@@ -2,7 +2,7 @@ import streamlit as st
 
 CSS = """
 <style>
-/* ============ Layout global ============ */
+/* ===== Reset basique ===== */
 header[data-testid="stHeader"]{opacity:0;height:0}
 .block-container{
   padding-top:1.4rem!important;
@@ -10,35 +10,23 @@ header[data-testid="stHeader"]{opacity:0;height:0}
   padding-left:16px!important;
   padding-right:16px!important;
 }
-*{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+*{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+html,body{font-size:17px;line-height:1.4}
 
-/* ============ Tokens ============ */
+/* ===== Tokens ===== */
 :root{
   --bg:#0b1220; --glass:#0f172a; --glass2:#0b1224; --line:#1f2a44;
   --text:#e5e7eb; --muted:#94a3b8; --ok:#22c55e; --bad:#ef4444; --accent:#60a5fa;
 
-  /* largeurs colonnes tableau & grilles */
   --col1:26%; --col2:10%; --col3:10%; --col4:15%;
   --col5:15%; --col6:8%;  --col7:8%;  --col8:8%;
 
-  /* TYPO hiérarchie N1 > N2 > N3 */
-  --fs-n1-title: 1.70rem;  /* titre principal (N1) */
-  --fs-n1-kpi:   1.24rem;
-  --fs-n1-label: 0.90rem;
-
-  --fs-n2-title: 1.50rem;  /* N2 (entre N1 et N3) */
-  --fs-n2-kpi:   1.12rem;
-  --fs-n2-label: 0.92rem;
-
-  --fs-n3-head:  0.95rem;  /* tableau (N3) */
-  --fs-n3-cell:  1.00rem;
-  --fs-small:    0.86rem;
+  --fs-n1-title:1.70rem; --fs-n1-kpi:1.24rem; --fs-n1-label:0.90rem;
+  --fs-n2-title:1.50rem; --fs-n2-kpi:1.12rem; --fs-n2-label:0.92rem;
+  --fs-n3-head:0.95rem;  --fs-n3-cell:1.00rem; --fs-small:0.86rem;
 }
 
-/* base */
-html, body { font-size:17px; line-height:1.4; }
-
-/* ============ Hero (Niveau 1) ============ */
+/* ===== N1 (hero) ===== */
 .hero{
   background:
     radial-gradient(1600px 500px at 20% -20%, rgba(59,130,246,.18), transparent 60%),
@@ -48,38 +36,35 @@ html, body { font-size:17px; line-height:1.4; }
   box-shadow:0 18px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(59,130,246,.15);
 }
 .hero .title{
-  font-size:var(--fs-n1-title)!important;
-  font-weight:800; color:var(--text);
+  font-size:var(--fs-n1-title)!important; font-weight:800; color:var(--text);
   text-shadow:0 0 18px rgba(59,130,246,.25); letter-spacing:.2px;
 }
 .hero .badge{
-  margin-left:12px;padding:3px 10px;font-weight:700;border:1px solid rgba(96,165,250,.5);
+  margin-left:12px; padding:3px 10px; font-weight:700; border:1px solid rgba(96,165,250,.5);
   background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));
-  border-radius:999px;color:#cffafe;font-size:.88rem
+  border-radius:999px; color:#cffafe; font-size:.88rem;
 }
-
-/* N1 grille */
 .hero .n1-grid{
   display:grid;
   grid-template-columns:var(--col1) var(--col2) var(--col3) var(--col4) var(--col5) var(--col6) var(--col7) var(--col8);
   align-items:center; gap:0; width:100%;
 }
-.hero .n1g-label{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:6px 8px;}
+.hero .n1g-label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 8px}
 .hero .n1g-label .title{
   font-size:1.22rem; font-weight:800; color:#f1f5f9; letter-spacing:.2px; text-shadow:0 0 8px rgba(59,130,246,.25);
 }
-.hero .n1g-cell{display:flex; flex-direction:column; align-items:flex-start; padding:6px 8px;}
+.hero .n1g-cell{display:flex;flex-direction:column;align-items:flex-start;padding:6px 8px}
 .hero .n1g-cell .small{
   font-size:var(--fs-n1-label); color:#aab4c3; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px;
 }
 .hero .n1g-cell b{ font-size:var(--fs-n1-kpi); font-weight:700; color:var(--text) }
 .hero .n1g-cell b.ok{ color:var(--ok)!important } .hero .n1g-cell b.bad{ color:var(--bad)!important }
 
-/* ============ Section / Carte N2 ============ */
+/* ===== N2 (section cards) ===== */
 .section-card{
   background:linear-gradient(180deg,#0f1a31,#0b1326);
-  border:1px solid #223355;border-radius:12px;padding:8px 10px;margin:4px 0 6px;
-  box-shadow:0 0 0 1px rgba(36,52,83,.35) inset
+  border:1px solid #223355; border-radius:12px; padding:8px 10px; margin:4px 0 6px;
+  box-shadow:0 0 0 1px rgba(36,52,83,.35) inset;
 }
 .n2-grid{
   display:grid;
@@ -89,34 +74,34 @@ html, body { font-size:17px; line-height:1.4; }
 .n2g-label,.n2g-cell{padding:6px 8px!important; box-sizing:border-box}
 .n2g-label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .n2g-label .title{
-  font-size:var(--fs-n2-title); font-weight:750; color:#f1f5f9; letter-spacing:.2px; text-shadow:0 0 6px rgba(59,130,246,.25)
+  font-size:var(--fs-n2-title); font-weight:750; color:#f1f5f9; letter-spacing:.2px; text-shadow:0 0 6px rgba(59,130,246,.25);
 }
 .n2g-label .badge{
-  padding:3px 10px;font-size:.88rem;font-weight:700;color:#cffafe;
+  padding:3px 10px; font-size:.88rem; font-weight:700; color:#cffafe;
   background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));
-  border:1px solid rgba(96,165,250,.5);border-radius:999px
+  border:1px solid rgba(96,165,250,.5); border-radius:999px;
 }
-.n2g-cell{display:flex;flex-direction:column;align-items:flex-start; gap:1px!important}
+.n2g-cell{display:flex;flex-direction:column;align-items:flex-start;gap:1px!important}
 .n2g-cell .small{
-  font-size:var(--fs-n2-label); color:#aab4c3; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px
+  font-size:var(--fs-n2-label); color:#aab4c3; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px;
 }
 .n2g-cell b{ font-size:var(--fs-n2-kpi); font-weight:700; color:var(--text) }
 .n2g-cell b.ok{ color:var(--ok)!important } .n2g-cell b.bad{ color:var(--bad)!important }
 
-/* ============ Tableau (N3) ============ */
+/* ===== Tableau N3 ===== */
 .table-card{
   background:linear-gradient(180deg,rgba(15,23,42,.65),rgba(11,18,36,.6));
-  border:1px solid #1f2a44;border-radius:14px;padding:12px;margin:8px 0;
-  box-shadow:0 6px 16px rgba(0,0,0,.22);overflow:hidden
+  border:1px solid #1f2a44; border-radius:14px; padding:12px; margin:8px 0;
+  box-shadow:0 6px 16px rgba(0,0,0,.22); overflow:hidden;
 }
 .table-wrap{width:100%;overflow-x:auto}
 table.neo{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
 table.neo thead th{
   font-size:var(--fs-n3-head)!important; letter-spacing:.3px; text-transform:uppercase;
-  color:#aab4c3; font-weight:700; text-align:left; padding:10px 12px; border-bottom:0!important; white-space:nowrap
+  color:#aab4c3; font-weight:700; text-align:left; padding:10px 12px; white-space:nowrap;
 }
-table.neo td{ padding:12px; font-size:var(--fs-n3-cell)!important; color:var(--text); border-bottom:0!important }
-table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background .12s ease}
+table.neo td{ padding:12px; font-size:var(--fs-n3-cell)!important; color:var(--text) }
+table.neo tbody tr:hover{ background:rgba(148,163,184,.06); transition:background .12s ease }
 .table-card .neo th:nth-child(1),.table-card .neo td:nth-child(1){width:var(--col1)}
 .table-card .neo th:nth-child(2),.table-card .neo td:nth-child(2){width:var(--col2)}
 .table-card .neo th:nth-child(3),.table-card .neo td:nth-child(3){width:var(--col3)}
@@ -125,26 +110,20 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .table-card .neo th:nth-child(6),.table-card .neo td:nth-child(6){width:var(--col6)}
 .table-card .neo th:nth-child(7),.table-card .neo td:nth-child(7){width:var(--col7)}
 .table-card .neo th:nth-child(8),.table-card .neo td:nth-child(8){width:var(--col8)}
-.table-card table.neo, .table-card table.neo * { border:0!important; box-shadow:none!important; }
-.table-card table.neo thead th, .table-card table.neo tbody td { border-bottom:0!important; }
-.table-card table.neo th + th, .table-card table.neo td + td { border-left:0!important; }
+.dot{width:8px;height:8px;background:var(--accent);border-radius:999px;display:inline-block}
+.ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
 
-/* ============ Mini barres (base horizontale) ============ */
+/* ===== Mini barres — horizontales partout ===== */
 .mbar-wrap{display:flex;align-items:center;gap:8px}
-.mbar{position:relative;height:10px;width:160px;background:#1f2a44;border-radius:999px;overflow:hidden;flex-shrink:0}
+.mbar{
+  position:relative;height:10px;width:160px;background:#1f2a44;
+  border-radius:999px;overflow:hidden;flex-shrink:0;
+}
 .mfill{display:block;height:100%;border-radius:999px;transition:width .35s ease}
 .mfill.blue{background:#3b82f6}.mfill.green{background:#22c55e}
 .mval{font-weight:700;color:var(--text);font-size:0.95rem;min-width:52px;text-align:right}
 
-/* ============ Variante verticale (N1 & N2) ============ */
-.mbar-wrap.v{
-  display:flex;flex-direction:column;align-items:flex-start;gap:4px;
-  width:100%;max-width:none;
-}
-.mbar-wrap.v .mbar{display:block;width:100%;margin-top:4px}
-.mbar-wrap.v .mval{display:block;text-align:left;margin-top:4px;font-size:0.9rem;color:#aab4c3}
-
-/* Responsive */
+/* ===== Responsive (typo) ===== */
 @media (max-width:1400px){
   :root{
     --fs-n1-title:1.55rem; --fs-n1-kpi:1.08rem;
@@ -152,9 +131,7 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
     --fs-n3-head:0.90rem;  --fs-n3-cell:0.98rem;
   }
 }
-@media (min-width:2000px){
-  :root{ --fs-n1-title:1.80rem; }
-}
+@media (min-width:2000px){ :root{ --fs-n1-title:1.80rem } }
 </style>
 """
 
