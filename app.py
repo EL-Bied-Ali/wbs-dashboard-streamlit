@@ -178,11 +178,49 @@ def render_section_level2(parent_node: dict):
         st.info("Aucun niveau 3 pour cette section.")
 
 def render_all_open_native(root: dict):
-    st.markdown(card_block(root.get("label",""), root.get("level",1), root.get("metrics",{}) or {}, big=True, show_dot=False, extra_cls="hero"), unsafe_allow_html=True)
+    st.markdown(header_level1_grid(root.get("label",""), root.get("metrics",{}) or {}), unsafe_allow_html=True)
     st.divider()
     with st.container(border=True):
         for n2 in root.get("children", []) or []:
             render_section_level2(n2)
+            
+def header_level1_grid(label_n1: str, m: dict) -> str:
+    planned  = m.get("planned_finish","")
+    forecast = m.get("forecast_finish","")
+    schedule = fmt_pct(m.get("schedule",0))
+    earned   = fmt_pct(m.get("earned", m.get("units",0)))
+    ecart_v  = _safe_float(m.get("ecart",0))
+    impact_v = _safe_float(m.get("impact",0))
+    ecart    = fmt_pct(ecart_v,  signed=True)
+    impact   = fmt_pct(impact_v, signed=True)
+
+    ecls = "ok" if ecart_v  >= 0 else "bad"
+    icls = "ok" if impact_v >= 0 else "bad"
+
+    gnum = to_number_j(m.get("glissement","0"))
+    gcls = "ok" if gnum >= 0 else "bad"
+    gliss = f"{int(gnum)}j"
+
+    return _minify(f"""
+    <div class="hero">
+      <div class="n1-grid">
+        <div class="n1g-label">
+          <span class="dot"></span>
+          <span class="title">{label_n1}</span>
+          <span class="badge">WBS Niveau 1</span>
+        </div>
+
+        <div class="n1g-cell"><span class="small">Planned</span><b>{planned}</b></div>
+        <div class="n1g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
+        <div class="n1g-cell"><span class="small">Schedule</span><b>{schedule}</b></div>
+        <div class="n1g-cell"><span class="small">Earned</span><b>{earned}</b></div>
+        <div class="n1g-cell"><span class="small">Écart</span><b class="{ecls}">{ecart}</b></div>
+        <div class="n1g-cell"><span class="small">Impact</span><b class="{icls}">{impact}</b></div>
+        <div class="n1g-cell"><span class="small">Glissement</span><b class="{gcls}">{gliss}</b></div>
+      </div>
+    </div>
+    """)
+
             
 def header_level2_grid(label, level, m):
     planned  = m.get("planned_finish","")

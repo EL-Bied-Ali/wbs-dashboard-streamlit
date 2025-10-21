@@ -154,6 +154,83 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   font-size: 1.08rem;             /* légerement plus petit pour équilibrer */
 }
 
+/* ==== NIVEAU 1 aligné sur la même grille que N2/N3 ==== */
+.hero .n1-grid{
+  display:grid;
+  grid-template-columns:
+    var(--col1) var(--col2) var(--col3) var(--col4)
+    var(--col5) var(--col6) var(--col7) var(--col8);
+  align-items:center;
+  gap:0;
+  width:100%;
+}
+
+/* Colonne 1 : titre + badge (alignement identique N2) */
+.hero .n1g-label{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:6px 8px;
+}
+.hero .n1g-label .title{
+  font-size:1.22rem;          /* > N2 (1.15rem), < titre principal */
+  font-weight:800;
+  color:#f1f5f9;
+  letter-spacing:.2px;
+  text-shadow:0 0 8px rgba(59,130,246,.25);
+}
+
+/* Cellules KPI (label au-dessus de la valeur, comme N2) */
+.hero .n1g-cell{
+  display:flex; flex-direction:column; align-items:flex-start;
+  padding:6px 8px;
+}
+.hero .n1g-cell .small{
+  font-size:.78rem; color:#aab4c3; text-transform:uppercase; letter-spacing:.3px;
+  margin-bottom:4px;
+}
+.hero .n1g-cell b{ font-weight:700; color:var(--text); }
+
+/* Couleurs signes */
+.hero .n1g-cell b.ok{ color:var(--ok)!important; }
+.hero .n1g-cell b.bad{ color:var(--bad)!important; }
+
+/* ==== NIVEAU 1 aligné sur la même grille que N2/N3 ==== */
+.hero .n1-grid{
+  display:grid;
+  grid-template-columns:
+    var(--col1) var(--col2) var(--col3) var(--col4)
+    var(--col5) var(--col6) var(--col7) var(--col8);
+  align-items:center;
+  gap:0;
+  width:100%;
+}
+
+/* Colonne 1 : titre + badge (alignement identique N2) */
+.hero .n1g-label{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:6px 8px;
+}
+.hero .n1g-label .title{
+  font-size:1.22rem;          /* > N2 (1.15rem), < titre principal */
+  font-weight:800;
+  color:#f1f5f9;
+  letter-spacing:.2px;
+  text-shadow:0 0 8px rgba(59,130,246,.25);
+}
+
+/* Cellules KPI (label au-dessus de la valeur, comme N2) */
+.hero .n1g-cell{
+  display:flex; flex-direction:column; align-items:flex-start;
+  padding:6px 8px;
+}
+.hero .n1g-cell .small{
+  font-size:.78rem; color:#aab4c3; text-transform:uppercase; letter-spacing:.3px;
+  margin-bottom:4px;
+}
+.hero .n1g-cell b{ font-weight:700; color:var(--text); }
+
+
+
+
 </style>
 """
 
