@@ -104,6 +104,36 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .dot{width:8px;height:8px;background:var(--accent);border-radius:999px;display:inline-block}
 .ok{color:var(--ok);font-weight:700}
 .bad{color:var(--bad);font-weight:700}
+
+/* ==== NO LINES IN TABLE (.neo) – hard override ==== */
+.table-card table.neo,
+.table-card table.neo * {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* kill bottom lines from head/body */
+.table-card table.neo thead th,
+.table-card table.neo tbody td {
+  border-bottom: 0 !important;
+}
+
+/* kill the “first row thick line” rule */
+.table-card table.neo tbody tr:first-child td {
+  border-bottom: 0 !important;
+}
+
+/* prevent any default column dividers that might sneak in */
+.table-card table.neo th + th,
+.table-card table.neo td + td {
+  border-left: 0 !important;
+}
+
+/* keep the hover highlight without lines */
+.table-card table.neo tbody tr:hover {
+  background: rgba(148,163,184,.06);
+}
+
 </style>
 """
 
