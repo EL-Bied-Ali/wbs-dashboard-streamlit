@@ -20,9 +20,18 @@ header[data-testid="stHeader"]{opacity:0;height:0}
   --col1:26%; --col2:10%; --col3:10%; --col4:15%;
   --col5:15%; --col6:8%;  --col7:8%;  --col8:8%;
 
-  --fs-n1-title:1.80rem; --fs-n1-kpi:1.40rem; --fs-n1-label:0.90rem;
-  --fs-n2-title:1.50rem; --fs-n2-kpi:1.12rem; --fs-n2-label:0.92rem;
-  --fs-n3-head:0.95rem;  --fs-n3-cell:1.00rem; --fs-small:0.86rem;
+  --fs-n1-title:2.1rem;  /* très imposant, titre principal */
+  --fs-n1-kpi:1.55rem;
+  --fs-n1-label:0.95rem;
+
+  --fs-n2-title:1.55rem; /* clair, mais visiblement inférieur */
+  --fs-n2-kpi:1.15rem;
+  --fs-n2-label:0.90rem;
+
+  --fs-n3-head:0.90rem;  /* plus compact pour tableau */
+  --fs-n3-cell:0.96rem;
+  --fs-small:0.82rem;
+
 }
 html, body { font-size:17px; line-height:1.4; }
 
