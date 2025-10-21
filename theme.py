@@ -141,5 +141,46 @@ section[data-testid="stMain"] > div{
 </style>
 """
 
+<style>
+/* PATCH — retirer les mini-barres */
+.mbar, .mfill { display:none !important; }
+.mval{ margin-left:0 !important; display:inline !important; }
+
+/* PATCH — 1ère colonne non cassée */
+.table-card .neo{ table-layout:auto !important; }
+.table-card .neo th:nth-child(1),
+.table-card .neo td:nth-child(1){
+  width:auto !important;
+  max-width:none !important;
+  white-space:normal !important;
+  word-break:normal !important;
+  overflow:visible !important;
+}
+.lvl{ display:flex; align-items:center; gap:8px; }
+
+/* Evite le nowrap global sur les cellules, garde-le sur les th */
+.table-card .neo td{ white-space:normal !important; word-break:break-word !important; }
+.table-card .neo th{ white-space:nowrap !important; }
+
+/* PATCH — réaligne l’en-tête N2 sur la nouvelle 1ère colonne auto */
+.n2-grid{
+  grid-template-columns:
+    auto var(--col2) var(--col3) var(--col4)
+    var(--col5) var(--col6) var(--col7) var(--col8) !important;
+}
+
+/* PATCH — étiquette Niveau 1 (hero) restaurée */
+.hero .title{ display:flex; align-items:baseline; gap:10px; }
+.hero .badge{ margin-left:0; }
+
+/* Sécurité anti-rotation héritée */
+.table-card .neo th, .table-card .neo td{
+  writing-mode:horizontal-tb !important;
+  text-orientation:mixed !important;
+  transform:none !important;
+}
+</style>
+
+
 def inject_theme():
     st.markdown(CSS, unsafe_allow_html=True)
