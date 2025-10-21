@@ -426,6 +426,41 @@ CSS += """
 </style>
 """
 
+CSS += """
+<style>
+/* ---- FIX: ne pas mettre le thead en grid ---- */
+.neo thead tr{
+  display: table-row !important;
+  grid-template-columns: none !important;
+}
+
+/* garder l’alignement par largeurs % déjà définies */
+.table-card .neo{ table-layout: fixed; width:100%; }
+.table-card .neo th, .table-card .neo td{
+  white-space: normal !important;
+  word-break: break-word;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+/* l’étiquette N2 RESTE en grid avec les mêmes colonnes */
+.n2-grid{
+  display: grid !important;
+  grid-template-columns:
+    var(--col1) var(--col2) var(--col3) var(--col4)
+    var(--col5) var(--col6) var(--col7) var(--col8) !important;
+  align-items: center;
+  gap: 12px;
+}
+
+/* première colonne (pastille + titre) en flex propre */
+.n2g-label, .lvl{
+  display:flex; align-items:center; gap:6px;
+}
+</style>
+"""
+
+
 
 def inject_theme():
   st.markdown(CSS, unsafe_allow_html=True)
