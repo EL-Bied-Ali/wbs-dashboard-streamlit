@@ -36,14 +36,17 @@ def to_number_j(val):
         return 0.0
 
 def bar_html(pct: float, color: str) -> str:
-    """Mini barre KPI. color: 'blue' (Schedule) ou 'green' (Earned)"""
     safe = max(0, min(100, pct or 0))
     return f"""
-    <span class="mbar">
-      <span class="mfill {color} anim" style="--to:{safe}%; width:{safe}%"></span>
+    <span class="mbar-wrap">
+      <span class="mbar">
+        <span class="mfill {color} anim" style="--to:{safe}%; width:{safe}%"></span>
+      </span>
+      <span class="mval">{safe:.2f}%</span>
     </span>
-    <span class="mval">{safe:.2f}%</span>
     """
+
+
 
 # ---------- Rendu N3 (table détail) ----------
 def render_detail_table(node: dict, compact: bool = False):

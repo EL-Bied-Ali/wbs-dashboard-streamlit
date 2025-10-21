@@ -145,11 +145,6 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .table-card .neo th:nth-child(7),.table-card .neo td:nth-child(7){width:var(--col7)}
 .table-card .neo th:nth-child(8),.table-card .neo td:nth-child(8){width:var(--col8)}
 
-/* barres mini */
-.mbar{position:relative;height:8px;width:160px;background:#1f2a44;border-radius:999px;overflow:hidden;display:inline-block;vertical-align:middle}
-.mfill{height:100%;border-radius:999px;transition:width .35s ease}
-.mfill.blue{background:#3b82f6}.mfill.green{background:#22c55e}
-.mval{display:inline-block;min-width:56px;margin-left:8px}
 
 /* pastille + couleurs génériques */
 .dot{width:8px;height:8px;background:var(--accent);border-radius:999px;display:inline-block}
@@ -173,17 +168,46 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   :root{ --fs-n1-title:1.80rem; }
 }
 
-/* Loader doux pour les barres (N1/N2/N3) */
-@keyframes growBar { from { width:0 } to { width:var(--to, 0%) } }
-.mfill.anim{
-  animation: growBar .6s ease-out both;
+/* barres mini */
+.mbar-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.mbar{
+  position:relative;
+  height:10px;
+  width:160px;
+  background:#1f2a44;
+  border-radius:999px;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.mfill{
+  height:100%;
+  border-radius:999px;
+  transition:width .35s ease;
+}
+.mfill.blue{background:#3b82f6}
+.mfill.green{background:#22c55e}
+.mval{
+  font-weight:700;
+  color:var(--text);
+  font-size:0.95rem;
+  min-width:52px;
+  text-align:right;
 }
 
-/* En-têtes N1/N2 : barres plus fluides */
-.hero .mbar, .section-card .mbar{
+/* animation fluide */
+@keyframes growBar { from { width:0 } to { width:var(--to, 0%) } }
+.mfill.anim{animation:growBar .6s ease-out both}
+
+/* En-têtes N1/N2 : alignement horizontal cohérent */
+.hero .mbar-wrap, .section-card .mbar-wrap{
   width:100%;
-  max-width:180px;   /* ajuste si tu veux plus long/court */
+  max-width:200px;
 }
+
 .hero .mval, .section-card .mval{
   min-width:56px;
   margin-left:8px;
