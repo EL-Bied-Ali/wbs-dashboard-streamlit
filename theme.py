@@ -552,6 +552,67 @@ CSS += """
 </style>
 """
 
+CSS += """
+<style>
+/* ===== Stronger, clearer Level-1 hero card ===== */
+.hero{
+  background:
+    radial-gradient(1600px 500px at 20% -20%, rgba(59,130,246,.18), transparent 60%),
+    linear-gradient(180deg, #0f1b34 0%, #0a1226 100%);
+  border: 1px solid rgba(96,165,250,.35);
+  border-radius: 18px;
+  padding: 18px 20px;
+  margin: 8px 0 16px 0;
+  box-shadow:
+    0 18px 30px rgba(0,0,0,.35),
+    inset 0 0 0 1px rgba(59,130,246,.15);
+}
+
+/* Title bigger + subtle glow */
+.hero .title{
+  font-size: 1.35rem;
+  letter-spacing: .2px;
+  text-shadow: 0 0 18px rgba(59,130,246,.25);
+}
+
+/* KPI row: compact, crisp labels */
+.hero .kpis{ gap: 28px; }
+.hero .kpi{
+  font-size: .95rem;
+  color: #cbd5e1;
+}
+.hero .kpi .label{
+  display:block;
+  font-size:.75rem;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  color:#93a3b8;
+}
+.hero .kpi b{ color:#e5e7eb; }
+
+/* Success / danger accents more legible */
+.hero .ok{ color:#22c55e; font-weight:800; }
+.hero .bad{ color:#ef4444; font-weight:800; }
+
+/* The small “WBS Niveau 1” pill: tighter and bolder */
+.hero .badge{
+  margin-left: 12px;
+  padding: 3px 10px;
+  font-weight: 700;
+  border-color: rgba(96,165,250,.5);
+  background: linear-gradient(180deg, rgba(14,165,233,.18), rgba(14,165,233,.10));
+}
+
+/* Divider stronger but subtle */
+.sep{
+  height: 1px;
+  background: linear-gradient(90deg, rgba(96,165,250,.35), rgba(96,165,250,.08));
+  margin: 12px 0 8px;
+  border-radius: 1px;
+}
+</style>
+"""
+
 
 def inject_theme():
   st.markdown(CSS, unsafe_allow_html=True)
