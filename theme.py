@@ -172,6 +172,24 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 @media (min-width:2000px){
   :root{ --fs-n1-title:1.80rem; }
 }
+
+/* Loader doux pour les barres (N1/N2/N3) */
+@keyframes growBar { from { width:0 } to { width:var(--to, 0%) } }
+.mfill.anim{
+  animation: growBar .6s ease-out both;
+}
+
+/* En-têtes N1/N2 : barres plus fluides */
+.hero .mbar, .section-card .mbar{
+  width:100%;
+  max-width:180px;   /* ajuste si tu veux plus long/court */
+}
+.hero .mval, .section-card .mval{
+  min-width:56px;
+  margin-left:8px;
+  display:inline-block;
+}
+
 </style>
 """
 
