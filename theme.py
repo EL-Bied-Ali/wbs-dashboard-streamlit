@@ -24,7 +24,7 @@ header[data-testid="stHeader"]{opacity:0;height:0}
 
   /* TYPO agrandie + hiérarchie N1>N2>N3 */
   --fs-n1-title: 1.70rem;  /* titre principal (N1) */
-  --fs-n1-kpi:   1.08rem;
+  --fs-n1-kpi:   1.24rem;
   --fs-n1-label: 0.90rem;
 
   --fs-n2-title: 1.50rem;  /* plus grand mais < N1 */
