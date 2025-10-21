@@ -11,65 +11,41 @@ st.set_page_config(page_title="WBS – Projet", layout="wide")
 inject_theme()
 
 # ---------- Helpers ----------
-def _minify(html: str) -> str: return "".join(line.strip() for line in html.splitlines())
+def _minify(html: str) -> str:
+    return "".join(line.strip() for line in html.splitlines())
+
 def _safe_float(x):
-    try: return float(x)
-    except Exception: return 0.0
+    try:
+        return float(x)
+    except Exception:
+        return 0.0
+
 def fmt_pct(x, signed=False):
     try:
-        v = float(x); sign = "+" if signed and v > 0 else ""
+        v = float(x)
+        sign = "+" if signed and v > 0 else ""
         return f"{sign}{v:.2f}%"
-    except Exception: return str(x)
+    except Exception:
+        return str(x)
+
 def to_number_j(val):
-    s = str(val).replace("j","").strip()
-    try: return float(s)
-    except: return 0.0
+    s = str(val).replace("j", "").strip()
+    try:
+        return float(s)
+    except:
+        return 0.0
 
-def kpi_html(m: dict):
-    planned = m.get("planned_finish","")
-    forecast = m.get("forecast_finish","")
-    schedule = fmt_pct(m.get("schedule",0))
-    earned   = fmt_pct(m.get("earned", m.get("units", 0)))
-    ecart    = fmt_pct(m.get("ecart",0), signed=True)
-    impact   = fmt_pct(m.get("impact",0), signed=True)
+def bar_html(pct: float, color: str) -> str:
+    """Mini barre KPI. color: 'blue' (Schedule) ou 'green' (Earned)"""
+    safe = max(0, min(100, pct or 0))
+    return f"""
+    <span class="mbar">
+      <span class="mfill {color} anim" style="--to:{safe}%; width:{safe}%"></span>
+    </span>
+    <span class="mval">{safe:.2f}%</span>
+    """
 
-    # --- glissement: classe ok/bad + suffixe "j"
-    glis_raw = str(m.get("glissement","0"))
-    gnum = to_number_j(glis_raw)
-    gliss = f"{int(gnum)}j"
-    glis_cls = "ok" if gnum >= 0 else "bad"
-
-    ecart_cls  = "ok" if _safe_float(m.get("ecart",0))  >= 0 else "bad"
-    impact_cls = "ok" if _safe_float(m.get("impact",0)) >= 0 else "bad"
-
-    return _minify(f"""
-    <div class="kpis">
-      <span class="kpi"><span class="small">Planned:</span> <b>{planned}</b></span>
-      <span class="kpi"><span class="small">Forecast:</span> <b>{forecast}</b></span>
-      <span class="kpi"><span class="small">Schedule %:</span> <b>{schedule}</b></span>
-      <span class="kpi"><span class="small">Earned %:</span> <b>{earned}</b></span>
-      <span class="kpi"><span class="small">Écart:</span> <b class="{ecart_cls}">{ecart}</b></span>
-      <span class="kpi"><span class="small">Impact:</span> <b class="{impact_cls}">{impact}</b></span>
-      <span class="kpi"><span class="small">Glissement:</span> <b class="{glis_cls}">{gliss}</b></span>
-    </div>""")
-
-
-def header_html(label, level, metrics, big=False, show_dot=True):
-    return _minify(f"""
-    <div class="row">
-      <div class="left">
-        {'<span class="dot"></span>' if show_dot else '<span style="width:8px"></span>'}
-        <span class="title {'title-lg' if big else ''}">{label}</span>
-        <span class="badge">WBS Niveau {level}</span>
-      </div>
-      {kpi_html(metrics)}
-    </div>""")
-
-def card_block(label, level, metrics, big=False, show_dot=True, extra_cls=""):
-    header = header_html(label, level, metrics, big=big, show_dot=show_dot)
-    cls = "hero" if extra_cls == "hero" else "card"
-    return _minify(f'<div class="{cls}">{header}</div>')
-
+# ---------- Rendu N3 (table détail) ----------
 def render_detail_table(node: dict, compact: bool = False):
     rows = []
     for ch in node.get("children", []) or []:
@@ -90,13 +66,6 @@ def render_detail_table(node: dict, compact: bool = False):
         cls = "ok" if v >= 0 else "bad"
         return f'<span class="{cls}">{s}</span>'
 
-    def bar(val, color):
-        width = max(0, min(100, val))
-        return f'''
-        <div class="mbar"><div class="mfill {color}" style="width:{width}%;"></div></div>
-        <div class="mval">{val:.2f}%</div>
-        '''
-
     trs = []
     for r in rows:
         trs.append(_minify(f"""
@@ -104,8 +73,8 @@ def render_detail_table(node: dict, compact: bool = False):
             <td class="lvl"><span class="dot"></span> <b>{r['label']}</b></td>
             <td class="col-date">{r['planned']}</td>
             <td class="col-date">{r['forecast']}</td>
-            <td class="col-bar">{bar(r['schedule'], 'blue')}</td>
-            <td class="col-bar">{bar(r['earned'],   'green')}</td>
+            <td class="col-bar">{bar_html(r['schedule'], 'blue')}</td>
+            <td class="col-bar">{bar_html(r['earned'],   'green')}</td>
             <td class="col-sign">{signed_span(r['ecart'])}</td>
             <td class="col-sign">{signed_span(r['impact'])}</td>
             <td class="col-gliss"><span class="{'ok' if r['gliss']>=0 else 'bad'}">{int(r['gliss'])}j</span></td>
@@ -134,6 +103,7 @@ def render_detail_table(node: dict, compact: bool = False):
     </div>
     """), unsafe_allow_html=True)
 
+# ---------- Graph barres ----------
 def render_barchart(node: dict):
     labels, schedule, earned = [], [], []
     for ch in node.get("children", []) or []:
@@ -166,29 +136,14 @@ def render_barchart(node: dict):
     )
     st.plotly_chart(fig, use_container_width=True)
 
-def render_section_level2(parent_node: dict):
-    st.markdown(
-        _minify(f'<div class="section-card">{header_level2_grid(parent_node.get("label",""), parent_node.get("level",2), parent_node.get("metrics",{}) or {})}</div>'),
-        unsafe_allow_html=True
-    )
-    if parent_node.get("children"):
-        render_detail_table(parent_node)
-        render_barchart(parent_node)
-    else:
-        st.info("Aucun niveau 3 pour cette section.")
-
-def render_all_open_native(root: dict):
-    st.markdown(header_level1_grid(root.get("label",""), root.get("metrics",{}) or {}), unsafe_allow_html=True)
-    st.divider()
-    with st.container(border=True):
-        for n2 in root.get("children", []) or []:
-            render_section_level2(n2)
-            
+# ---------- En-têtes N1/N2 (avec loaders KPI) ----------
 def header_level1_grid(label_n1: str, m: dict) -> str:
     planned  = m.get("planned_finish","")
     forecast = m.get("forecast_finish","")
-    schedule = fmt_pct(m.get("schedule",0))
-    earned   = fmt_pct(m.get("earned", m.get("units",0)))
+
+    sched_v  = _safe_float(m.get("schedule",0))
+    earn_v   = _safe_float(m.get("earned", m.get("units",0)))
+
     ecart_v  = _safe_float(m.get("ecart",0))
     impact_v = _safe_float(m.get("impact",0))
     ecart    = fmt_pct(ecart_v,  signed=True)
@@ -212,8 +167,10 @@ def header_level1_grid(label_n1: str, m: dict) -> str:
 
         <div class="n1g-cell"><span class="small">Planned</span><b>{planned}</b></div>
         <div class="n1g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
-        <div class="n1g-cell"><span class="small">Schedule</span><b>{schedule}</b></div>
-        <div class="n1g-cell"><span class="small">Earned</span><b>{earned}</b></div>
+
+        <div class="n1g-cell"><span class="small">Schedule</span>{bar_html(sched_v, 'blue')}</div>
+        <div class="n1g-cell"><span class="small">Earned</span>{bar_html(earn_v, 'green')}</div>
+
         <div class="n1g-cell"><span class="small">Écart</span><b class="{ecls}">{ecart}</b></div>
         <div class="n1g-cell"><span class="small">Impact</span><b class="{icls}">{impact}</b></div>
         <div class="n1g-cell"><span class="small">Glissement</span><b class="{gcls}">{gliss}</b></div>
@@ -221,20 +178,21 @@ def header_level1_grid(label_n1: str, m: dict) -> str:
     </div>
     """)
 
-            
 def header_level2_grid(label, level, m):
     planned  = m.get("planned_finish","")
     forecast = m.get("forecast_finish","")
-    schedule = fmt_pct(m.get("schedule",0))
-    earned   = fmt_pct(m.get("earned", m.get("units",0)))
-    ecart    = fmt_pct(m.get("ecart",0),  signed=True)
-    impact   = fmt_pct(m.get("impact",0), signed=True)
 
-    # classes couleur
-    ecls = "ok" if _safe_float(m.get("ecart",0))  >= 0 else "bad"
-    icls = "ok" if _safe_float(m.get("impact",0)) >= 0 else "bad"
+    sched_v  = _safe_float(m.get("schedule",0))
+    earn_v   = _safe_float(m.get("earned", m.get("units",0)))
 
-    # glissement N2
+    ecart_v  = _safe_float(m.get("ecart",0))
+    impact_v = _safe_float(m.get("impact",0))
+    ecart    = fmt_pct(ecart_v,  signed=True)
+    impact   = fmt_pct(impact_v, signed=True)
+
+    ecls = "ok" if ecart_v  >= 0 else "bad"
+    icls = "ok" if impact_v >= 0 else "bad"
+
     gnum   = to_number_j(m.get("glissement","0"))
     gcls   = "ok" if gnum >= 0 else "bad"
     gliss  = f"{int(gnum)}j"
@@ -250,8 +208,8 @@ def header_level2_grid(label, level, m):
       <div class="n2g-cell"><span class="small">Planned</span><b>{planned}</b></div>
       <div class="n2g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
 
-      <div class="n2g-cell"><span class="small">Schedule</span><b>{schedule}</b></div>
-      <div class="n2g-cell"><span class="small">Earned</span><b>{earned}</b></div>
+      <div class="n2g-cell"><span class="small">Schedule</span>{bar_html(sched_v, 'blue')}</div>
+      <div class="n2g-cell"><span class="small">Earned</span>{bar_html(earn_v, 'green')}</div>
 
       <div class="n2g-cell"><span class="small">Écart</span><b class="{ecls}">{ecart}</b></div>
       <div class="n2g-cell"><span class="small">Impact</span><b class="{icls}">{impact}</b></div>
@@ -259,11 +217,39 @@ def header_level2_grid(label, level, m):
     </div>
     """)
 
+# ---------- Rendu global ----------
+def render_section_level2(parent_node: dict):
+    st.markdown(
+        _minify(f'<div class="section-card">{header_level2_grid(parent_node.get("label",""), parent_node.get("level",2), parent_node.get("metrics",{}) or {})}</div>'),
+        unsafe_allow_html=True
+    )
+    if parent_node.get("children"):
+        render_detail_table(parent_node)
+        render_barchart(parent_node)
+    else:
+        st.info("Aucun niveau 3 pour cette section.")
 
+def render_all_open_native(root: dict):
+    st.markdown(
+        header_level1_grid(
+            root.get("label", "CONSTRUCTION NEUVE"),
+            root.get("metrics", {}) or {}
+        ),
+        unsafe_allow_html=True
+    )
+    st.divider()
+    with st.container(border=True):
+        for n2 in root.get("children", []) or []:
+            render_section_level2(n2)
 
 # ---------- Sources de données ----------
 st.sidebar.markdown("### Import WBS")
-uploaded = st.sidebar.file_uploader("Charger un Excel de suivi (.xlsx)", type=["xlsx","xlsm"], accept_multiple_files=False, help="L’app détecte automatiquement les tableaux contenant Planned/Forecast/Schedule/Earned etc. et reconstruit le WBS.")
+uploaded = st.sidebar.file_uploader(
+    "Charger un Excel de suivi (.xlsx)",
+    type=["xlsx","xlsm"],
+    accept_multiple_files=False,
+    help="L’app détecte automatiquement les tableaux contenant Planned/Forecast/Schedule/Earned etc. et reconstruit le WBS."
+)
 packs = []
 
 if uploaded is not None:
@@ -280,19 +266,21 @@ if uploaded is not None:
     except Exception as e:
         st.error(f"Erreur d’extraction: {e}")
     finally:
-        try: os.unlink(tmp_path)
-        except: pass
+        try:
+            os.unlink(tmp_path)
+        except:
+            pass
 
 # Aucun fichier uploadé : on reste vide
 if not packs:
     st.info("🔹 Veuillez importer un fichier Excel pour générer le WBS.")
     st.stop()
 
-
 # ---------- Sélecteur et rendu ----------
 labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}  [{p.get('sheet','') or '?'} {p.get('range','') or ''}]"
           for i, p in enumerate(packs)]
 idx = st.sidebar.selectbox("WBS à afficher", options=range(len(labels)), format_func=lambda i: labels[i], index=0 if packs else 0)
 root = packs[idx]["wbs"] if packs else {"label":"Aucun WBS","level":1,"metrics":{},"children":[]}
+
 render_all_open_native(root)
 st.caption("Import Excel → extraction auto → rendu hiérarchique. Les colonnes requises: Planned/Forecast/Schedule/Earned/ecart/impact/Glissement.")
