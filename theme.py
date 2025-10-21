@@ -219,6 +219,25 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   font-weight: 650;
 }
 
+/* ==== 1️⃣ Rendre le sidebar toujours accessible ==== */
+section[data-testid="stSidebar"] {
+  transform: translateX(0) !important; /* évite qu'il disparaisse complètement */
+  transition: transform 0.3s ease-in-out;
+}
+button[kind="header"] {
+  opacity: 1 !important; /* rend le bouton d'ouverture visible */
+  pointer-events: auto !important;
+}
+
+/* ==== 2️⃣ Réduction globale de la longueur des loaders ==== */
+.mbar {
+  width: 130px !important; /* longueur par défaut réduite */
+}
+
+/* Ajustement par niveau pour garder les proportions */
+.hero .mbar { width: 160px !important; height: 14px; }
+.section-card .mbar { width: 140px !important; height: 12px; }
+.table-card .mbar { width: 120px !important; height: 10px; }
 
 </style>
 """
