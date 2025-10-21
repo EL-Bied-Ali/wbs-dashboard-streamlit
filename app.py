@@ -192,7 +192,11 @@ def header_level2_grid(label, level, m):
     ecart    = fmt_pct(m.get("ecart",0),  signed=True)
     impact   = fmt_pct(m.get("impact",0), signed=True)
 
-    # --- glissement N2
+    # classes couleur
+    ecls = "ok" if _safe_float(m.get("ecart",0))  >= 0 else "bad"
+    icls = "ok" if _safe_float(m.get("impact",0)) >= 0 else "bad"
+
+    # glissement N2
     gnum   = to_number_j(m.get("glissement","0"))
     gcls   = "ok" if gnum >= 0 else "bad"
     gliss  = f"{int(gnum)}j"
@@ -201,7 +205,7 @@ def header_level2_grid(label, level, m):
     <div class="n2-grid">
       <div class="n2g-label">
         <span class="dot"></span>
-        <span class="title title-lg">{label}</span>
+        <span class="title">{label}</span>
         <span class="badge">WBS Niveau {level}</span>
       </div>
 
@@ -211,16 +215,12 @@ def header_level2_grid(label, level, m):
       <div class="n2g-cell"><span class="small">Schedule</span><b>{schedule}</b></div>
       <div class="n2g-cell"><span class="small">Earned</span><b>{earned}</b></div>
 
-      <div class="n2g-cell"><span class="small">Écart</span>
-        <b class="{ 'ok' if _safe_float(m.get('ecart',0))>=0 else 'bad' }">{ecart}</b>
-      </div>
-      <div class="n2g-cell"><span class="small">Impact</span>
-        <b class="{ 'ok' if _safe_float(m.get('impact',0))>=0 else 'bad' }">{impact}</b>
-      </div>
-
+      <div class="n2g-cell"><span class="small">Écart</span><b class="{ecls}">{ecart}</b></div>
+      <div class="n2g-cell"><span class="small">Impact</span><b class="{icls}">{impact}</b></div>
       <div class="n2g-cell gliss"><span class="small">Glissement</span><b class="{gcls}">{gliss}</b></div>
     </div>
     """)
+
 
 
 # ---------- Sources de données ----------

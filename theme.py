@@ -131,7 +131,7 @@ table.neo td {
   padding:12px;
   font-size:.95rem;
   color:var(--text);
-  border-bottom:1px solid rgba(31,42,68,.8);
+  border-bottom:none !important;
 }
 table.neo tbody tr:hover {
   background: rgba(148,163,184,.06);
@@ -222,6 +222,16 @@ table.neo tbody tr:hover {
 .n2g-cell.gliss b.ok{ color: var(--ok) !important; }
 .n2g-cell.gliss b.bad{ color: var(--bad) !important; }
 .n2g-cell.gliss b.neutral{ color: var(--muted) !important; }
+
+/* --- Amélioration du titre Niveau 2 --- */
+.n2g-label .title{
+  font-size:1.15rem;              /* un cran au-dessus des valeurs */
+  font-weight:750;
+  color:#f1f5f9;
+  letter-spacing:.2px;
+  text-shadow:0 0 6px rgba(59,130,246,.25);
+}
+
 </style>
 """
 
