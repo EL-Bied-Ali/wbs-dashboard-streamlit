@@ -241,6 +241,43 @@ CSS += """
 </style>
 """
 
+CSS += """
+<style>
+/* === Streamlit Cloud: full-width no-scroll === */
+
+/* Étire vraiment la page comme en local */
+[data-testid="stAppViewContainer"] .main .block-container{
+  max-width: 2300px !important;
+}
+
+/* Le tableau s’adapte (pas de scroll) */
+.table-card{ overflow: hidden; }
+.table-card .table-wrap{ overflow-x: visible !important; }
+
+/* Autoriser le retour à la ligne (on retire le nowrap) */
+.table-card .neo th,
+.table-card .neo td{
+  white-space: normal !important;
+  word-break: break-word;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Réduire un peu les largeurs mini pour tenir sur Cloud */
+.table-card .neo .lvl{ min-width: 240px; }
+.table-card .neo .col-date{ min-width: 110px; }
+.table-card .neo .col-bar{ min-width: 180px; }
+.mbar{ width: 120px; }
+
+/* Header N2 aligné avec les nouvelles largeurs */
+.n2-grid{
+  grid-template-columns: 240px 110px 110px 180px 180px 95px 95px 80px !important;
+}
+/* petit décalage glissement */
+.n2-grid > .n2g-cell:last-child{ margin-left: -10px; }
+</style>
+"""
+
 
 def inject_theme():
   st.markdown(CSS, unsafe_allow_html=True)
