@@ -193,16 +193,7 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .hero .n1g-cell b.ok{ color:var(--ok)!important; }
 .hero .n1g-cell b.bad{ color:var(--bad)!important; }
 
-/* ==== NIVEAU 1 aligné sur la même grille que N2/N3 ==== */
-.hero .n1-grid{
-  display:grid;
-  grid-template-columns:
-    var(--col1) var(--col2) var(--col3) var(--col4)
-    var(--col5) var(--col6) var(--col7) var(--col8);
-  align-items:center;
-  gap:0;
-  width:100%;
-}
+
 
 /* Colonne 1 : titre + badge (alignement identique N2) */
 .hero .n1g-label{
