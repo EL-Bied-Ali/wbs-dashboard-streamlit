@@ -168,3 +168,11 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   margin-top:4px;
 }
 
+
+
+
+</style>
+"""
+
+def inject_theme():
+    st.markdown(CSS, unsafe_allow_html=True)
