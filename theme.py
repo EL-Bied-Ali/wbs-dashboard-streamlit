@@ -187,6 +187,37 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   margin-right: 2px;      /* petit espace après le signe */
 }
 
+/* ==== Taille des loaders et % selon le niveau ==== */
+
+/* Niveau 1 — plus large et plus épais */
+.hero .mbar {
+  height: 14px;
+  width: 200px;
+}
+.hero .mval {
+  font-size: 1.15rem;
+  font-weight: 750;
+}
+
+/* Niveau 2 — intermédiaire */
+.section-card .mbar {
+  height: 12px;
+  width: 180px;
+}
+.section-card .mval {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* Niveau 3 — plus compact (défaut) */
+.table-card .mbar {
+  height: 10px;
+  width: 160px;
+}
+.table-card .mval {
+  font-size: 0.95rem;
+  font-weight: 650;
+}
 
 
 </style>
