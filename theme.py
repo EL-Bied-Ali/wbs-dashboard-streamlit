@@ -217,6 +217,21 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   display:inline-block;
 }
 
+/* ==== Barres NIVEAU 2 verticales ==== */
+.section-card .n2g-cell .mbar-wrap{
+  flex-direction: column;         /* place la barre sous le texte */
+  align-items: flex-start;        /* aligne à gauche */
+  gap: 4px;                       /* petit espace entre texte et barre */
+}
+
+.section-card .n2g-cell .mval{
+  margin-left: 0;                 /* supprime l'espace horizontal */
+  text-align: left;               /* aligne le pourcentage sous la barre */
+  font-size: 0.9rem;              /* un peu plus discret */
+  color: #aab4c3;
+}
+
+
 </style>
 """
 
