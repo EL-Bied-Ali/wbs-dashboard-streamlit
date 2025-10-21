@@ -20,7 +20,7 @@ header[data-testid="stHeader"]{opacity:0;height:0}
   --col1:26%; --col2:10%; --col3:10%; --col4:15%;
   --col5:15%; --col6:8%;  --col7:8%;  --col8:8%;
 
-  --fs-n1-title:1.70rem; --fs-n1-kpi:1.24rem; --fs-n1-label:0.90rem;
+  --fs-n1-title:1.80rem; --fs-n1-kpi:1.40rem; --fs-n1-label:0.90rem;
   --fs-n2-title:1.50rem; --fs-n2-kpi:1.12rem; --fs-n2-label:0.92rem;
   --fs-n3-head:0.95rem;  --fs-n3-cell:1.00rem; --fs-small:0.86rem;
 }
@@ -149,28 +149,22 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   border-left:0 !important;
 }
 
-/* Badge N2 sur une nouvelle ligne, largeur auto */
-.n2g-label{ flex-wrap: wrap; }
-
-/* retour à la ligne fiable après le titre */
-.n2g-label .title::after{
-  content:"";
-  display:block;      /* <-- important pour que le “saut de ligne” soit pris en compte */
-  width:100%;
+/* N2: dot + titre (ligne 1), badge (ligne 2), badge compact */
+.n2g-label{
+  display:grid !important;
+  grid-template-columns:auto 1fr;  /* dot | titre */
+  grid-auto-rows:auto;
+  align-items:center;
+  column-gap:8px;
+  row-gap:4px;
 }
-
-
-/* le badge reste compact, à la taille du texte */
+.n2g-label .dot{grid-column:1;grid-row:1;}
+.n2g-label .title{grid-column:2;grid-row:1;}
 .n2g-label .badge{
+  grid-column:2;grid-row:2;        /* passe sous le titre */
+  justify-self:start;              /* pas d'étirement */
   display:inline-block;
-  margin-top:4px;
   width:auto;
+  margin-top:4px;
 }
 
-
-
-</style>
-"""
-
-def inject_theme():
-    st.markdown(CSS, unsafe_allow_html=True)
