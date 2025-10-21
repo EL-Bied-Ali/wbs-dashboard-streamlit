@@ -77,9 +77,8 @@ def render_detail_table(node: dict, compact: bool = False):
             <td class="lvl"><span class="dot"></span> <b>{r['label']}</b></td>
             <td class="col-date">{r['planned']}</td>
             <td class="col-date">{r['forecast']}</td>
-            # dans render_detail_table(...)
-            td class="col-bar">{bar_html(r['schedule'], 'blue', False)}</td>
-            td class="col-bar">{bar_html(r['earned'],   'green', False)}</td>
+            <td class="col-bar">{bar_html(r['schedule'], 'blue', False)}</td>
+            <td class="col-bar">{bar_html(r['earned'],   'green', False)}</td>
 
             <td class="col-sign">{signed_span(r['ecart'])}</td>
             <td class="col-sign">{signed_span(r['impact'])}</td>
