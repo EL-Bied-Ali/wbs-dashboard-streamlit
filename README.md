@@ -2,7 +2,7 @@
 
 Dashboard Streamlit moderne qui **extrait automatiquement** la structure WBS et les métriques (Planned / Forecast / Schedule / Earned / Écart / Impact / Glissement) depuis un fichier **Excel** puis génère une vue hiérarchique **pro** (Niveau 1 → sections N2 alignées → tableau N3 + bar chart).
 
-![screenshot](./docs/screenshot.png) <!-- ajoute ton image plus tard -->
+https://wbs-dashboard-app-265wfosvya6ebzja5uokf9.streamlit.app/
 
 ---
 
