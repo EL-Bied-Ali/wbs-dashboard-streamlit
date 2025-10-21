@@ -1,139 +1,290 @@
+# app.py — upload Excel -> extraction WBS instantanée
 import streamlit as st
+import plotly.graph_objects as go
+from theme import inject_theme
+from data import load_all_wbs
+from extract_wbs_json import extract_all_wbs  # <- utilise ton script d’extraction
+import pandas as pd
+import tempfile, os
 
-CSS = """
-<style>
-/* ===== Reset basique ===== */
-header[data-testid="stHeader"]{opacity:0;height:0}
-.block-container{
-  padding-top:1.4rem!important;
-  max-width:2000px!important;
-  padding-left:16px!important;
-  padding-right:16px!important;
-}
-*{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial}
-html,body{font-size:17px;line-height:1.4}
+st.set_page_config(page_title="WBS – Projet", layout="wide")
+inject_theme()
 
-/* ===== Tokens ===== */
-:root{
-  --bg:#0b1220; --glass:#0f172a; --glass2:#0b1224; --line:#1f2a44;
-  --text:#e5e7eb; --muted:#94a3b8; --ok:#22c55e; --bad:#ef4444; --accent:#60a5fa;
+# ---------- Helpers ----------
+def _minify(html: str) -> str:
+    return "".join(line.strip() for line in html.splitlines())
 
-  --col1:26%; --col2:10%; --col3:10%; --col4:15%;
-  --col5:15%; --col6:8%;  --col7:8%;  --col8:8%;
+def _safe_float(x):
+    try:
+        return float(x)
+    except Exception:
+        return 0.0
 
-  --fs-n1-title:1.70rem; --fs-n1-kpi:1.24rem; --fs-n1-label:0.90rem;
-  --fs-n2-title:1.50rem; --fs-n2-kpi:1.12rem; --fs-n2-label:0.92rem;
-  --fs-n3-head:0.95rem;  --fs-n3-cell:1.00rem; --fs-small:0.86rem;
-}
+def fmt_pct(x, signed=False):
+    try:
+        v = float(x)
+        sign = "+" if signed and v > 0 else ""
+        return f"{sign}{v:.2f}%"
+    except Exception:
+        return str(x)
 
-/* ===== N1 (hero) ===== */
-.hero{
-  background:
-    radial-gradient(1600px 500px at 20% -20%, rgba(59,130,246,.18), transparent 60%),
-    linear-gradient(180deg,#0f1b34 0%,#0a1226 100%);
-  border:1px solid rgba(96,165,250,.35);
-  border-radius:18px; padding:18px 20px; margin:8px 0 16px;
-  box-shadow:0 18px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(59,130,246,.15);
-}
-.hero .title{
-  font-size:var(--fs-n1-title)!important; font-weight:800; color:var(--text);
-  text-shadow:0 0 18px rgba(59,130,246,.25); letter-spacing:.2px;
-}
-.hero .badge{
-  margin-left:12px; padding:3px 10px; font-weight:700; border:1px solid rgba(96,165,250,.5);
-  background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));
-  border-radius:999px; color:#cffafe; font-size:.88rem;
-}
-.hero .n1-grid{
-  display:grid;
-  grid-template-columns:var(--col1) var(--col2) var(--col3) var(--col4) var(--col5) var(--col6) var(--col7) var(--col8);
-  align-items:center; gap:0; width:100%;
-}
-.hero .n1g-label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 8px}
-.hero .n1g-label .title{
-  font-size:1.22rem; font-weight:800; color:#f1f5f9; letter-spacing:.2px; text-shadow:0 0 8px rgba(59,130,246,.25);
-}
-.hero .n1g-cell{display:flex;flex-direction:column;align-items:flex-start;padding:6px 8px}
-.hero .n1g-cell .small{
-  font-size:var(--fs-n1-label); color:#aab4c3; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px;
-}
-.hero .n1g-cell b{ font-size:var(--fs-n1-kpi); font-weight:700; color:var(--text) }
-.hero .n1g-cell b.ok{ color:var(--ok)!important } .hero .n1g-cell b.bad{ color:var(--bad)!important }
+def to_number_j(val):
+    s = str(val).replace("j", "").strip()
+    try:
+        return float(s)
+    except:
+        return 0.0
 
-/* ===== N2 (section cards) ===== */
-.section-card{
-  background:linear-gradient(180deg,#0f1a31,#0b1326);
-  border:1px solid #223355; border-radius:12px; padding:8px 10px; margin:4px 0 6px;
-  box-shadow:0 0 0 1px rgba(36,52,83,.35) inset;
-}
-.n2-grid{
-  display:grid;
-  grid-template-columns:var(--col1) var(--col2) var(--col3) var(--col4) var(--col5) var(--col6) var(--col7) var(--col8);
-  align-items:center; gap:0; padding:6px 8px; row-gap:2px;
-}
-.n2g-label,.n2g-cell{padding:6px 8px!important; box-sizing:border-box}
-.n2g-label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.n2g-label .title{
-  font-size:var(--fs-n2-title); font-weight:750; color:#f1f5f9; letter-spacing:.2px; text-shadow:0 0 6px rgba(59,130,246,.25);
-}
-.n2g-label .badge{
-  padding:3px 10px; font-size:.88rem; font-weight:700; color:#cffafe;
-  background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));
-  border:1px solid rgba(96,165,250,.5); border-radius:999px;
-}
-.n2g-cell{display:flex;flex-direction:column;align-items:flex-start;gap:1px!important}
-.n2g-cell .small{
-  font-size:var(--fs-n2-label); color:#aab4c3; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px;
-}
-.n2g-cell b{ font-size:var(--fs-n2-kpi); font-weight:700; color:var(--text) }
-.n2g-cell b.ok{ color:var(--ok)!important } .n2g-cell b.bad{ color:var(--bad)!important }
+def bar_html(pct: float, color: str, vertical: bool = True) -> str:
+    safe = max(0, min(100, pct or 0))
+    cls = "mbar-wrap v" if vertical else "mbar-wrap"
+    return f"""
+    <span class="{cls}">
+      <span class="mbar"><span class="mfill {color}" style="width:{safe}%"></span></span>
+      <span class="mval">{safe:.2f}%</span>
+    </span>
+    """
 
-/* ===== Tableau N3 ===== */
-.table-card{
-  background:linear-gradient(180deg,rgba(15,23,42,.65),rgba(11,18,36,.6));
-  border:1px solid #1f2a44; border-radius:14px; padding:12px; margin:8px 0;
-  box-shadow:0 6px 16px rgba(0,0,0,.22); overflow:hidden;
-}
-.table-wrap{width:100%;overflow-x:auto}
-table.neo{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
-table.neo thead th{
-  font-size:var(--fs-n3-head)!important; letter-spacing:.3px; text-transform:uppercase;
-  color:#aab4c3; font-weight:700; text-align:left; padding:10px 12px; white-space:nowrap;
-}
-table.neo td{ padding:12px; font-size:var(--fs-n3-cell)!important; color:var(--text) }
-table.neo tbody tr:hover{ background:rgba(148,163,184,.06); transition:background .12s ease }
-.table-card .neo th:nth-child(1),.table-card .neo td:nth-child(1){width:var(--col1)}
-.table-card .neo th:nth-child(2),.table-card .neo td:nth-child(2){width:var(--col2)}
-.table-card .neo th:nth-child(3),.table-card .neo td:nth-child(3){width:var(--col3)}
-.table-card .neo th:nth-child(4),.table-card .neo td:nth-child(4){width:var(--col4)}
-.table-card .neo th:nth-child(5),.table-card .neo td:nth-child(5){width:var(--col5)}
-.table-card .neo th:nth-child(6),.table-card .neo td:nth-child(6){width:var(--col6)}
-.table-card .neo th:nth-child(7),.table-card .neo td:nth-child(7){width:var(--col7)}
-.table-card .neo th:nth-child(8),.table-card .neo td:nth-child(8){width:var(--col8)}
-.dot{width:8px;height:8px;background:var(--accent);border-radius:999px;display:inline-block}
-.ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
 
-/* ===== Mini barres — horizontales partout ===== */
-.mbar-wrap{display:flex;align-items:center;gap:8px}
-.mbar{
-  position:relative;height:10px;width:160px;background:#1f2a44;
-  border-radius:999px;overflow:hidden;flex-shrink:0;
-}
-.mfill{display:block;height:100%;border-radius:999px;transition:width .35s ease}
-.mfill.blue{background:#3b82f6}.mfill.green{background:#22c55e}
-.mval{font-weight:700;color:var(--text);font-size:0.95rem;min-width:52px;text-align:right}
 
-/* ===== Responsive (typo) ===== */
-@media (max-width:1400px){
-  :root{
-    --fs-n1-title:1.55rem; --fs-n1-kpi:1.08rem;
-    --fs-n2-title:1.32rem; --fs-n2-kpi:1.02rem;
-    --fs-n3-head:0.90rem;  --fs-n3-cell:0.98rem;
-  }
-}
-@media (min-width:2000px){ :root{ --fs-n1-title:1.80rem } }
-</style>
-"""
 
-def inject_theme():
-    st.markdown(CSS, unsafe_allow_html=True)
+
+# ---------- Rendu N3 (table détail) ----------
+def render_detail_table(node: dict, compact: bool = False):
+    rows = []
+    for ch in node.get("children", []) or []:
+        m = ch.get("metrics", {}) or {}
+        rows.append({
+            "label":    ch.get("label",""),
+            "planned":  m.get("planned_finish",""),
+            "forecast": m.get("forecast_finish",""),
+            "schedule": _safe_float(m.get("schedule",0)),
+            "earned":   _safe_float(m.get("earned", m.get("units", 0))),
+            "ecart":    _safe_float(m.get("ecart",0)),
+            "impact":   _safe_float(m.get("impact",0)),
+            "gliss":    to_number_j(m.get("glissement","0")),
+        })
+
+    def signed_span(v):
+        s = f"{'+' if v>0 else ''}{v:.2f}%"
+        cls = "ok" if v >= 0 else "bad"
+        return f'<span class="{cls}">{s}</span>'
+
+    trs = []
+    for r in rows:
+        trs.append(_minify(f"""
+          <tr>
+            <td class="lvl"><span class="dot"></span> <b>{r['label']}</b></td>
+            <td class="col-date">{r['planned']}</td>
+            <td class="col-date">{r['forecast']}</td>
+            <td class="col-bar">{bar_html(r['schedule'], 'blue')}</td>
+            <td class="col-bar">{bar_html(r['earned'],   'green')}</td>
+            <td class="col-sign">{signed_span(r['ecart'])}</td>
+            <td class="col-sign">{signed_span(r['impact'])}</td>
+            <td class="col-gliss"><span class="{'ok' if r['gliss']>=0 else 'bad'}">{int(r['gliss'])}j</span></td>
+          </tr>
+        """))
+
+    st.markdown(_minify(f"""
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="neo">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Planned</th>
+              <th>Forecast</th>
+              <th>Schedule</th>
+              <th>Earned</th>
+              <th>Écart</th>
+              <th>Impact</th>
+              <th>Glissement</th>
+            </tr>
+          </thead>
+          <tbody>{''.join(trs)}</tbody>
+        </table>
+      </div>
+    </div>
+    """), unsafe_allow_html=True)
+
+# ---------- Graph barres ----------
+def render_barchart(node: dict):
+    labels, schedule, earned = [], [], []
+    for ch in node.get("children", []) or []:
+        labels.append(ch.get("label", ""))
+        m = ch.get("metrics", {}) or {}
+        schedule.append(_safe_float(m.get("schedule", 0)))
+        earned.append(_safe_float(m.get("earned", m.get("units", 0))))
+
+    if not labels:
+        st.info("Aucun enfant pour le graphique.")
+        return
+
+    fig = go.Figure()
+    fig.add_bar(name="Schedule %", x=labels, y=schedule, offsetgroup="g1",
+                marker=dict(color="#3b82f6", line=dict(width=0)),
+                hovertemplate="Schedule: %{y:.2f}%<extra>%{x}</extra>")
+    fig.add_bar(name="Units %", x=labels, y=earned, offsetgroup="g2",
+                marker=dict(color="#22c55e", line=dict(width=0)),
+                hovertemplate="Units: %{y:.2f}%<extra>%{x}</extra>")
+    fig.update_layout(
+        barmode="group", bargroupgap=0.18, bargap=0.26,
+        height=280, margin=dict(l=20, r=20, t=8, b=60),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+        legend=dict(orientation="h", yanchor="bottom", y=-0.32, xanchor="center", x=0.5,
+                    itemclick=False, itemdoubleclick=False, font=dict(size=12, color="#cbd5e1")),
+        xaxis=dict(title="", showgrid=False, tickfont=dict(size=13, color="#e5e7eb"), zeroline=False),
+        yaxis=dict(title="", showgrid=True, gridcolor="rgba(42,59,98,.55)", zeroline=False,
+                   tickfont=dict(size=12, color="#cbd5e1"), range=[0, 100]),
+        hoverlabel=dict(bgcolor="#0f172a", font=dict(color="#e5e7eb")),
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+# ---------- En-têtes N1/N2 (avec loaders KPI) ----------
+def header_level1_grid(label_n1: str, m: dict) -> str:
+    planned  = m.get("planned_finish","")
+    forecast = m.get("forecast_finish","")
+
+    sched_v  = _safe_float(m.get("schedule",0))
+    earn_v   = _safe_float(m.get("earned", m.get("units",0)))
+
+    ecart_v  = _safe_float(m.get("ecart",0))
+    impact_v = _safe_float(m.get("impact",0))
+    ecart    = fmt_pct(ecart_v,  signed=True)
+    impact   = fmt_pct(impact_v, signed=True)
+
+    ecls = "ok" if ecart_v  >= 0 else "bad"
+    icls = "ok" if impact_v >= 0 else "bad"
+
+    gnum = to_number_j(m.get("glissement","0"))
+    gcls = "ok" if gnum >= 0 else "bad"
+    gliss = f"{int(gnum)}j"
+
+    return _minify(f"""
+    <div class="hero">
+      <div class="n1-grid">
+        <div class="n1g-label">
+          <span class="dot"></span>
+          <span class="title">{label_n1}</span>
+          <span class="badge">WBS Niveau 1</span>
+        </div>
+
+        <div class="n1g-cell"><span class="small">Planned</span><b>{planned}</b></div>
+        <div class="n1g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
+
+        <div class="n1g-cell"><span class="small">Schedule</span>{bar_html(sched_v, 'blue')}</div>
+        <div class="n1g-cell"><span class="small">Earned</span>{bar_html(earn_v, 'green')}</div>
+
+        <div class="n1g-cell"><span class="small">Écart</span><b class="{ecls}">{ecart}</b></div>
+        <div class="n1g-cell"><span class="small">Impact</span><b class="{icls}">{impact}</b></div>
+        <div class="n1g-cell"><span class="small">Glissement</span><b class="{gcls}">{gliss}</b></div>
+      </div>
+    </div>
+    """)
+
+def header_level2_grid(label, level, m):
+    planned  = m.get("planned_finish","")
+    forecast = m.get("forecast_finish","")
+
+    sched_v  = _safe_float(m.get("schedule",0))
+    earn_v   = _safe_float(m.get("earned", m.get("units",0)))
+
+    ecart_v  = _safe_float(m.get("ecart",0))
+    impact_v = _safe_float(m.get("impact",0))
+    ecart    = fmt_pct(ecart_v,  signed=True)
+    impact   = fmt_pct(impact_v, signed=True)
+
+    ecls = "ok" if ecart_v  >= 0 else "bad"
+    icls = "ok" if impact_v >= 0 else "bad"
+
+    gnum   = to_number_j(m.get("glissement","0"))
+    gcls   = "ok" if gnum >= 0 else "bad"
+    gliss  = f"{int(gnum)}j"
+
+    return _minify(f"""
+    <div class="n2-grid">
+      <div class="n2g-label">
+        <span class="dot"></span>
+        <span class="title">{label}</span>
+        <span class="badge">WBS Niveau {level}</span>
+      </div>
+
+      <div class="n2g-cell"><span class="small">Planned</span><b>{planned}</b></div>
+      <div class="n2g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
+
+      <div class="n2g-cell"><span class="small">Schedule</span>{bar_html(sched_v, 'blue')}</div>
+      <div class="n2g-cell"><span class="small">Earned</span>{bar_html(earn_v, 'green')}</div>
+
+      <div class="n2g-cell"><span class="small">Écart</span><b class="{ecls}">{ecart}</b></div>
+      <div class="n2g-cell"><span class="small">Impact</span><b class="{icls}">{impact}</b></div>
+      <div class="n2g-cell gliss"><span class="small">Glissement</span><b class="{gcls}">{gliss}</b></div>
+    </div>
+    """)
+
+# ---------- Rendu global ----------
+def render_section_level2(parent_node: dict):
+    st.markdown(
+        _minify(f'<div class="section-card">{header_level2_grid(parent_node.get("label",""), parent_node.get("level",2), parent_node.get("metrics",{}) or {})}</div>'),
+        unsafe_allow_html=True
+    )
+    if parent_node.get("children"):
+        render_detail_table(parent_node)
+        render_barchart(parent_node)
+    else:
+        st.info("Aucun niveau 3 pour cette section.")
+
+def render_all_open_native(root: dict):
+    st.markdown(
+        header_level1_grid(
+            root.get("label", "CONSTRUCTION NEUVE"),
+            root.get("metrics", {}) or {}
+        ),
+        unsafe_allow_html=True
+    )
+    st.divider()
+    with st.container(border=True):
+        for n2 in root.get("children", []) or []:
+            render_section_level2(n2)
+
+# ---------- Sources de données ----------
+st.sidebar.markdown("### Import WBS")
+uploaded = st.sidebar.file_uploader(
+    "Charger un Excel de suivi (.xlsx)",
+    type=["xlsx","xlsm"],
+    accept_multiple_files=False,
+    help="L’app détecte automatiquement les tableaux contenant Planned/Forecast/Schedule/Earned etc. et reconstruit le WBS."
+)
+packs = []
+
+if uploaded is not None:
+    # sauvegarder en fichier temp pour openpyxl
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+        tmp.write(uploaded.read())
+        tmp_path = tmp.name
+    try:
+        packs = extract_all_wbs(tmp_path)  # ← renvoie une liste [{sheet, range, wbs}, ...]
+        if not packs:
+            st.warning("Aucun tableau valide détecté dans ce fichier. Vérifie les en-têtes requis.")
+        else:
+            st.success(f"{len(packs)} tableau(x) WBS détecté(s) • Feuilles: " + ", ".join({p['sheet'] for p in packs}))
+    except Exception as e:
+        st.error(f"Erreur d’extraction: {e}")
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except:
+            pass
+
+# Aucun fichier uploadé : on reste vide
+if not packs:
+    st.info("🔹 Veuillez importer un fichier Excel pour générer le WBS.")
+    st.stop()
+
+# ---------- Sélecteur et rendu ----------
+labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}  [{p.get('sheet','') or '?'} {p.get('range','') or ''}]"
+          for i, p in enumerate(packs)]
+idx = st.sidebar.selectbox("WBS à afficher", options=range(len(labels)), format_func=lambda i: labels[i], index=0 if packs else 0)
+root = packs[idx]["wbs"] if packs else {"label":"Aucun WBS","level":1,"metrics":{},"children":[]}
+
+render_all_open_native(root)
+st.caption("Import Excel → extraction auto → rendu hiérarchique. Les colonnes requises: Planned/Forecast/Schedule/Earned/ecart/impact/Glissement.")
