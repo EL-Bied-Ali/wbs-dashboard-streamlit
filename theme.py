@@ -193,7 +193,7 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .hero .n1g-cell b.ok{ color:var(--ok)!important; }
 .hero .n1g-cell b.bad{ color:var(--bad)!important; }
 
-
+    
 
 /* Colonne 1 : titre + badge (alignement identique N2) */
 .hero .n1g-label{
@@ -219,6 +219,13 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 }
 .hero .n1g-cell b{ font-weight:700; color:var(--text); }
 
+/* Harmonisation finale hauteur N1/N2 */
+.hero .n1g-cell, .n2g-cell {
+  padding: 4px 6px !important;
+}
+.hero .n1g-label, .n2g-label {
+  padding: 4px 6px !important;
+}
 
 
 
