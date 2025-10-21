@@ -144,7 +144,7 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .table-card .neo th:nth-child(6),.table-card .neo td:nth-child(6){width:var(--col6)}
 .table-card .neo th:nth-child(7),.table-card .neo td:nth-child(7){width:var(--col7)}
 .table-card .neo th:nth-child(8),.table-card .neo td:nth-child(8){width:var(--col8)}
-
+    
 
 /* pastille + couleurs génériques */
 .dot{width:8px;height:8px;background:var(--accent);border-radius:999px;display:inline-block}
@@ -184,10 +184,12 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   flex-shrink:0;
 }
 .mfill{
+  display:block;              /* <-- indispensable, sinon la width est ignorée */
   height:100%;
   border-radius:999px;
   transition:width .35s ease;
 }
+
 .mfill.blue{background:#3b82f6}
 .mfill.green{background:#22c55e}
 .mval{
