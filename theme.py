@@ -206,7 +206,7 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .mfill.anim{animation:growBar .6s ease-out both}
 
 /* En-têtes N1/N2 : alignement horizontal cohérent */
-.hero .mbar-wrap, .section-card .mbar-wrap{
+.hero .mbar-wrap{
   width:100%;
   max-width:200px;
 }
