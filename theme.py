@@ -227,6 +227,88 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   padding: 4px 6px !important;
 }
 
+/* =========================
+   TYPOGRAPHIE HIÉRARCHISÉE
+   N1 > N2 > N3 + tableaux
+   ========================= */
+
+/* 1) Variables de taille */
+:root{
+  /* N1 = carte globale (hero) */
+  --fs-n1-title: 1.45rem;     /* titre "CONSTRUCTION NEUVE" */
+  --fs-n1-kpi:   0.95rem;     /* valeurs de KPIs du N1 */
+  --fs-n1-label: 0.78rem;     /* libellés (Schedule %, Earned %, etc.) */
+
+  /* N2 = section (ex: Bâtiment Principal) */
+  --fs-n2-title: 1.15rem;     /* titre de section + pastille */
+  --fs-n2-kpi:   0.92rem;     /* valeurs sous l’étiquette N2 */
+  --fs-n2-label: 0.78rem;     /* libellés sous l’étiquette N2 */
+
+  /* N3 = contenus (tableaux, petites infos) */
+  --fs-n3-head:  0.86rem;     /* en-têtes de tableau */
+  --fs-n3-cell:  0.94rem;     /* cellules du tableau */
+  --fs-small:    0.80rem;     /* petites indications/notes */
+}
+
+/* 2) Niveau 1 (hero) */
+.hero .title{
+  font-size: var(--fs-n1-title) !important;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.hero .kpi{ font-size: var(--fs-n1-kpi) !important; }
+.hero .kpi .label,
+.hero .small{ font-size: var(--fs-n1-label) !important; }
+
+/* 3) Niveau 2 (étiquette + KPIs alignés) */
+.section-card .n2g-label .title,      /* ton titre "Bâtiment Principal" */
+.section-card .n2g-label .title-lg{
+  font-size: var(--fs-n2-title) !important;
+  font-weight: 700;
+}
+.section-card .n2g-cell b{            /* valeurs */
+  font-size: var(--fs-n2-kpi) !important;
+  font-weight: 700;
+}
+.section-card .n2g-cell .small{       /* libellés */
+  font-size: var(--fs-n2-label) !important;
+}
+
+/* 4) Tableaux (N3) */
+.table-card table.neo thead th{
+  font-size: var(--fs-n3-head) !important;
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+.table-card table.neo tbody td{
+  font-size: var(--fs-n3-cell) !important;
+}
+
+/* 5) Badges/pastilles harmonisés */
+.badge{ font-size: 0.78rem !important; font-weight: 700; }
+
+/* 6) Micro-texte */
+.small,
+.mval{ font-size: var(--fs-small) !important; }
+
+/* 7) Responsive – rétrécit un peu sur écrans moyens */
+@media (max-width: 1400px){
+  :root{
+    --fs-n1-title: 1.35rem;
+    --fs-n1-kpi:   0.92rem;
+    --fs-n2-title: 1.08rem;
+    --fs-n2-kpi:   0.90rem;
+    --fs-n3-head:  0.84rem;
+    --fs-n3-cell:  0.92rem;
+  }
+}
+
+/* 8) Très grands écrans – donne un peu d’air au N1 seulement */
+@media (min-width: 2000px){
+  :root{ --fs-n1-title: 1.55rem; }
+}
+
 
 
 </style>
