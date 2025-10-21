@@ -27,9 +27,10 @@ header[data-testid="stHeader"]{opacity:0;height:0}
   --fs-n1-kpi:   1.08rem;
   --fs-n1-label: 0.90rem;
 
-  --fs-n2-title: 1.35rem;  /* titre section (N2) */
-  --fs-n2-kpi:   1.02rem;
-  --fs-n2-label: 0.85rem;
+  --fs-n2-title: 1.50rem;  /* plus grand mais < N1 */
+  --fs-n2-kpi:   1.12rem;  /* valeurs un peu plus visibles */
+  --fs-n2-label: 0.92rem;  /* étiquettes plus lisibles */
+
 
   --fs-n3-head:  0.95rem;  /* tableau (N3) */
   --fs-n3-cell:  1.00rem;
