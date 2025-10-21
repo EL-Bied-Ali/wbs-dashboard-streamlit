@@ -241,6 +241,98 @@ CSS += """
 </style>
 """
 
+CSS += """
+<style>
+/* === Patch Streamlit Cloud: largeur & overflow sûrs === */
+
+/* 0) Sélecteurs stables (data-testid), pas les classes hashées */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+/* 1) Les conteneurs Streamlit doivent s’étendre à 100% */
+[data-testid="stElementContainer"] { width: 100% !important; }
+[data-testid="stMarkdown"] { width: 100% !important; }
+[data-testid="stMarkdownContainer"] { width: 100% !important; }
+
+/* 2) Nos cartes prennent toute la largeur du conteneur */
+.section-card,
+.table-card { width: 100% !important; }
+
+/* 3) Pas de rognage : on laisse le contenu respirer */
+[data-testid="stElementContainer"],
+.section-card,
+.table-card,
+.table-card .table-wrap { overflow: visible !important; }
+
+/* 4) Tableau = fixed + wrap (zéro scroll) */
+.table-card .neo { table-layout: fixed; width: 100%; }
+.table-card .neo th,
+.table-card .neo td{
+  white-space: normal !important;
+  word-break: break-word;
+  overflow: visible;
+  text-overflow: clip;
+  padding: 10px 10px;
+}
+
+/* 5) Largeurs en % (cohérentes header N2 / tableau) */
+:root{
+  --col1: 24%;  /* Label */
+  --col2:  9%;  /* Planned  */
+  --col3:  9%;  /* Forecast */
+  --col4: 14%;  /* Schedule */
+  --col5: 14%;  /* Earned   */
+  --col6: 10%;  /* Écart    */
+  --col7: 10%;  /* Impact   */
+  --col8: 10%;  /* Gliss.   */
+}
+
+/* Applique les % au THEAD + TBODY */
+.table-card .neo thead th:nth-child(1),
+.table-card .neo tbody td:nth-child(1){ width: var(--col1); }
+.table-card .neo thead th:nth-child(2),
+.table-card .neo tbody td:nth-child(2){ width: var(--col2); }
+.table-card .neo thead th:nth-child(3),
+.table-card .neo tbody td:nth-child(3){ width: var(--col3); }
+.table-card .neo thead th:nth-child(4),
+.table-card .neo tbody td:nth-child(4){ width: var(--col4); }
+.table-card .neo thead th:nth-child(5),
+.table-card .neo tbody td:nth-child(5){ width: var(--col5); }
+.table-card .neo thead th:nth-child(6),
+.table-card .neo tbody td:nth-child(6){ width: var(--col6); }
+.table-card .neo thead th:nth-child(7),
+.table-card .neo tbody td:nth-child(7){ width: var(--col7); }
+.table-card .neo thead th:nth-child(8),
+.table-card .neo tbody td:nth-child(8){ width: var(--col8); }
+
+/* Mini-barres adaptatives */
+.mbar{ width:100%; max-width:140px; }
+
+/* Header N2 : aligne avec les mêmes % + petit décalage Gliss. */
+.n2-grid{
+  grid-template-columns:
+    var(--col1) var(--col2) var(--col3) var(--col4)
+    var(--col5) var(--col6) var(--col7) var(--col8) !important;
+}
+.n2-grid > .n2g-cell:last-child{ margin-left:-8px; }
+
+/* 6) Un cran plus compact si l’espace est moindre */
+@media (max-width: 1750px){
+  :root{
+    --col1: 26%;
+    --col2:  9%;
+    --col3:  9%;
+    --col4: 12%;
+    --col5: 12%;
+    --col6: 10%;
+    --col7: 10%;
+    --col8: 12%;
+  }
+  .mbar{ max-width:120px; }
+}
+</style>
+"""
 
 
 def inject_theme():
