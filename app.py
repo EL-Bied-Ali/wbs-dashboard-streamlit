@@ -32,10 +32,16 @@ def kpi_html(m: dict):
     earned   = fmt_pct(m.get("earned", m.get("units", 0)))
     ecart    = fmt_pct(m.get("ecart",0), signed=True)
     impact   = fmt_pct(m.get("impact",0), signed=True)
-    glis_raw = str(m.get("glissement",""))
-    gliss = glis_raw if not glis_raw.replace("-","").isdigit() else glis_raw + "j"
+
+    # --- glissement: classe ok/bad + suffixe "j"
+    glis_raw = str(m.get("glissement","0"))
+    gnum = to_number_j(glis_raw)
+    gliss = f"{int(gnum)}j"
+    glis_cls = "ok" if gnum >= 0 else "bad"
+
     ecart_cls  = "ok" if _safe_float(m.get("ecart",0))  >= 0 else "bad"
     impact_cls = "ok" if _safe_float(m.get("impact",0)) >= 0 else "bad"
+
     return _minify(f"""
     <div class="kpis">
       <span class="kpi"><span class="small">Planned:</span> <b>{planned}</b></span>
@@ -44,8 +50,9 @@ def kpi_html(m: dict):
       <span class="kpi"><span class="small">Earned %:</span> <b>{earned}</b></span>
       <span class="kpi"><span class="small">Écart:</span> <b class="{ecart_cls}">{ecart}</b></span>
       <span class="kpi"><span class="small">Impact:</span> <b class="{impact_cls}">{impact}</b></span>
-      <span class="kpi"><span class="small">Glissement:</span> <b class="ok">{gliss}</b></span>
+      <span class="kpi"><span class="small">Glissement:</span> <b class="{glis_cls}">{gliss}</b></span>
     </div>""")
+
 
 def header_html(label, level, metrics, big=False, show_dot=True):
     return _minify(f"""
@@ -184,8 +191,12 @@ def header_level2_grid(label, level, m):
     earned   = fmt_pct(m.get("earned", m.get("units",0)))
     ecart    = fmt_pct(m.get("ecart",0),  signed=True)
     impact   = fmt_pct(m.get("impact",0), signed=True)
-    glis_raw = str(m.get("glissement",""))
-    gliss    = glis_raw if not glis_raw.replace("-","").isdigit() else glis_raw + "j"
+
+    # --- glissement N2
+    gnum   = to_number_j(m.get("glissement","0"))
+    gcls   = "ok" if gnum >= 0 else "bad"
+    gliss  = f"{int(gnum)}j"
+
     return _minify(f"""
     <div class="n2-grid">
       <div class="n2g-label">
@@ -197,12 +208,8 @@ def header_level2_grid(label, level, m):
       <div class="n2g-cell"><span class="small">Planned</span><b>{planned}</b></div>
       <div class="n2g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
 
-      <div class="n2g-cell"><span class="small">Schedule</span>
-        <span><b>{schedule}</b></span>
-      </div>
-      <div class="n2g-cell"><span class="small">Earned</span>
-        <span><b>{earned}</b></span>
-      </div>
+      <div class="n2g-cell"><span class="small">Schedule</span><b>{schedule}</b></div>
+      <div class="n2g-cell"><span class="small">Earned</span><b>{earned}</b></div>
 
       <div class="n2g-cell"><span class="small">Écart</span>
         <b class="{ 'ok' if _safe_float(m.get('ecart',0))>=0 else 'bad' }">{ecart}</b>
@@ -211,7 +218,7 @@ def header_level2_grid(label, level, m):
         <b class="{ 'ok' if _safe_float(m.get('impact',0))>=0 else 'bad' }">{impact}</b>
       </div>
 
-      <div class="n2g-cell"><span class="small">Glissement</span><b>{gliss}</b></div>
+      <div class="n2g-cell gliss"><span class="small">Glissement</span><b class="{gcls}">{gliss}</b></div>
     </div>
     """)
 

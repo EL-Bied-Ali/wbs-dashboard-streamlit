@@ -167,6 +167,61 @@ table.neo tbody tr:hover {
   white-space: nowrap !important;
   overflow: visible !important;
 }
+
+/* 1) Table: look “flat” sans traits */
+.table-card table.neo th,
+.table-card table.neo td{
+  border-bottom: 0 !important;            /* plus de lignes */
+  box-shadow: none !important;
+}
+.table-card table.neo tbody tr{
+  background: transparent;
+}
+.table-card table.neo tbody tr:hover{
+  background: rgba(148,163,184,.06);      /* juste un hover doux */
+}
+
+/* 2) Étiquette Niveau 2: badge, labels au-dessus, alignement net */
+.n2-grid{
+  gap: 0;                                 /* pas d’entre-colonnes */
+  padding: 10px 12px;
+}
+.n2g-label{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+.n2g-label .badge{
+  padding: 3px 10px;
+  font-size: .78rem;
+  font-weight: 700;
+  color:#cffafe;
+  background: linear-gradient(180deg, rgba(14,165,233,.18), rgba(14,165,233,.10));
+  border:1px solid rgba(96,165,250,.5);
+  border-radius:999px;
+}
+
+/* Empiler “label” puis “valeur” dans chaque cellule N2 */
+.n2g-cell{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  padding: 8px 12px !important;
+}
+.n2g-cell .small{
+  font-size:.78rem;
+  color:#aab4c3;
+  text-transform:uppercase;
+  letter-spacing:.3px;
+  margin-bottom:4px;                       /* label au-dessus de la valeur */
+}
+.n2g-cell b{
+  color:var(--text);
+  font-weight:700;
+}
+
+/* 3) Glissement N2: couleur selon signe (nécessite classe .ok / .bad sur la <b>) */
+.n2g-cell.gliss b.ok{ color: var(--ok) !important; }
+.n2g-cell.gliss b.bad{ color: var(--bad) !important; }
+.n2g-cell.gliss b.neutral{ color: var(--muted) !important; }
 </style>
 """
 
