@@ -35,16 +35,16 @@ def to_number_j(val):
     except:
         return 0.0
 
-def bar_html(pct: float, color: str) -> str:
+def bar_html(pct: float, color: str, vertical: bool=True) -> str:
     safe = max(0, min(100, pct or 0))
+    cls = "mbar-wrap v" if vertical else "mbar-wrap"
     return f"""
-    <span class="mbar-wrap">
-      <span class="mbar">
-        <span class="mfill {color} anim" style="--to:{safe}%; width:{safe}%"></span>
-      </span>
+    <span class="{cls}">
+      <span class="mbar"><span class="mfill {color}" style="width:{safe}%"></span></span>
       <span class="mval">{safe:.2f}%</span>
     </span>
     """
+
 
 
 
