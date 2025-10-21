@@ -149,12 +149,16 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   border-left:0 !important;
 }
 
-/* Force the N2 badge to a new line after the title */
-.n2g-label{ flex-wrap:wrap; }              /* (déjà là, on renforce) */
-.n2g-label .badge{
-  flex-basis:100%;                         /* -> nouvelle ligne */
-  margin-top:4px;
+/* Badge Niveau 2 — nouvelle ligne mais largeur auto */
+.n2g-label{
+  flex-wrap:wrap;
 }
+.n2g-label .badge{
+  display:inline-block;        /* ne prend que la taille du texte */
+  width:auto;                  /* empêche l’étirement */
+  margin-top:4px;              /* petit espace sous le titre */
+}
+
 
 </style>
 """
