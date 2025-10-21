@@ -177,6 +177,10 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   margin-top:4px;
 }
 
+/* ==== Masquer les en-têtes du tableau N3 ==== */
+.table-card table.neo thead {
+  display: none !important;
+}
 
 
 
