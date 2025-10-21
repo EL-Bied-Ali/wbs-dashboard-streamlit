@@ -181,6 +181,11 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .table-card table.neo thead {
   display: none !important;
 }
+/* ==== Préfixe + pour les valeurs positives ==== */
+.ok::before {
+  content: "+";           /* ajoute le signe + avant */
+  margin-right: 2px;      /* petit espace après le signe */
+}
 
 
 
