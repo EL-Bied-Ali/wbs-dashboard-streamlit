@@ -17,8 +17,27 @@ header[data-testid="stHeader"]{opacity:0;height:0}
 :root{
   --bg:#0b1220; --glass:#0f172a; --glass2:#0b1224; --line:#1f2a44;
   --text:#e5e7eb; --muted:#94a3b8; --ok:#22c55e; --bad:#ef4444; --accent:#60a5fa;
-  --col1:26%; --col2:10%; --col3:10%; --col4:15%; --col5:15%; --col6:8%; --col7:8%; --col8:8%;
+
+  /* largeurs colonnes tableau & grilles */
+  --col1:26%; --col2:10%; --col3:10%; --col4:15%;
+  --col5:15%; --col6:8%;  --col7:8%;  --col8:8%;
+
+  /* TYPO agrandie + hiérarchie N1>N2>N3 */
+  --fs-n1-title: 1.70rem;  /* titre principal (N1) */
+  --fs-n1-kpi:   1.08rem;
+  --fs-n1-label: 0.90rem;
+
+  --fs-n2-title: 1.35rem;  /* titre section (N2) */
+  --fs-n2-kpi:   1.02rem;
+  --fs-n2-label: 0.85rem;
+
+  --fs-n3-head:  0.95rem;  /* tableau (N3) */
+  --fs-n3-cell:  1.00rem;
+  --fs-small:    0.86rem;
 }
+
+/* base un peu plus grande */
+html, body { font-size:17px; line-height:1.4; }
 
 /* ============ Hero (Niveau 1) ============ */
 .hero{
@@ -29,62 +48,94 @@ header[data-testid="stHeader"]{opacity:0;height:0}
   border-radius:18px; padding:18px 20px; margin:8px 0 16px;
   box-shadow:0 18px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(59,130,246,.15);
 }
-.hero .title{font-size:1.35rem;font-weight:800;color:var(--text);text-shadow:0 0 18px rgba(59,130,246,.25);letter-spacing:.2px}
+.hero .title{
+  font-size:var(--fs-n1-title)!important;
+  font-weight:800; color:var(--text);
+  text-shadow:0 0 18px rgba(59,130,246,.25); letter-spacing:.2px;
+}
 .hero .badge{
   margin-left:12px;padding:3px 10px;font-weight:700;border:1px solid rgba(96,165,250,.5);
-  background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));border-radius:999px;color:#cffafe;font-size:.8rem
+  background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));
+  border-radius:999px;color:#cffafe;font-size:.88rem
 }
-.hero .kpis{display:flex;gap:28px;flex-wrap:wrap}
-.hero .kpi{font-size:.95rem;color:#cbd5e1}
-.hero .ok{color:var(--ok);font-weight:800}
-.hero .bad{color:var(--bad);font-weight:800}
+
+/* N1 aligné sur la grille des colonnes */
+.hero .n1-grid{
+  display:grid;
+  grid-template-columns:
+    var(--col1) var(--col2) var(--col3) var(--col4)
+    var(--col5) var(--col6) var(--col7) var(--col8);
+  align-items:center; gap:0; width:100%;
+}
+.hero .n1g-label{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:6px 8px;
+}
+.hero .n1g-label .title{
+  font-size:1.22rem; font-weight:800; color:#f1f5f9;
+  letter-spacing:.2px; text-shadow:0 0 8px rgba(59,130,246,.25);
+}
+.hero .n1g-cell{
+  display:flex; flex-direction:column; align-items:flex-start; padding:6px 8px;
+}
+.hero .n1g-cell .small{
+  font-size:var(--fs-n1-label); color:#aab4c3; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px;
+}
+.hero .n1g-cell b{ font-size:var(--fs-n1-kpi); font-weight:700; color:var(--text); }
+.hero .n1g-cell b.ok{ color:var(--ok)!important; }
+.hero .n1g-cell b.bad{ color:var(--bad)!important; }
 
 /* ============ Section / Carte N2 ============ */
 .section-card{
   background:linear-gradient(180deg,#0f1a31,#0b1326);
-  border:1px solid #223355;border-radius:12px;padding:12px 14px;margin:6px 0 10px;box-shadow:0 0 0 1px rgba(36,52,83,.35) inset
+  border:1px solid #223355;border-radius:12px;padding:8px 10px;margin:4px 0 6px; /* compact */
+  box-shadow:0 0 0 1px rgba(36,52,83,.35) inset
 }
 .n2-grid{
   display:grid;
   grid-template-columns:var(--col1) var(--col2) var(--col3) var(--col4) var(--col5) var(--col6) var(--col7) var(--col8);
-  align-items:center;gap:0;padding:10px 12px
+  align-items:center; gap:0; padding:6px 8px; row-gap:2px;
 }
-.n2g-label,.n2g-cell{padding:10px 12px!important;box-sizing:border-box}
+.n2g-label,.n2g-cell{padding:6px 8px!important; box-sizing:border-box}
 .n2g-label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.n2g-label .title{font-size:1.15rem;font-weight:750;color:#f1f5f9;letter-spacing:.2px;text-shadow:0 0 6px rgba(59,130,246,.25)}
+.n2g-label .title{
+  font-size:var(--fs-n2-title); font-weight:750; color:#f1f5f9;
+  letter-spacing:.2px; text-shadow:0 0 6px rgba(59,130,246,.25)
+}
 .n2g-label .badge{
-  padding:3px 10px;font-size:.78rem;font-weight:700;color:#cffafe;
+  padding:3px 10px;font-size:.88rem;font-weight:700;color:#cffafe;
   background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));
   border:1px solid rgba(96,165,250,.5);border-radius:999px
 }
 /* libellé au-dessus de la valeur */
-.n2g-cell{display:flex;flex-direction:column;align-items:flex-start}
-.n2g-cell .small{font-size:.78rem;color:#aab4c3;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
-.n2g-cell b{font-weight:700;color:var(--text)}
-/* >>> couleurs des valeurs N2 (Écart/Impact/Gliss) */
-.n2g-cell b.ok{color:var(--ok)!important}
-.n2g-cell b.bad{color:var(--bad)!important}
+.n2g-cell{display:flex;flex-direction:column;align-items:flex-start; gap:1px!important}
+.n2g-cell .small{
+  font-size:var(--fs-n2-label); color:#aab4c3; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px
+}
+.n2g-cell b{ font-size:var(--fs-n2-kpi); font-weight:700; color:var(--text) }
+.n2g-cell b.ok{ color:var(--ok)!important }
+.n2g-cell b.bad{ color:var(--bad)!important }
 
 /* ============ Tableau “neo” (flat, sans traits) ============ */
 .table-card{
   background:linear-gradient(180deg,rgba(15,23,42,.65),rgba(11,18,36,.6));
-  border:1px solid #1f2a44;border-radius:14px;padding:12px;margin:8px 0;box-shadow:0 6px 16px rgba(0,0,0,.22);overflow:hidden
+  border:1px solid #1f2a44;border-radius:14px;padding:12px;margin:8px 0;
+  box-shadow:0 6px 16px rgba(0,0,0,.22);overflow:hidden
 }
 .table-wrap{width:100%;overflow-x:auto}
 table.neo{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
 
 /* en-tête sans bordure */
 table.neo thead th{
-  font-size:.85rem;letter-spacing:.3px;text-transform:uppercase;color:#aab4c3;font-weight:700;text-align:left;
-  padding:10px 12px;border-bottom:0!important;white-space:nowrap
+  font-size:var(--fs-n3-head)!important; letter-spacing:.3px; text-transform:uppercase;
+  color:#aab4c3; font-weight:700; text-align:left; padding:10px 12px; border-bottom:0!important; white-space:nowrap
 }
 /* cellules sans bordure */
 table.neo td{
-  padding:12px;font-size:.95rem;color:var(--text);border-bottom:0!important
+  padding:12px; font-size:var(--fs-n3-cell)!important; color:var(--text); border-bottom:0!important
 }
 table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background .12s ease}
 
-/* largeur cohérente */
+/* largeur cohérente (thead + tbody) */
 .table-card .neo th:nth-child(1),.table-card .neo td:nth-child(1){width:var(--col1)}
 .table-card .neo th:nth-child(2),.table-card .neo td:nth-child(2){width:var(--col2)}
 .table-card .neo th:nth-child(3),.table-card .neo td:nth-child(3){width:var(--col3)}
@@ -106,186 +157,21 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .bad{color:var(--bad);font-weight:700}
 
 /* ==== NO LINES IN TABLE (.neo) – hard override ==== */
-.table-card table.neo,
-.table-card table.neo * {
-  border: 0 !important;
-  box-shadow: none !important;
-}
+.table-card table.neo, .table-card table.neo * { border:0!important; box-shadow:none!important; }
+.table-card table.neo thead th, .table-card table.neo tbody td { border-bottom:0!important; }
+.table-card table.neo th + th, .table-card table.neo td + td { border-left:0!important; }
 
-/* kill bottom lines from head/body */
-.table-card table.neo thead th,
-.table-card table.neo tbody td {
-  border-bottom: 0 !important;
-}
-
-/* kill the “first row thick line” rule */
-.table-card table.neo tbody tr:first-child td {
-  border-bottom: 0 !important;
-}
-
-/* prevent any default column dividers that might sneak in */
-.table-card table.neo th + th,
-.table-card table.neo td + td {
-  border-left: 0 !important;
-}
-
-/* keep the hover highlight without lines */
-.table-card table.neo tbody tr:hover {
-  background: rgba(148,163,184,.06);
-}
-
-/* ==== Cartes N2 plus compactes ==== */
-.section-card {
-  padding: 8px 10px !important;   /* ↓ hauteur interne */
-  margin: 4px 0 6px 0 !important; /* ↓ espace entre cartes */
-  border-radius: 10px;
-}
-
-.n2-grid {
-  padding: 6px 8px !important;    /* ↓ espace intérieur des cellules */
-  row-gap: 2px;
-}
-
-.n2g-cell {
-  gap: 1px !important;            /* ↓ écart entre label et valeur */
-}
-
-.n2g-label .title {
-  font-size: 1.08rem;             /* légerement plus petit pour équilibrer */
-}
-
-/* ==== NIVEAU 1 aligné sur la même grille que N2/N3 ==== */
-.hero .n1-grid{
-  display:grid;
-  grid-template-columns:
-    var(--col1) var(--col2) var(--col3) var(--col4)
-    var(--col5) var(--col6) var(--col7) var(--col8);
-  align-items:center;
-  gap:0;
-  width:100%;
-}
-
-/* Colonne 1 : titre + badge (alignement identique N2) */
-.hero .n1g-label{
-  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-  padding:6px 8px;
-}
-.hero .n1g-label .title{
-  font-size:1.22rem;          /* > N2 (1.15rem), < titre principal */
-  font-weight:800;
-  color:#f1f5f9;
-  letter-spacing:.2px;
-  text-shadow:0 0 8px rgba(59,130,246,.25);
-}
-
-/* Cellules KPI (label au-dessus de la valeur, comme N2) */
-.hero .n1g-cell{
-  display:flex; flex-direction:column; align-items:flex-start;
-  padding:6px 8px;
-}
-.hero .n1g-cell .small{
-  font-size:.78rem; color:#aab4c3; text-transform:uppercase; letter-spacing:.3px;
-  margin-bottom:4px;
-}
-.hero .n1g-cell b{ font-weight:700; color:var(--text); }
-
-/* Couleurs signes */
-.hero .n1g-cell b.ok{ color:var(--ok)!important; }
-.hero .n1g-cell b.bad{ color:var(--bad)!important; }
-
-    
-
-/* Colonne 1 : titre + badge (alignement identique N2) */
-.hero .n1g-label{
-  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-  padding:6px 8px;
-}
-.hero .n1g-label .title{
-  font-size:1.22rem;          /* > N2 (1.15rem), < titre principal */
-  font-weight:800;
-  color:#f1f5f9;
-  letter-spacing:.2px;
-  text-shadow:0 0 8px rgba(59,130,246,.25);
-}
-
-/* Cellules KPI (label au-dessus de la valeur, comme N2) */
-.hero .n1g-cell{
-  display:flex; flex-direction:column; align-items:flex-start;
-  padding:6px 8px;
-}
-.hero .n1g-cell .small{
-  font-size:.78rem; color:#aab4c3; text-transform:uppercase; letter-spacing:.3px;
-  margin-bottom:4px;
-}
-.hero .n1g-cell b{ font-weight:700; color:var(--text); }
-
-/* Harmonisation finale hauteur N1/N2 */
-.hero .n1g-cell, .n2g-cell {
-  padding: 4px 6px !important;
-}
-.hero .n1g-label, .n2g-label {
-  padding: 4px 6px !important;
-}
-
-/* =========================
-   TYPOGRAPHIE HIÉRARCHISÉE (Version finale)
-   ========================= */
-:root{
-  /* Niveau 1 – global et fort */
-  --fs-n1-title: 1.5rem;
-  --fs-n1-kpi:   1.0rem;
-  --fs-n1-label: 0.82rem;
-
-  /* Niveau 2 – secondaire, clair mais sobre */
-  --fs-n2-title: 1.2rem;
-  --fs-n2-kpi:   0.94rem;
-  --fs-n2-label: 0.78rem;
-
-  /* Niveau 3 – détaillé, discret */
-  --fs-n3-head:  0.85rem;
-  --fs-n3-cell:  0.93rem;
-  --fs-small:    0.78rem;
-}
-
-/* N1 */
-.hero .title{ font-size:var(--fs-n1-title)!important; font-weight:800; letter-spacing:.2px; }
-.hero .kpi{ font-size:var(--fs-n1-kpi)!important; }
-.hero .kpi .label, .hero .small{ font-size:var(--fs-n1-label)!important; }
-
-/* N2 */
-.section-card .n2g-label .title,
-.section-card .n2g-label .title-lg{ font-size:var(--fs-n2-title)!important; font-weight:700; }
-.section-card .n2g-cell b{ font-size:var(--fs-n2-kpi)!important; font-weight:700; }
-.section-card .n2g-cell .small{ font-size:var(--fs-n2-label)!important; }
-
-/* N3 (tableaux) */
-.table-card table.neo thead th{
-  font-size:var(--fs-n3-head)!important;
-  font-weight:700;
-  letter-spacing:.3px;
-  text-transform:uppercase;
-}
-.table-card table.neo tbody td{ font-size:var(--fs-n3-cell)!important; }
-
-/* Petits éléments */
-.badge{ font-size:0.78rem!important; font-weight:700; }
-.small, .mval{ font-size:var(--fs-small)!important; }
-
-/* Responsive */
+/* Responsive ajustements typographiques */
 @media (max-width:1400px){
   :root{
-    --fs-n1-title:1.35rem; --fs-n1-kpi:0.92rem;
-    --fs-n2-title:1.05rem; --fs-n2-kpi:0.88rem;
-    --fs-n3-head:0.82rem;  --fs-n3-cell:0.9rem;
+    --fs-n1-title:1.55rem; --fs-n1-kpi:1.02rem;
+    --fs-n2-title:1.22rem; --fs-n2-kpi:0.96rem;
+    --fs-n3-head:0.90rem;  --fs-n3-cell:0.98rem;
   }
 }
 @media (min-width:2000px){
-  :root{ --fs-n1-title:1.6rem; }
+  :root{ --fs-n1-title:1.80rem; }
 }
-
-
-
-
 </style>
 """
 
