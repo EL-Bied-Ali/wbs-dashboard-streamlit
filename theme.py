@@ -211,11 +211,7 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   max-width:200px;
 }
 
-.hero .mval, .section-card .mval{
-  min-width:56px;
-  margin-left:8px;
-  display:inline-block;
-}
+
 
 /* ==== Barres NIVEAU 2 verticales ==== */
 .section-card .n2g-cell .mbar-wrap{
@@ -256,6 +252,15 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 /* Neutraliser la règle globale qui limitait la largeur */
 .section-card .mbar-wrap{ max-width:none !important; }
 
+.section-card .n2g-cell .mbar-wrap{ display:block !important; }
+.section-card .n2g-cell .mbar{ display:block !important; width:100% !important; margin-top:4px; }
+.section-card .n2g-cell .mval{
+  display:block !important;
+  min-width:0 !important;
+  margin-left:0 !important;
+  text-align:left !important;
+  margin-top:4px;
+}
 
 </style>
 """
