@@ -134,6 +134,26 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   background: rgba(148,163,184,.06);
 }
 
+/* ==== Cartes N2 plus compactes ==== */
+.section-card {
+  padding: 8px 10px !important;   /* ↓ hauteur interne */
+  margin: 4px 0 6px 0 !important; /* ↓ espace entre cartes */
+  border-radius: 10px;
+}
+
+.n2-grid {
+  padding: 6px 8px !important;    /* ↓ espace intérieur des cellules */
+  row-gap: 2px;
+}
+
+.n2g-cell {
+  gap: 1px !important;            /* ↓ écart entre label et valeur */
+}
+
+.n2g-label .title {
+  font-size: 1.08rem;             /* légerement plus petit pour équilibrer */
+}
+
 </style>
 """
 
