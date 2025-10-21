@@ -231,6 +231,31 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   color: #aab4c3;
 }
 
+/* ==== Forcer KPI NIVEAU 2 en colonne (sous le titre) ==== */
+.section-card .n2g-cell .mbar-wrap{
+  display:block !important;           /* plus de flex horizontal */
+  max-width:none !important;          /* enlève la limite 200px */
+}
+
+.section-card .n2g-cell .mbar{
+  display:block !important;
+  width:100% !important;              /* barre sur toute la largeur de la cellule */
+  max-width:none !important;
+  margin-top:4px;
+}
+
+.section-card .n2g-cell .mval{
+  display:block !important;           /* passe en ligne suivante */
+  margin-left:0 !important;
+  text-align:left !important;
+  margin-top:4px;                     /* sous la barre */
+  font-size:0.9rem;
+  color:#aab4c3;
+}
+
+/* Neutraliser la règle globale qui limitait la largeur */
+.section-card .mbar-wrap{ max-width:none !important; }
+
 
 </style>
 """
