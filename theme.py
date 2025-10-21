@@ -216,5 +216,31 @@ CSS += """
 </style>
 """
 
+CSS += """
+<style>
+/* --- Streamlit Cloud: fixes anti-débordement --- */
+
+/* 1) Le scroll horizontal reste DANS la carte, pas dehors */
+.table-card{ overflow:hidden; }
+.table-card .table-wrap{ overflow-x:auto !important; }
+
+/* 2) Empêche les cellules en nowrap de pousser hors du conteneur */
+.table-card .neo th,
+.table-card .neo td{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 1px;  /* active ellipsis en layout auto */
+}
+
+/* 3) Légère réduction des largeurs mini en environnements plus étroits */
+@media (max-width: 1750px){
+  .table-card .neo .lvl{ min-width:240px; }
+  .table-card .neo .col-bar{ min-width:190px; }
+  .mbar{ width:140px; }
+}
+</style>
+"""
+
+
 def inject_theme():
   st.markdown(CSS, unsafe_allow_html=True)
