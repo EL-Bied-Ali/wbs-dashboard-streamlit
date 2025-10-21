@@ -278,6 +278,85 @@ CSS += """
 </style>
 """
 
+CSS += """
+<style>
+/* === Streamlit Cloud – no scroll, no cut, full width === */
+
+/* 1) Page plus large */
+[data-testid="stAppViewContainer"] .main .block-container{
+  max-width: 2300px !important;
+}
+
+/* 2) Tableau : pas de scroll, pas de coupe (on laisse déborder, mais on contraint en % + wrap) */
+.table-card{ overflow: visible; }
+.table-card .table-wrap{ overflow-x: visible !important; }
+
+/* 3) Fix de layout : les colonnes respectent des % et le texte wrap */
+:root{
+  --col1: 24%;  /* Label (WBS) */
+  --col2:  9%;  /* Planned  */
+  --col3:  9%;  /* Forecast */
+  --col4: 14%;  /* Schedule */
+  --col5: 14%;  /* Earned   */
+  --col6: 10%;  /* Écart    */
+  --col7: 10%;  /* Impact   */
+  --col8: 10%;  /* Gliss.   */
+}
+
+.table-card .neo{ table-layout: fixed; width:100%; }
+.table-card .neo th, .table-card .neo td{
+  white-space: normal !important;    /* autorise retour à la ligne */
+  word-break: break-word;            /* coupe proprement */
+  overflow: visible; text-overflow: clip;
+  padding: 10px 10px;                /* un peu plus compact */
+}
+
+/* Largeurs en % (thead + tbody) */
+.table-card .neo thead th:nth-child(1),
+.table-card .neo tbody td:nth-child(1){ width: var(--col1); }
+.table-card .neo thead th:nth-child(2),
+.table-card .neo tbody td:nth-child(2){ width: var(--col2); }
+.table-card .neo thead th:nth-child(3),
+.table-card .neo tbody td:nth-child(3){ width: var(--col3); }
+.table-card .neo thead th:nth-child(4),
+.table-card .neo tbody td:nth-child(4){ width: var(--col4); }
+.table-card .neo thead th:nth-child(5),
+.table-card .neo tbody td:nth-child(5){ width: var(--col5); }
+.table-card .neo thead th:nth-child(6),
+.table-card .neo tbody td:nth-child(6){ width: var(--col6); }
+.table-card .neo thead th:nth-child(7),
+.table-card .neo tbody td:nth-child(7){ width: var(--col7); }
+.table-card .neo thead th:nth-child(8),
+.table-card .neo tbody td:nth-child(8){ width: var(--col8); }
+
+/* 4) Adapter les mini-barres pour tenir dans des cellules plus étroites */
+.mbar{ width: 100%; max-width: 140px; }
+
+/* 5) Header N2 aligné avec les mêmes % + léger décalage Gliss. */
+.n2-grid{
+  grid-template-columns:
+    var(--col1) var(--col2) var(--col3) var(--col4)
+    var(--col5) var(--col6) var(--col7) var(--col8) !important;
+}
+.n2-grid > .n2g-cell:last-child{ margin-left:-8px; }  /* ajuste à ton goût */
+
+/* 6) Si l’écran est plus petit, on resserre un peu les % (toujours sans scroll) */
+@media (max-width: 1750px){
+  :root{
+    --col1: 26%;
+    --col2:  9%;
+    --col3:  9%;
+    --col4: 12%;
+    --col5: 12%;
+    --col6: 10%;
+    --col7: 10%;
+    --col8: 12%; /* on donne un peu plus à Gliss. si besoin */
+  }
+  .mbar{ max-width: 120px; }
+}
+</style>
+"""
+
 
 def inject_theme():
   st.markdown(CSS, unsafe_allow_html=True)
