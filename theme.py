@@ -460,6 +460,66 @@ CSS += """
 </style>
 """
 
+CSS += """
+<style>
+/* --- Hard fix header/table alignment --- */
+
+/* 0) NE PAS transformer le thead en grid */
+.neo thead tr{
+  display: table-row !important;
+  grid-template-columns: none !important;
+}
+
+/* 1) Le tableau reste en layout fixe + largeurs en % */
+.table-card .neo{ table-layout: fixed !important; width:100%; }
+
+/* 2) Les th ne doivent PAS couper les mots (sinon texte vertical) */
+.table-card .neo th{
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 3) Les td peuvent wrap pour éviter l'overflow */
+.table-card .neo td{
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+/* 4) Annule les min-width px qui faussent nos % */
+.table-card .neo .lvl,
+.table-card .neo .col-date,
+.table-card .neo .col-bar,
+.table-card .neo .col-sign,
+.table-card .neo .col-gliss{
+  min-width: 0 !important;
+}
+
+/* 5) L’étiquette N2 garde la même grille que le tableau */
+.n2-grid{
+  display: grid !important;
+  grid-template-columns:
+    var(--col1) var(--col2) var(--col3) var(--col4)
+    var(--col5) var(--col6) var(--col7) var(--col8) !important;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 6) (Optionnel) un poil plus d’air sur grands écrans */
+:root{
+  /* ajuste à ton goût ; garde la somme ≈ 100% */
+  --col1: 26%;
+  --col2: 10%;
+  --col3: 10%;
+  --col4: 15%;
+  --col5: 15%;
+  --col6:  8%;
+  --col7:  8%;
+  --col8:  8%;
+}
+</style>
+"""
 
 
 def inject_theme():
