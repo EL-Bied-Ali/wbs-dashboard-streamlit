@@ -3,7 +3,17 @@ import streamlit as st
 CSS = """
 <style>
 /* ============ Layout global ============ */
-header[data-testid="stHeader"]{opacity:0;height:0}
+/* Garder le header minimal pour voir le bouton de sidebar */
+header[data-testid="stHeader"]{
+  opacity:1;              /* visible */
+  height:auto;            /* hauteur auto */
+  min-height:48px;        /* petit bandeau */
+  background:transparent; /* pas de fond */
+  box-shadow:none;
+}
+
+
+
 .block-container{
   padding-top:1.4rem!important;
   max-width:2000px!important;
@@ -132,33 +142,27 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 /* ==== Barres horizontales (pour tous les niveaux) ==== */
 .mbar-wrap{display:flex;align-items:center;gap:8px;}
 .mbar{
-  position:relative;height:10px;width:160px;background:#1f2a44;
-  border-radius:999px;overflow:hidden;flex-shrink:0;
+  position:relative; height:10px; /* pas de width ici */
+  background:#1f2a44;
+  border-radius:999px; overflow:hidden; flex-shrink:0;
 }
-.mfill{display:block;height:100%;border-radius:999px;transition:width .35s ease;}
+.mfill{display:block; height:100%; border-radius:999px; transition:width .35s ease;}
 .mfill.blue{background:#3b82f6;}
 .mfill.green{background:#22c55e;}
 .mval{
-  font-weight:700;color:var(--text);font-size:0.95rem;
-  min-width:52px;text-align:right;
+  font-weight:700; color:var(--text); font-size:0.95rem;
+  min-width:52px; text-align:right;
 }
 
-/* No lines inside the table */
+/* ===== Table N3 sans traits ===== */
 .table-card table.neo,
-.table-card table.neo *{
-  border:0 !important;
-  box-shadow:none !important;
-}
+.table-card table.neo *{ border:0 !important; box-shadow:none !important; }
 .table-card table.neo thead th,
-.table-card table.neo tbody td{
-  border-bottom:0 !important;
-}
+.table-card table.neo tbody td{ border-bottom:0 !important; }
 .table-card table.neo th + th,
-.table-card table.neo td + td{
-  border-left:0 !important;
-}
+.table-card table.neo td + td{ border-left:0 !important; }
 
-/* N2: dot + titre (ligne 1), badge (ligne 2), badge compact */
+/* ===== N2: dot + titre (ligne 1), badge (ligne 2), badge compact ===== */
 .n2g-label{
   display:grid !important;
   grid-template-columns:auto 1fr;  /* dot | titre */
@@ -167,77 +171,37 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   column-gap:8px;
   row-gap:4px;
 }
-.n2g-label .dot{grid-column:1;grid-row:1;}
-.n2g-label .title{grid-column:2;grid-row:1;}
+.n2g-label .dot{grid-column:1; grid-row:1;}
+.n2g-label .title{grid-column:2; grid-row:1;}
 .n2g-label .badge{
-  grid-column:2;grid-row:2;        /* passe sous le titre */
+  grid-column:2; grid-row:2;       /* passe sous le titre */
   justify-self:start;              /* pas d'étirement */
-  display:inline-block;
-  width:auto;
-  margin-top:4px;
+  display:inline-block; width:auto; margin-top:4px;
 }
 
-/* ==== Masquer les en-têtes du tableau N3 ==== */
-.table-card table.neo thead {
-  display: none !important;
-}
-/* ==== Préfixe + pour les valeurs positives ==== */
-.ok::before {
-  content: "+";           /* ajoute le signe + avant */
-  margin-right: 2px;      /* petit espace après le signe */
+/* ===== Masquer les en-têtes du tableau N3 ===== */
+.table-card table.neo thead{ display:none !important; }
+
+/* ===== Préfixe + pour les valeurs positives ===== */
+.ok::before{ content:"+"; margin-right:2px; }
+
+/* ===== Taille des loaders et % selon le niveau (source unique de vérité) ===== */
+.hero .mbar{        width:150px !important; height:12px; }
+.section-card .mbar{width:130px !important; height:11px; }
+.table-card .mbar{  width:110px !important; height:10px; }
+
+.hero .mval{        font-size:1.10rem; font-weight:750; }
+.section-card .mval{font-size:1.02rem; font-weight:700; }
+.table-card .mval{  font-size:0.95rem; font-weight:650; }
+
+/* ===== Rendre le bouton de sidebar toujours accessible ===== */
+/* (ne pas masquer le header ; on épingle juste le bouton) */
+button[data-testid="stSidebarCollapseButton"]{
+  position:fixed; left:12px; top:12px; z-index:500;
+  opacity:1 !important; pointer-events:auto !important;
 }
 
-/* ==== Taille des loaders et % selon le niveau ==== */
 
-/* Niveau 1 — plus large et plus épais */
-.hero .mbar {
-  height: 14px;
-  width: 200px;
-}
-.hero .mval {
-  font-size: 1.15rem;
-  font-weight: 750;
-}
-
-/* Niveau 2 — intermédiaire */
-.section-card .mbar {
-  height: 12px;
-  width: 180px;
-}
-.section-card .mval {
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-/* Niveau 3 — plus compact (défaut) */
-.table-card .mbar {
-  height: 10px;
-  width: 160px;
-}
-.table-card .mval {
-  font-size: 0.95rem;
-  font-weight: 650;
-}
-
-/* ==== 1️⃣ Rendre le sidebar toujours accessible ==== */
-section[data-testid="stSidebar"] {
-  transform: translateX(0) !important; /* évite qu'il disparaisse complètement */
-  transition: transform 0.3s ease-in-out;
-}
-button[kind="header"] {
-  opacity: 1 !important; /* rend le bouton d'ouverture visible */
-  pointer-events: auto !important;
-}
-
-/* ==== 2️⃣ Réduction globale de la longueur des loaders ==== */
-.mbar {
-  width: 130px !important; /* longueur par défaut réduite */
-}
-
-/* Ajustement par niveau pour garder les proportions */
-.hero .mbar { width: 160px !important; height: 14px; }
-.section-card .mbar { width: 140px !important; height: 12px; }
-.table-card .mbar { width: 120px !important; height: 10px; }
 
 </style>
 """

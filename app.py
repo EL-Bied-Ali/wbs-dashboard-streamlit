@@ -7,7 +7,7 @@ from extract_wbs_json import extract_all_wbs  # <- utilise ton script d’extrac
 import pandas as pd
 import tempfile, os
 
-st.set_page_config(page_title="WBS – Projet", layout="wide")
+st.set_page_config(page_title="WBS – Projet", layout="wide", initial_sidebar_state="expanded")
 inject_theme()
 
 # ---------- Helpers ----------
