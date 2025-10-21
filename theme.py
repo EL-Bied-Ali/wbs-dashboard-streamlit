@@ -334,6 +334,54 @@ CSS += """
 </style>
 """
 
+CSS += """
+<style>
+/* ==== Ultra-wide page on Streamlit Cloud ==== */
+
+/* 1) Étire le conteneur central (tous sélecteurs robustes) */
+:root{ --pageMax: 2000px; } /* ajuste 1800–2300px si tu veux */
+
+[data-testid="stAppViewContainer"] .main .block-container,
+section[data-testid="stMain"] > div,
+div[data-testid="stToolbar"] ~ div .block-container{
+  max-width: var(--pageMax) !important;
+  width: 100% !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  margin: 0 auto !important;
+}
+
+/* 2) S’assure que nos wrappers prennent toute la largeur */
+[data-testid="stLayoutWrapper"],
+[data-testid="stVerticalBlock"],
+[data-testid="stElementContainer"],
+[data-testid="stMarkdown"],
+[data-testid="stMarkdownContainer"]{
+  width: 100% !important;
+}
+
+/* 3) On laisse respirer les cartes */
+.section-card, .table-card{ width:100% !important; }
+
+/* 4) Optionnel : un cran plus large encore sur écrans XXL */
+@media (min-width: 2200px){
+  :root{ --pageMax: 2300px; }
+}
+
+/* 5) Avec la page plus large, on peut redonner un peu d’air aux colonnes */
+:root{
+  --col1: 26%;  /* Label */
+  --col2: 10%;  /* Planned  */
+  --col3: 10%;  /* Forecast */
+  --col4: 15%;  /* Schedule */
+  --col5: 15%;  /* Earned   */
+  --col6:  8%;  /* Écart    */
+  --col7:  8%;  /* Impact   */
+  --col8:  8%;  /* Gliss.   */
+}
+</style>
+"""
+
 
 def inject_theme():
   st.markdown(CSS, unsafe_allow_html=True)
