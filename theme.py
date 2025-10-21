@@ -382,6 +382,50 @@ div[data-testid="stToolbar"] ~ div .block-container{
 </style>
 """
 
+CSS += """
+<style>
+/* === Alignement parfait entre les en-têtes Niveau 2 et le tableau === */
+
+/* Structure commune à la ligne d’en-tête (n2-grid) et au tableau (neo) */
+.n2-grid,
+.neo thead tr {
+  display: grid !important;
+  grid-template-columns:
+    var(--col1)   /* Label */
+    var(--col2)
+    var(--col3)
+    var(--col4)
+    var(--col5)
+    var(--col6)
+    var(--col7)
+    var(--col8);
+  align-items: center;
+  text-align: left;
+  width: 100%;
+}
+
+/* Corrige aussi le padding pour un rendu net */
+.n2g-cell, .n2g-label, .neo th, .neo td {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  box-sizing: border-box;
+}
+
+/* Empêche le décalage visuel de la première colonne (titre + pastille) */
+.n2g-label, .lvl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Optionnel : homogénéise la hauteur et police des titres */
+.n2-grid .small {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+</style>
+"""
+
 
 def inject_theme():
   st.markdown(CSS, unsafe_allow_html=True)
