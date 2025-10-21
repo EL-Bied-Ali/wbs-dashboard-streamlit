@@ -133,6 +133,29 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
   font-weight:700;color:var(--text);font-size:0.95rem;
   min-width:52px;text-align:right;
 }
+
+/* No lines inside the table */
+.table-card table.neo,
+.table-card table.neo *{
+  border:0 !important;
+  box-shadow:none !important;
+}
+.table-card table.neo thead th,
+.table-card table.neo tbody td{
+  border-bottom:0 !important;
+}
+.table-card table.neo th + th,
+.table-card table.neo td + td{
+  border-left:0 !important;
+}
+
+/* Force the N2 badge to a new line after the title */
+.n2g-label{ flex-wrap:wrap; }              /* (déjà là, on renforce) */
+.n2g-label .badge{
+  flex-basis:100%;                         /* -> nouvelle ligne */
+  margin-top:4px;
+}
+
 </style>
 """
 
