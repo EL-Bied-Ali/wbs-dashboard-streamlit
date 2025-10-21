@@ -521,6 +521,37 @@ CSS += """
 </style>
 """
 
+CSS += """
+<style>
+/* === FIX: texte vertical dans la première colonne === */
+
+/* Empêche toute rotation ou écriture verticale */
+.table-card .neo th,
+.table-card .neo td,
+.table-card .neo td:first-child,
+.table-card .neo th:first-child {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  transform: none !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow: visible !important;
+}
+
+/* Optionnel : réduit légèrement la largeur du label pour l’esthétique */
+:root {
+  --col1: 25%;
+  --col2: 10%;
+  --col3: 10%;
+  --col4: 15%;
+  --col5: 15%;
+  --col6: 8%;
+  --col7: 8%;
+  --col8: 9%;
+}
+</style>
+"""
+
 
 def inject_theme():
   st.markdown(CSS, unsafe_allow_html=True)
