@@ -35,7 +35,7 @@ def to_number_j(val):
     except:
         return 0.0
 
-def bar_html(pct: float, color: str, vertical: bool=True) -> str:
+def bar_html(pct: float, color: str, vertical: bool = True) -> str:
     safe = max(0, min(100, pct or 0))
     cls = "mbar-wrap v" if vertical else "mbar-wrap"
     return f"""
@@ -44,6 +44,7 @@ def bar_html(pct: float, color: str, vertical: bool=True) -> str:
       <span class="mval">{safe:.2f}%</span>
     </span>
     """
+
 
 
 
@@ -76,8 +77,10 @@ def render_detail_table(node: dict, compact: bool = False):
             <td class="lvl"><span class="dot"></span> <b>{r['label']}</b></td>
             <td class="col-date">{r['planned']}</td>
             <td class="col-date">{r['forecast']}</td>
-            <td class="col-bar">{bar_html(r['schedule'], 'blue')}</td>
-            <td class="col-bar">{bar_html(r['earned'],   'green')}</td>
+            # dans render_detail_table(...)
+            td class="col-bar">{bar_html(r['schedule'], 'blue', False)}</td>
+            td class="col-bar">{bar_html(r['earned'],   'green', False)}</td>
+
             <td class="col-sign">{signed_span(r['ecart'])}</td>
             <td class="col-sign">{signed_span(r['impact'])}</td>
             <td class="col-gliss"><span class="{'ok' if r['gliss']>=0 else 'bad'}">{int(r['gliss'])}j</span></td>
