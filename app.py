@@ -238,15 +238,44 @@ def header_level2_grid(label, level, m):
 
 # ---------- Rendu global ----------
 def render_section_level2(parent_node: dict):
-    st.markdown(
-        _minify(f'<div class="section-card">{header_level2_grid(parent_node.get("label",""), parent_node.get("level",2), parent_node.get("metrics",{}) or {})}</div>'),
-        unsafe_allow_html=True
+    header_html = header_level2_grid(
+        parent_node.get("label", ""),
+        parent_node.get("level", 2),
+        parent_node.get("metrics", {}) or {}
     )
+
+    # Rendu du contenu Niveau 3 (table + graph)
     if parent_node.get("children"):
-        render_detail_table(parent_node)
-        render_barchart(parent_node)
+        body_html = st._repr_html_(  # juste pour inline plus propre
+            ""
+        )
+        body_html = f"""
+        <div style='padding:12px 8px 4px'>
+            {st._repr_html_ if False else ''}
+        </div>
+        """
+        table_html = st._repr_html_ if False else ""
+        # mais on passe via st.markdown directement :
+        with st.container():
+            st.markdown(
+                f"""
+                <details class="section table-card section-card section">
+                    <summary class="summary-as-card">{header_html}</summary>
+                    <div style="padding:12px 8px 4px">
+                        <!-- N3 table -->
+                        """,
+                unsafe_allow_html=True
+            )
+            render_detail_table(parent_node)
+            render_barchart(parent_node)
+            st.markdown("</div></details>", unsafe_allow_html=True)
     else:
-        st.info("Aucun niveau 3 pour cette section.")
+        # Si aucun enfant : carte fixe (comme avant)
+        st.markdown(
+            f'<div class="section-card">{header_html}</div>',
+            unsafe_allow_html=True
+        )
+
 
 def render_all_open_native(root: dict):
     st.markdown(

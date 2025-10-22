@@ -304,6 +304,15 @@ button[data-testid="stSidebarCollapseButton"]:focus{
   pointer-events:none;
 }
 
+details.section{border-radius:12px; overflow:hidden}
+details.section > summary{list-style:none; cursor:pointer}
+details.section[open] > summary{box-shadow:0 0 0 1px rgba(96,165,250,.25) inset}
+details.section summary::-webkit-details-marker{display:none}
+.summary-as-card{padding:0}
+
+</style>
+
+
 </style>
 """
 
