@@ -167,6 +167,59 @@ form[data-testid="stForm"] button[kind="formSubmit"]{
 form[data-testid="stForm"] button[kind="formSubmit"]:hover{
   background:rgba(30,41,59,.96) !important; border-color:rgba(125,211,252,.9) !important;
 }
+
+
+/* --- Repositionne le submit (chevron) EN HAUT-DROITE de la carte N2 --- */
+form[data-testid="stForm"]{ position: relative; }
+form[data-testid="stForm"] .n2-card{ position: relative; padding-right: 46px; }
+
+/* Le WRAPPER du bouton devient absolu dans la carte */
+form[data-testid="stForm"] div[data-testid="stFormSubmitButton"]{
+  position: absolute !important;
+  top: 10px;              /* ajuste si besoin (ex: 6px ou 12px) */
+  right: 12px;            /* marge droite de la carte */
+  z-index: 5;
+  width: 34px;            /* largeur du chevron */
+  height: 28px;           /* hauteur du chevron */
+  margin: 0 !important;   /* pas d’offset vertical */
+  padding: 0 !important;
+}
+
+/* Le conteneur interne garde la même taille */
+form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] > div{
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Le bouton Streamlit prend toute la zone et adopte ton style */
+form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] button{
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+
+  border-radius: 8px;
+  background: rgba(15,23,42,.88) !important;
+  border: 1px solid rgba(96,165,250,.45) !important;
+  color: #e5e7eb !important;
+  font-weight: 800; font-size: 16px;
+  box-shadow: 0 6px 14px rgba(0,0,0,.30);
+}
+form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] button:hover{
+  background: rgba(30,41,59,.96) !important;
+  border-color: rgba(125,211,252,.9) !important;
+}
+
+
+
+
+
+
+
+
+
+
+
 </style>
 """
 
