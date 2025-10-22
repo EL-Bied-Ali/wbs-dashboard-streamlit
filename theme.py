@@ -194,13 +194,47 @@ table.neo tbody tr:hover{background:rgba(148,163,184,.06);transition:background 
 .section-card .mval{font-size:1.02rem; font-weight:700; }
 .table-card .mval{  font-size:0.95rem; font-weight:650; }
 
-/* ===== Rendre le bouton de sidebar toujours accessible ===== */
-/* (ne pas masquer le header ; on épingle juste le bouton) */
+
+/* ==== Sidebar toggle: always visible & high-contrast ==== */
 button[data-testid="stSidebarCollapseButton"]{
-  position:fixed; left:12px; top:12px; z-index:500;
-  opacity:1 !important; pointer-events:auto !important;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 600;                    /* above charts/tooltips but not crazy high */
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+
+  /* glassy pill so it pops on dark bg */
+  background: rgba(15,23,42,.92) !important;     /* #0f172a */
+  border: 1px solid rgba(96,165,250,.55) !important; /* sky-400 */
+  box-shadow: 0 6px 18px rgba(0,0,0,.35);
 }
 
+/* make the hamburger icon itself bright */
+button[data-testid="stSidebarCollapseButton"] svg,
+button[data-testid="stSidebarCollapseButton"] svg *{
+  fill: #e5f0ff !important;
+  stroke: #e5f0ff !important;
+}
+
+/* hover/focus states for clarity */
+button[data-testid="stSidebarCollapseButton"]:hover{
+  background: rgba(30,41,59,.95) !important;      /* #1e293b */
+  border-color: rgba(125,211,252,.9) !important;  /* cyan-300 */
+  box-shadow: 0 8px 22px rgba(0,0,0,.45);
+}
+button[data-testid="stSidebarCollapseButton"]:focus{
+  outline: 2px solid rgba(125,211,252,.9);
+  outline-offset: 2px;
+}
+
+/* avoid overlap with your top content on small screens */
+@media (max-width: 900px){
+  .block-container{ padding-top: 2.2rem !important; }
+}
 
 
 </style>
