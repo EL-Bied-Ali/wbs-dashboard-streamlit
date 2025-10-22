@@ -248,7 +248,8 @@ def render_section_level2(parent_node: dict):
 
     # ===== BLOC N2 (wrapper carte autour de tout : header + N3) =====
     with st.container():
-        st.markdown('<div class="n2-card-sentinel"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="n2-block-sentinel"></div>', unsafe_allow_html=True)
+
 
         # ---- HEADER : HTML complet à gauche + chevron natif à droite
         left, right = st.columns([0.985, 0.015], gap="small")
