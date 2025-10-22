@@ -238,22 +238,31 @@ def header_level2_grid(label, level, m):
 
 # ---------- Rendu global ----------
 def render_section_level2(parent_node: dict):
-    label   = parent_node.get("label","")
-    level   = parent_node.get("level",2)
+    label = parent_node.get("label","")
+    level = parent_node.get("level",2)
     metrics = parent_node.get("metrics",{}) or {}
 
     key = f"n2_open::{label}_{level}".replace(" ", "_")
     if key not in st.session_state:
         st.session_state[key] = False
 
+    # header avec badge clickable
     header_html = header_level2_grid(label, level, metrics)
+    header_html = header_html.replace(
+        f'<span class="badge">WBS Niveau {level}</span>',
+        f"""
+        <form action="" method="post" style="display:inline;" id="{key}_form">
+          <button class="badge badge-toggle" name="toggle" value="{key}">WBS Niveau {level}</button>
+        </form>
+        """
+    )
 
-    # Form = header N2 + chevron overlay (dans la carte)
-    with st.form(f"{key}_form", clear_on_submit=False):
-        st.markdown(f'<div class="section-card n2-card">{header_html}</div>', unsafe_allow_html=True)
-        chevron = "▸" if not st.session_state[key] else "▾"
-        if st.form_submit_button(chevron, help="Afficher/masquer le Niveau 3", use_container_width=False):
-            st.session_state[key] = not st.session_state[key]
+    st.markdown(f'<div class="section-card">{header_html}</div>', unsafe_allow_html=True)
+
+    # Lecture du bouton soumis
+    if "toggle" in st.session_state and st.session_state["toggle"] == key:
+        st.session_state[key] = not st.session_state[key]
+        del st.session_state["toggle"]
 
     if st.session_state[key] and parent_node.get("children"):
         render_detail_table(parent_node)
