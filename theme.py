@@ -304,18 +304,32 @@ button[data-testid="stSidebarCollapseButton"]:focus{
   pointer-events:none;
 }
 
-<style>
-/* Bouton chevron discret à gauche du header N2 */
-div[data-testid="column"]:has(> div button[kind="secondary"]) > div > button {
-  border-radius:12px; height:38px;
-  background:rgba(15,23,42,.85); border:1px solid rgba(96,165,250,.35);
-  color:#e5e7eb; font-weight:800; font-size:16px;
+/* Formulaire cliquable pleine largeur sur la carte N2 */
+form[data-testid="stForm"]{
+  position: relative;
+  margin: 0; padding: 0; border: 0;
 }
-div[data-testid="column"]:has(> div button[kind="secondary"]) > div > button:hover{
-  background:rgba(30,41,59,.95); border-color:rgba(125,211,252,.8);
+form[data-testid="stForm"] .n2-card{
+  position: relative;
+  z-index: 1; /* visible au-dessus du fond */
 }
-</style>
 
+/* Le submit recouvre toute la carte, invisible mais cliquable */
+form[data-testid="stForm"] button[kind="formSubmit"]{
+  position: absolute !important;
+  inset: 0 !important;            /* top/right/bottom/left: 0 */
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  z-index: 2 !important;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+/* Pas de saut de layout quand on survole / focus */
+form[data-testid="stForm"] button[kind="formSubmit"]:focus{ outline: 0 !important; }
 
 </style>
 

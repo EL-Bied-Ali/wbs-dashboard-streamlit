@@ -242,26 +242,27 @@ def render_section_level2(parent_node: dict):
     level   = parent_node.get("level", 2)
     metrics = parent_node.get("metrics", {}) or {}
 
-    # clé d'état par section
     key_base = f"n2_{label}_{level}".replace(" ", "_")
     if key_base not in st.session_state:
         st.session_state[key_base] = False  # replié par défaut
 
-    # ligne header avec chevron + bandeau N2
-    c1, c2 = st.columns([0.06, 0.94], vertical_alignment="center")
-    with c1:
-        if st.button("▸" if not st.session_state[key_base] else "▾",
-                     key=f"{key_base}_btn", type="secondary",
-                     help="Afficher/masquer le Niveau 3", use_container_width=True):
+    # --- FORM cliquable sur toute la carte ---
+    with st.form(f"{key_base}_form", clear_on_submit=False):
+        # 1) header N2
+        st.markdown(
+            f'<div class="section-card n2-card">{header_level2_grid(label, level, metrics)}</div>',
+            unsafe_allow_html=True
+        )
+        # 2) bouton overlay invisible (couvre toute la carte)
+        clicked = st.form_submit_button(" ", use_container_width=True)
+        if clicked:
             st.session_state[key_base] = not st.session_state[key_base]
-    with c2:
-        st.markdown(f'<div class="section-card">{header_level2_grid(label, level, metrics)}</div>',
-                    unsafe_allow_html=True)
 
-    # contenu Niveau 3 conditionnel
+    # --- Contenu N3 conditionnel ---
     if st.session_state[key_base] and parent_node.get("children"):
         render_detail_table(parent_node)
         render_barchart(parent_node)
+
 
 
 
