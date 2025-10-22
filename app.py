@@ -246,25 +246,24 @@ def render_section_level2(parent_node: dict):
     if key not in st.session_state:
         st.session_state[key] = False
 
-    # ---- Carte N2 = vrai container Streamlit ----
+    # ===== BLOC N2 (wrapper carte autour de tout : header + N3) =====
     with st.container():
-        # Sentinel (invisible) pour cibler ce container en CSS
-        st.markdown('<div class="n2-card-sentinel"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="n2-block-sentinel"></div>', unsafe_allow_html=True)
 
-        # Grille: HTML complet à gauche (ton header existant) + chevron natif à droite
+        # ---- HEADER : HTML complet à gauche + chevron natif à droite
         left, right = st.columns([0.985, 0.015], gap="small")
         with left:
             st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
-
         with right:
             chevron = "▾" if st.session_state[key] else "▸"
             if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
                 st.session_state[key] = not st.session_state[key]
 
-    # ---- Contenu N3 ----
-    if st.session_state[key] and parent_node.get("children"):
-        render_detail_table(parent_node)
-        render_barchart(parent_node)
+        # ---- CONTENU N3 (reste DANS le wrapper)
+        if st.session_state[key] and parent_node.get("children"):
+            render_detail_table(parent_node)
+            render_barchart(parent_node)
+
 
 
 

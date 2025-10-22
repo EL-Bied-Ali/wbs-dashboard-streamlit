@@ -211,6 +211,50 @@ div[data-testid="stVerticalBlock"]:has(> .n2-card-sentinel) .n2-grid{
   padding: 6px 8px !important;
 }
 
+/* === Carte "grand wrapper" autour de tout le N2 (header + tables + charts) === */
+div[data-testid="stVerticalBlock"]:has(> .n2-block-sentinel){
+  background: linear-gradient(180deg, #0f1a31, #0b1326);
+  border: 1px solid #223355;
+  border-radius: 12px;
+  padding: 10px 12px;     /* air interne pour tout le bloc */
+  margin: 8px 0 14px;     /* espacement entre 2 blocs N2 */
+  box-shadow: 0 0 0 1px rgba(36,52,83,.35) inset;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* le sentinel est invisible (sert juste de balise pour le :has) */
+.n2-block-sentinel{ display:none !important; }
+
+/* évite les marges fantômes autour des markdown/cols */
+div[data-testid="stVerticalBlock"]:has(> .n2-block-sentinel) [data-testid="stMarkdownContainer"] > p{ margin:0 !important; }
+div[data-testid="stVerticalBlock"]:has(> .n2-block-sentinel) .stColumns,
+div[data-testid="stVerticalBlock"]:has(> .n2-block-sentinel) [data-testid="column"]{ overflow:visible; }
+
+/* aplatit la .section-card que ton header HTML rend à l’intérieur */
+div[data-testid="stVerticalBlock"]:has(> .n2-block-sentinel) .section-card{
+  background:transparent !important; border:0 !important; box-shadow:none !important;
+  padding:0 !important; margin:0 !important;
+}
+div[data-testid="stVerticalBlock"]:has(> .n2-block-sentinel) .n2-grid{
+  padding:6px 8px !important;
+}
+
+/* bouton chevron (colonne de droite, dans le wrapper) */
+div[data-testid="stVerticalBlock"]:has(> .n2-block-sentinel) .stButton{
+  display:flex; align-items:center; justify-content:flex-end; margin-top:4px;
+}
+div[data-testid="stVerticalBlock"]:has(> .n2-block-sentinel) .stButton button{
+  border-radius:8px;
+  background:rgba(15,23,42,.88);
+  border:1px solid rgba(96,165,250,.45);
+  color:#e5e7eb; font-weight:800; font-size:16px;
+  min-height:28px; padding:0 .25rem;
+}
+div[data-testid="stVerticalBlock"]:has(> .n2-block-sentinel) .stButton button:hover{
+  background:rgba(30,41,59,.96);
+  border-color:rgba(125,211,252,.9);
+}
 
 
 
