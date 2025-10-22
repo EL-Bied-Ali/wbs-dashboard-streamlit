@@ -238,31 +238,23 @@ def header_level2_grid(label, level, m):
 
 # ---------- Rendu global ----------
 def render_section_level2(parent_node: dict):
-    label = parent_node.get("label", "")
-    level = parent_node.get("level", 2)
-    metrics = parent_node.get("metrics", {}) or {}
-
+    label = parent_node.get("label",""); level = parent_node.get("level",2)
+    metrics = parent_node.get("metrics",{}) or {}
     key = f"n2_open::{label}_{level}".replace(" ", "_")
-    if key not in st.session_state:
-        st.session_state[key] = False
+    if key not in st.session_state: st.session_state[key] = False
 
     header_html = header_level2_grid(label, level, metrics)
     chevron = "▾" if st.session_state[key] else "▸"
 
-    # ajout du bouton discret à droite
     with st.form(f"{key}_form", clear_on_submit=False):
-        st.markdown(f"""
-        <div class="section-card n2-card">
-            {header_html}
-            <button class="chevron-btn" type="submit">{chevron}</button>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.form_submit_button("", label_visibility="collapsed"):
+        st.markdown(f'<div class="section-card n2-card">{header_html}</div>', unsafe_allow_html=True)
+        if st.form_submit_button(chevron):  # pas de label_visibility ici
             st.session_state[key] = not st.session_state[key]
 
     if st.session_state[key] and parent_node.get("children"):
         render_detail_table(parent_node)
         render_barchart(parent_node)
+
 
 
 
