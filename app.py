@@ -242,13 +242,13 @@ def render_section_level2(parent_node: dict):
     level   = parent_node.get("level",2)
     metrics = parent_node.get("metrics",{}) or {}
 
-    header_html = f'<div class="section-card">{header_level2_grid(label, level, metrics)}</div>'
+    header_html = header_level2_grid(label, level, metrics)
 
-    with st.expander(header_html, expanded=False):
-        st.markdown('<div class="table-card-wrapper">', unsafe_allow_html=True)
+    # On met un titre minimal dans l'expander, mais on affiche le vrai header juste dedans
+    with st.expander("", expanded=False):
+        st.markdown(f'<div class="section-card">{header_html}</div>', unsafe_allow_html=True)
         render_detail_table(parent_node)
         render_barchart(parent_node)
-        st.markdown('</div>', unsafe_allow_html=True)
 
 
 
