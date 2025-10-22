@@ -304,11 +304,15 @@ button[data-testid="stSidebarCollapseButton"]:focus{
   pointer-events:none;
 }
 
-details.section{border-radius:12px; overflow:hidden}
-details.section > summary{list-style:none; cursor:pointer}
-details.section[open] > summary{box-shadow:0 0 0 1px rgba(96,165,250,.25) inset}
-details.section summary::-webkit-details-marker{display:none}
-.summary-as-card{padding:0}
+/* Bouton chevron discret à gauche du header N2 */
+div[data-testid="column"]:has(> div button[kind="secondary"]) > div > button {
+  border-radius:12px; height:38px;
+  background:rgba(15,23,42,.85); border:1px solid rgba(96,165,250,.35);
+  color:#e5e7eb; font-weight:800; font-size:16px;
+}
+div[data-testid="column"]:has(> div button[kind="secondary"]) > div > button:hover{
+  background:rgba(30,41,59,.95); border-color:rgba(125,211,252,.8);
+}
 
 </style>
 
