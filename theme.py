@@ -331,6 +331,11 @@ form[data-testid="stForm"] button[kind="formSubmit"]{
 /* Pas de saut de layout quand on survole / focus */
 form[data-testid="stForm"] button[kind="formSubmit"]:focus{ outline: 0 !important; }
 
+div[role="button"][data-testid="stExpanderToggle"]{ padding:0; }
+details[data-testid="stExpander"] > summary { list-style:none }
+details[data-testid="stExpander"] { border:0; background:transparent }
+
+
 </style>
 
 
