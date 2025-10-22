@@ -335,6 +335,23 @@ div[role="button"][data-testid="stExpanderToggle"]{ padding:0; }
 details[data-testid="stExpander"] > summary { list-style:none }
 details[data-testid="stExpander"] { border:0; background:transparent }
 
+/* --- Style expander Streamlit (carte cliquable) --- */
+details[data-testid="stExpander"] {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+details[data-testid="stExpander"] > summary {
+  list-style: none !important;
+  cursor: pointer !important;
+}
+summary p {
+  margin: 0 !important;
+}
+details[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"] {
+  display: none !important; /* supprime la flèche */
+}
+
 
 </style>
 
