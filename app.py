@@ -299,16 +299,16 @@ def render_section_level2(parent_node: dict):
 
 def render_all_open_native(root: dict):
     st.markdown(
-        header_level1_grid(
-            root.get("label", "CONSTRUCTION NEUVE"),
-            root.get("metrics", {}) or {}
-        ),
+        header_level1_grid(root.get("label", "CONSTRUCTION NEUVE"),
+                           root.get("metrics", {}) or {}),
         unsafe_allow_html=True
     )
     st.divider()
-    with st.container(border=True):
-        for n2 in root.get("children", []) or []:
-            render_section_level2(n2)
+    # ⛔️ supprime ce conteneur borduré
+    # with st.container(border=True):
+    for n2 in root.get("children", []) or []:
+        render_section_level2(n2)
+
 
 # ---------- Sources de données ----------
 st.sidebar.markdown("### Import WBS")
