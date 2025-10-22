@@ -352,6 +352,24 @@ details[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"] {
   display: none !important; /* supprime la flèche */
 }
 
+/* Carte N2 cliquable via chevron interne (bouton positionné en haut à droite) */
+form[data-testid="stForm"]{ position:relative; margin:0; padding:0; }
+form[data-testid="stForm"] .n2-card{ position:relative; padding-right:46px; } /* place pour le bouton */
+form[data-testid="stForm"] button[kind="formSubmit"]{
+  position:absolute !important; top:10px; right:12px;
+  width:34px; height:28px; line-height:26px;
+  border-radius:8px;
+  background:rgba(15,23,42,.88) !important;
+  border:1px solid rgba(96,165,250,.45) !important;
+  color:#e5e7eb !important; font-weight:800; font-size:16px;
+  z-index:3; box-shadow:0 6px 14px rgba(0,0,0,.30);
+  padding:0 !important; min-height:auto !important;
+}
+form[data-testid="stForm"] button[kind="formSubmit"]:hover{
+  background:rgba(30,41,59,.96) !important;
+  border-color:rgba(125,211,252,.9) !important;
+}
+
 
 </style>
 

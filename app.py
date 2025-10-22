@@ -242,13 +242,23 @@ def render_section_level2(parent_node: dict):
     level   = parent_node.get("level",2)
     metrics = parent_node.get("metrics",{}) or {}
 
+    key = f"n2_open::{label}_{level}".replace(" ", "_")
+    if key not in st.session_state:
+        st.session_state[key] = False
+
     header_html = header_level2_grid(label, level, metrics)
 
-    # On met un titre minimal dans l'expander, mais on affiche le vrai header juste dedans
-    with st.expander("", expanded=False):
-        st.markdown(f'<div class="section-card">{header_html}</div>', unsafe_allow_html=True)
+    # Form = header N2 + chevron overlay (dans la carte)
+    with st.form(f"{key}_form", clear_on_submit=False):
+        st.markdown(f'<div class="section-card n2-card">{header_html}</div>', unsafe_allow_html=True)
+        chevron = "▸" if not st.session_state[key] else "▾"
+        if st.form_submit_button(chevron, help="Afficher/masquer le Niveau 3", use_container_width=False):
+            st.session_state[key] = not st.session_state[key]
+
+    if st.session_state[key] and parent_node.get("children"):
         render_detail_table(parent_node)
         render_barchart(parent_node)
+
 
 
 
