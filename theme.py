@@ -156,24 +156,6 @@ button[data-testid="stSidebarCollapseButton"]:focus{ outline:2px solid rgba(125,
 
 
 
-/* Le WRAPPER du bouton devient absolu dans la carte */
-form[data-testid="stForm"] div[data-testid="stFormSubmitButton"]{
-  position: absolute !important;
-  top: 10px;              /* ajuste si besoin (ex: 6px ou 12px) */
-  right: 12px;            /* marge droite de la carte */
-  z-index: 5;
-  width: 34px;            /* largeur du chevron */
-  height: 28px;           /* hauteur du chevron */
-  margin: 0 !important;   /* pas d’offset vertical */
-  padding: 0 !important;
-}
-
-/* Le conteneur interne garde la même taille */
-form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] > div{
-  width: 100% !important;
-  height: 100% !important;
-}
-
 /* ====== Carte N2 native : UN SEUL wrapper ====== */
 .n2-native-card{
   background:linear-gradient(180deg,#0f1a31,#0b1326);
@@ -186,13 +168,11 @@ form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] > div{
   box-sizing:border-box;
 }
 
-/* évite que des wrappers internes créent de nouveaux contours/overflows */
+/* éviter les overflow internes dans la grille */
 .n2-native-card .stColumns,
-.n2-native-card [data-testid="column"]{
-  overflow: visible;
-}
+.n2-native-card [data-testid="column"]{ overflow:visible; }
 
-/* chevron (dernier col) */
+/* bouton chevron (dernière colonne) */
 .n2-native-card .stButton button{
   border-radius:8px;
   background:rgba(15,23,42,.88);
@@ -205,9 +185,9 @@ form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] > div{
   border-color:rgba(125,211,252,.9);
 }
 
-/* (optionnel) resserre verticalement la ligne KPI si besoin */
+/* compacter légèrement les cellules */
 .n2-native-card .n2g-label,
-.n2-native-card .n2g-cell{ padding-top:6px !important; padding-bottom:6px !important; }
+.n2-native-card .n2g-cell{ padding-top:6px!important; padding-bottom:6px!important; }
 
 
 
