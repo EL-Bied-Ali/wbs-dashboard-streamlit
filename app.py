@@ -242,35 +242,27 @@ def render_section_level2(parent_node: dict):
     level   = parent_node.get("level", 2)
     metrics = parent_node.get("metrics", {}) or {}
 
-    # --- STATE par section (clé stable)
+    # clé d'état par section
     key_base = f"n2_{label}_{level}".replace(" ", "_")
     if key_base not in st.session_state:
         st.session_state[key_base] = False  # replié par défaut
 
-    # --- Ligne header avec chevron-bouton + header HTML
-    c1, c2 = st.columns([0.06, 0.94])  # petit bouton à gauche
+    # ligne header avec chevron + bandeau N2
+    c1, c2 = st.columns([0.06, 0.94], vertical_alignment="center")
     with c1:
-        opened = st.button(
-            "▸" if not st.session_state[key_base] else "▾",
-            key=f"{key_base}_btn",
-            type="secondary",
-            help="Afficher/masquer le Niveau 3",
-            use_container_width=True
-        )
-        # si on clique, on toggle l'état
-        if opened:
+        if st.button("▸" if not st.session_state[key_base] else "▾",
+                     key=f"{key_base}_btn", type="secondary",
+                     help="Afficher/masquer le Niveau 3", use_container_width=True):
             st.session_state[key_base] = not st.session_state[key_base]
-
     with c2:
-        st.markdown(
-            f'<div class="section-card">{header_level2_grid(label, level, metrics)}</div>',
-            unsafe_allow_html=True
-        )
+        st.markdown(f'<div class="section-card">{header_level2_grid(label, level, metrics)}</div>',
+                    unsafe_allow_html=True)
 
-    # --- Contenu Niveau 3 (table + graph) selon l'état
+    # contenu Niveau 3 conditionnel
     if st.session_state[key_base] and parent_node.get("children"):
         render_detail_table(parent_node)
         render_barchart(parent_node)
+
 
 
 

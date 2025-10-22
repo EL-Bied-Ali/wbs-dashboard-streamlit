@@ -304,6 +304,7 @@ button[data-testid="stSidebarCollapseButton"]:focus{
   pointer-events:none;
 }
 
+<style>
 /* Bouton chevron discret à gauche du header N2 */
 div[data-testid="column"]:has(> div button[kind="secondary"]) > div > button {
   border-radius:12px; height:38px;
@@ -313,11 +314,12 @@ div[data-testid="column"]:has(> div button[kind="secondary"]) > div > button {
 div[data-testid="column"]:has(> div button[kind="secondary"]) > div > button:hover{
   background:rgba(30,41,59,.95); border-color:rgba(125,211,252,.8);
 }
-
 </style>
 
 
 </style>
+
+
 """
 
 def inject_theme():
