@@ -248,13 +248,11 @@ def render_section_level2(parent_node: dict):
 
     # --- wrapper logique ---
     with st.container():
-        # ⬇️ SUPPRIME l'ANCIEN sentinel ici (s'il existe)
-        # st.markdown('<div class="n2-block-sentinel"></div>', unsafe_allow_html=True)
+        # Sentinel au niveau du container -> le wrapper couvre TOUT (cols + bouton)
+        st.markdown('<span class="n2-block-sentinel"></span>', unsafe_allow_html=True)
 
         left, right = st.columns([0.985, 0.015], gap="small")
         with left:
-            # ⬇️ PLACE le sentinel DANS le même VerticalBlock que le header
-            st.markdown('<span class="n2-block-sentinel"></span>', unsafe_allow_html=True)
             st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
         with right:
             chevron = "▾" if st.session_state[key] else "▸"
@@ -264,6 +262,7 @@ def render_section_level2(parent_node: dict):
         if st.session_state[key] and parent_node.get("children"):
             render_detail_table(parent_node)
             render_barchart(parent_node)
+
 
 
 
