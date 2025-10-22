@@ -244,28 +244,17 @@ def render_section_level2(parent_node: dict):
         parent_node.get("metrics", {}) or {}
     )
 
-    # Si des enfants existent → rendu pliable avec <details>
+    # Bandeau Niveau 2 (toujours visible)
+    st.markdown(f'<div class="section-card">{header_html}</div>', unsafe_allow_html=True)
+
+    # Niveau 3 (table + graphe) replié par défaut
     if parent_node.get("children"):
-        st.markdown(
-            f"""
-            <details class="section table-card section-card section">
-                <summary class="summary-as-card">{header_html}</summary>
-                <div style="padding:12px 8px 4px">
-            """,
-            unsafe_allow_html=True
-        )
-
-        render_detail_table(parent_node)
-        render_barchart(parent_node)
-
-        st.markdown("</div></details>", unsafe_allow_html=True)
-
-    # Sinon → carte simple (pas pliable)
+        with st.expander("Afficher / masquer le Niveau 3", expanded=False):
+            render_detail_table(parent_node)
+            render_barchart(parent_node)
     else:
-        st.markdown(
-            f'<div class="section-card">{header_html}</div>',
-            unsafe_allow_html=True
-        )
+        st.info("Aucun niveau 3 pour cette section.")
+
 
 
 
