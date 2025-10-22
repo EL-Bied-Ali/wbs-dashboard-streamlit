@@ -40,10 +40,13 @@ def bar_html(pct: float, color: str, vertical: bool = True) -> str:
     cls = "mbar-wrap v" if vertical else "mbar-wrap"
     return f"""
     <span class="{cls}">
-      <span class="mbar"><span class="mfill anim {color}" style="--to:{safe}%; width:{safe}%"></span></span>
+      <span class="mbar">
+        <span class="mfill anim {color}" style="--to:{safe}%;"></span>
+      </span>
       <span class="mval">{safe:.2f}%</span>
     </span>
     """
+
 
 
 
