@@ -352,23 +352,35 @@ details[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"] {
   display: none !important; /* supprime la flèche */
 }
 
-/* Rendre le badge clickable sans casser le style */
-.badge-toggle{
-  background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));
-  border:1px solid rgba(96,165,250,.5);
-  border-radius:999px;
-  color:#cffafe;
-  padding:3px 10px;
-  font-weight:700;
-  font-size:.88rem;
-  cursor:pointer;
+
+
+
+
+
+/* Chevron toggle à droite de la carte N2 */
+.section-card {
+  position: relative;
 }
-.badge-toggle:hover{
-  background:rgba(59,130,246,.25);
-  border-color:rgba(125,211,252,.9);
-  box-shadow:0 0 10px rgba(59,130,246,.4);
-  transform:translateY(-1px);
+.chevron-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9ec9ff;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .25s ease, color .25s ease;
 }
+.chevron-btn:hover {
+  color: #cce6ff;
+  transform: translateY(-1px);
+}
+
 
 
 
