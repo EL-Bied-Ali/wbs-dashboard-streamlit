@@ -203,6 +203,38 @@ form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] > div{
 
 
 
+/* Wrap the Streamlit block that CONTAINS the N2 native header */
+div[data-testid="stVerticalBlock"] > div:has(> div .n2g-label){
+  background: linear-gradient(180deg,#0f1a31,#0b1326);
+  border: 1px solid #223355;
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin: 4px 0 6px 0;
+  box-shadow: 0 0 0 1px rgba(36,52,83,.35) inset;
+  overflow: hidden;            /* prevents “bleed out” */
+  box-sizing: border-box;
+}
+
+/* Keep the grid cells tidy inside the card */
+div[data-testid="stVerticalBlock"] > div:has(> div .n2g-label) .stColumns,
+div[data-testid="stVerticalBlock"] > div:has(> div .n2g-label) [data-testid="column"]{
+  overflow: visible;
+}
+
+/* Chevron button (last column) look */
+div[data-testid="stVerticalBlock"] > div:has(> div .n2g-label) button{
+  border-radius: 8px;
+  background: rgba(15,23,42,.88);
+  border: 1px solid rgba(96,165,250,.45);
+  color: #e5e7eb; font-weight: 800; font-size: 16px;
+  min-height: 28px; padding: 0 .25rem;
+}
+div[data-testid="stVerticalBlock"] > div:has(> div .n2g-label) button:hover{
+  background: rgba(30,41,59,.96);
+  border-color: rgba(125,211,252,.9);
+}
+
+
 
 
 
