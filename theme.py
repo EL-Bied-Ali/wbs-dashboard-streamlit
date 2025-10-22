@@ -152,26 +152,9 @@ button[data-testid="stSidebarCollapseButton"]:focus{ outline:2px solid rgba(125,
 @keyframes fadeSlideUp { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
 @keyframes pulseDot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.35);opacity:.75} }
 
-/* ====== Chevron interne (submit Streamlit en haut-droite) ====== */
-form[data-testid="stForm"]{ position:relative; margin:0; padding:0; }
-form[data-testid="stForm"] .n2-card{ position:relative; padding-right:46px; }
-form[data-testid="stForm"] button[kind="formSubmit"]{
-  position:absolute !important; top:10px; right:12px;
-  width:34px; height:28px; border-radius:8px;
-  background:rgba(15,23,42,.88) !important;
-  border:1px solid rgba(96,165,250,.45) !important;
-  color:#e5e7eb !important; font-weight:800; font-size:16px;
-  padding:0 !important; min-height:auto !important; z-index:3;
-  box-shadow:0 6px 14px rgba(0,0,0,.30);
-}
-form[data-testid="stForm"] button[kind="formSubmit"]:hover{
-  background:rgba(30,41,59,.96) !important; border-color:rgba(125,211,252,.9) !important;
-}
 
 
-/* --- Repositionne le submit (chevron) EN HAUT-DROITE de la carte N2 --- */
-form[data-testid="stForm"]{ position: relative; }
-form[data-testid="stForm"] .n2-card{ position: relative; padding-right: 46px; }
+
 
 /* Le WRAPPER du bouton devient absolu dans la carte */
 form[data-testid="stForm"] div[data-testid="stFormSubmitButton"]{
@@ -199,17 +182,22 @@ form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] > div{
   box-shadow:0 0 0 1px rgba(36,52,83,.35) inset;
 }
 
-/* Le bouton chevron dans la dernière colonne */
+/* Bouton chevron dans la dernière colonne (DANS la carte) */
 .n2-native-card button{
   border-radius:8px;
   background:rgba(15,23,42,.88);
   border:1px solid rgba(96,165,250,.45);
-  color:#e5e7eb; font-weight:800; font-size:16px; min-height:28px;
+  color:#e5e7eb; font-weight:800; font-size:16px;
+  min-height:28px; padding:0 .25rem;
 }
 .n2-native-card button:hover{
   background:rgba(30,41,59,.96);
   border-color:rgba(125,211,252,.9);
 }
+
+/* Optionnel: aligne un poil le chevron avec la ligne de KPI */
+.n2-native-card .stButton{ margin-top: 6px; }   /* ajuste 0–10px selon ton goût */
+
 
 
 
