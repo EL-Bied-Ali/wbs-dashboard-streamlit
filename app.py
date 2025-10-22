@@ -40,10 +40,11 @@ def bar_html(pct: float, color: str, vertical: bool = True) -> str:
     cls = "mbar-wrap v" if vertical else "mbar-wrap"
     return f"""
     <span class="{cls}">
-      <span class="mbar"><span class="mfill {color}" style="width:{safe}%"></span></span>
+      <span class="mbar"><span class="mfill anim {color}" style="--to:{safe}%; width:{safe}%"></span></span>
       <span class="mval">{safe:.2f}%</span>
     </span>
     """
+
 
 
 
@@ -131,13 +132,24 @@ def render_barchart(node: dict):
         barmode="group", bargroupgap=0.18, bargap=0.26,
         height=280, margin=dict(l=20, r=20, t=8, b=60),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.32, xanchor="center", x=0.5,
-                    itemclick=False, itemdoubleclick=False, font=dict(size=12, color="#cbd5e1")),
-        xaxis=dict(title="", showgrid=False, tickfont=dict(size=13, color="#e5e7eb"), zeroline=False),
-        yaxis=dict(title="", showgrid=True, gridcolor="rgba(42,59,98,.55)", zeroline=False,
-                   tickfont=dict(size=12, color="#cbd5e1"), range=[0, 100]),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=-0.32, xanchor="center", x=0.5,
+            itemclick=False, itemdoubleclick=False,
+            font=dict(size=12, color="#cbd5e1")
+        ),
+        xaxis=dict(
+            title="", showgrid=False, tickfont=dict(size=13, color="#e5e7eb"), zeroline=False
+        ),
+        yaxis=dict(
+            title="", showgrid=True, gridcolor="rgba(42,59,98,.55)", zeroline=False,
+            tickfont=dict(size=12, color="#cbd5e1"), range=[0, 100]
+        ),
         hoverlabel=dict(bgcolor="#0f172a", font=dict(color="#e5e7eb")),
     )
+
+    # 👇 Add this line for smooth animated redraws
+    fig.update_layout(transition={'duration': 400})
+
     st.plotly_chart(fig, use_container_width=True)
 
 # ---------- En-têtes N1/N2 (avec loaders KPI) ----------

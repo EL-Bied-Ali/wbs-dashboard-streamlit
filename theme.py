@@ -236,6 +236,73 @@ button[data-testid="stSidebarCollapseButton"]:focus{
   .block-container{ padding-top: 2.2rem !important; }
 }
 
+/* ====== Animations globales et micro-interactions ====== */
+
+/* Barres: croissance fluide de 0 -> var(--to) */
+@keyframes growBar { from { width:0 } to { width:var(--to, 0%) } }
+.mfill.anim{
+  animation: growBar .7s ease-out both;
+}
+
+/* Stagger léger pour éviter que tout parte en même temps */
+.n1-grid .mbar .mfill.anim{ animation-delay:.05s; }
+.n2-grid .mbar .mfill.anim{ animation-delay:.10s; }
+.table-card .mbar .mfill.anim{ animation-delay:.15s; }
+
+/* Cartes qui “arrivent” légèrement (fade+slide) */
+@keyframes fadeSlideUp { from { opacity:0; transform:translateY(6px) }
+                         to   { opacity:1; transform:translateY(0) } }
+.hero, .section-card, .table-card{
+  animation: fadeSlideUp .45s ease both;
+}
+.section-card{ animation-delay:.05s; }
+.table-card{ animation-delay:.10s; }
+
+/* Badge: hover subtil (un peu de relief) */
+.n2g-label .badge{
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.n2g-label .badge:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(59,130,246,.25);
+  border-color: rgba(96,165,250,.8);
+}
+
+/* Point bleu qui pulse doucement (à côté des titres) */
+@keyframes pulseDot {
+  0%,100% { transform:scale(1);   opacity:1 }
+  50%     { transform:scale(1.35); opacity:.75 }
+}
+.dot{
+  animation: pulseDot 2.2s ease-in-out infinite;
+}
+
+/* Valeurs: transition de couleur/poids pour +/–, plus doux à l’œil */
+.ok, .bad{
+  transition: color .18s ease, transform .18s ease;
+}
+.ok:hover, .bad:hover{
+  transform: translateY(-1px);
+}
+
+/* Progress “sheen” optionnel (petit reflet qui passe) */
+@keyframes sheen {
+  0%   { transform: translateX(-100%); opacity:.0 }
+  15%  { opacity:.22 }
+  85%  { opacity:.22 }
+  100% { transform: translateX(100%); opacity:0 }
+}
+.mbar{
+  position:relative;
+  overflow:hidden; /* déjà présent chez toi, on réutilise */
+}
+.mbar::after{
+  content:"";
+  position:absolute; top:0; bottom:0; width:40%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+  animation: sheen 2.6s ease-in-out infinite;
+  pointer-events:none;
+}
 
 </style>
 """
