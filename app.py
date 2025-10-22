@@ -238,22 +238,77 @@ def header_level2_grid(label, level, m):
 
 # ---------- Rendu global ----------
 def render_section_level2(parent_node: dict):
-    label = parent_node.get("label",""); level = parent_node.get("level",2)
-    metrics = parent_node.get("metrics",{}) or {}
+    label = parent_node.get("label", "")
+    level = parent_node.get("level", 2)
+    m     = parent_node.get("metrics", {}) or {}
+
     key = f"n2_open::{label}_{level}".replace(" ", "_")
-    if key not in st.session_state: st.session_state[key] = False
+    if key not in st.session_state:
+        st.session_state[key] = False
 
-    header_html = header_level2_grid(label, level, metrics)
-    chevron = "▾" if st.session_state[key] else "▸"
+    # --- carte N2 native (scopée) ---
+    with st.container():  # <-- isolé, on va styler CE container seulement
+        st.markdown('<div class="n2-native-card">', unsafe_allow_html=True)
 
-    with st.form(f"{key}_form", clear_on_submit=False):
-        st.markdown(f'<div class="section-card n2-card">{header_html}</div>', unsafe_allow_html=True)
-        if st.form_submit_button(chevron):  # pas de label_visibility ici
-            st.session_state[key] = not st.session_state[key]
+        # grille: [label] + 7 KPI + glissement + chevron
+        cols = st.columns([2.6, 1.0, 1.0, 1.5, 1.5, 0.8, 0.8, 0.8, 0.18], gap="small")
 
+        # label + badge
+        with cols[0]:
+            st.markdown(
+                f"""
+                <div class="n2g-label">
+                  <span class="dot"></span>
+                  <span class="title">{label}</span>
+                  <span class="badge">WBS Niveau {level}</span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        def cell(col, small, body_html):
+            with col:
+                st.markdown(
+                    f'<div class="n2g-cell"><span class="small">{small}</span>{body_html}</div>',
+                    unsafe_allow_html=True
+                )
+
+        # mêmes champs que ton header HTML actuel
+        planned   = m.get("planned_finish","")
+        forecast  = m.get("forecast_finish","")
+        sched_v   = _safe_float(m.get("schedule",0))
+        earn_v    = _safe_float(m.get("earned", m.get("units",0)))
+        ecart_v   = _safe_float(m.get("ecart",0))
+        impact_v  = _safe_float(m.get("impact",0))
+        gliss_num = to_number_j(m.get("glissement","0"))
+
+        cell(cols[1], "Planned",  f"<b>{planned}</b>")
+        cell(cols[2], "Forecast", f"<b>{forecast}</b>")
+        cell(cols[3], "Schedule", bar_html(sched_v, 'blue'))
+        cell(cols[4], "Earned",   bar_html(earn_v, 'green'))
+
+        ecart  = fmt_pct(ecart_v, signed=True)
+        impact = fmt_pct(impact_v, signed=True)
+        ecls   = "ok" if ecart_v  >= 0 else "bad"
+        icls   = "ok" if impact_v >= 0 else "bad"
+        gcls   = "ok" if gliss_num >= 0 else "bad"
+        cell(cols[5], "Écart",   f'<b class="{ecls}">{ecart}</b>')
+        cell(cols[6], "Impact",  f'<b class="{icls}">{impact}</b>')
+        cell(cols[7], "Glissement", f'<b class="{gcls}">{int(gliss_num)}j</b>')
+
+        # chevron DANS la carte (vrai widget)
+        with cols[8]:
+            chevron = "▾" if st.session_state[key] else "▸"
+            if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
+                st.session_state[key] = not st.session_state[key]
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # --- contenu N3 ---
     if st.session_state[key] and parent_node.get("children"):
         render_detail_table(parent_node)
         render_barchart(parent_node)
+
 
 
 

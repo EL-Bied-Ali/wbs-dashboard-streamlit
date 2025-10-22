@@ -191,24 +191,26 @@ form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] > div{
   height: 100% !important;
 }
 
-/* Le bouton Streamlit prend toute la zone et adopte ton style */
-form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] button{
-  width: 100% !important;
-  height: 100% !important;
-  padding: 0 !important;
-  min-height: 0 !important;
+/* Scope: ne cible que le container qui contient la grille N2 native */
+.n2-native-card{
+  background:linear-gradient(180deg,#0f1a31,#0b1326);
+  border:1px solid #223355; border-radius:12px;
+  padding:8px 10px; margin:4px 0 6px;
+  box-shadow:0 0 0 1px rgba(36,52,83,.35) inset;
+}
 
-  border-radius: 8px;
-  background: rgba(15,23,42,.88) !important;
-  border: 1px solid rgba(96,165,250,.45) !important;
-  color: #e5e7eb !important;
-  font-weight: 800; font-size: 16px;
-  box-shadow: 0 6px 14px rgba(0,0,0,.30);
+/* Le bouton chevron dans la dernière colonne */
+.n2-native-card button{
+  border-radius:8px;
+  background:rgba(15,23,42,.88);
+  border:1px solid rgba(96,165,250,.45);
+  color:#e5e7eb; font-weight:800; font-size:16px; min-height:28px;
 }
-form[data-testid="stForm"] div[data-testid="stFormSubmitButton"] button:hover{
-  background: rgba(30,41,59,.96) !important;
-  border-color: rgba(125,211,252,.9) !important;
+.n2-native-card button:hover{
+  background:rgba(30,41,59,.96);
+  border-color:rgba(125,211,252,.9);
 }
+
 
 
 
