@@ -197,6 +197,35 @@ button[data-testid="stSidebarCollapseButton"]:focus{ outline:2px solid rgba(125,
 
 
 
+/* Aplatit la section-card rendue par header_level2_grid à l'intérieur de la carte native */
+.n2-native-card .section-card{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;   /* supprime le "wrapper vide" au-dessus */
+}
+
+/* Conserve la respiration du contenu */
+.n2-native-card .n2-grid{ padding: 6px 8px !important; }
+
+/* Chevron : aligné et compact dans la colonne de droite */
+.n2-native-card .stButton{ display:flex; align-items:center; justify-content:flex-end; }
+.n2-native-card .stButton button{
+  border-radius:8px;
+  background:rgba(15,23,42,.88);
+  border:1px solid rgba(96,165,250,.45);
+  color:#e5e7eb; font-weight:800; font-size:16px;
+  min-height:28px; padding:0 .25rem;
+}
+.n2-native-card .stButton button:hover{
+  background:rgba(30,41,59,.96);
+  border-color:rgba(125,211,252,.9);
+}
+
+
+
+
 
 </style>
 """
