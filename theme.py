@@ -228,6 +228,8 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
   opacity:1;
   transform:translateY(0);
 }
+/* Masque l’entête du st.expander (on garde ton bouton chevron) */
+div[data-testid="stExpander"] > details > summary { display:none; }
 
 
 
