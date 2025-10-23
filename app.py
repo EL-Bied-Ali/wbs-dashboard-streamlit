@@ -308,7 +308,7 @@ def header_level2_grid(label, level, m):
     """)
 
 # ---------- Rendu global ----------
-ddef render_section_level2(parent_node: dict):
+def render_section_level2(parent_node: dict):
     label   = parent_node.get("label", "")
     level   = parent_node.get("level", 2)
     metrics = parent_node.get("metrics", {}) or {}
