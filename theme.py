@@ -215,6 +215,13 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 
 
 
+/* Expander 100% invisible (on ne garde que l’animation de hauteur) */
+div[data-testid="stExpander"]{border:0!important;background:transparent!important;box-shadow:none!important;margin:0!important;padding:0!important}
+div[data-testid="stExpander"] > details{border:0!important;margin:0!important;padding:0!important;background:transparent!important}
+div[data-testid="stExpander"] > details > summary{display:none!important;height:0!important;line-height:0!important;padding:0!important;margin:0!important;border:0!important}
+div[data-testid="stExpander"] > details > div[role="region"]{margin:0!important;padding:0!important;border:0!important}
+
+
 
 
 

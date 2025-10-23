@@ -259,9 +259,25 @@ def render_section_level2(parent_node: dict):
             if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
                 st.session_state[key] = not st.session_state[key]
 
-        if st.session_state[key] and parent_node.get("children"):
-            render_detail_table(parent_node)
-            render_barchart(parent_node)
+
+
+
+
+
+        # -- init fermé par défaut
+        if key not in st.session_state:
+            st.session_state[key] = False
+
+        # -- ton chevron (bouton) qui bascule l'état au clic
+        if st.button("▾", key=f"{key}_btn"):
+            st.session_state[key] = not st.session_state[key]
+
+        # -- conteneur animé (st.expander) synchronisé avec l'état
+        with st.expander("", expanded=st.session_state[key]):
+            if parent_node.get("children"):
+                render_detail_table(parent_node)
+                render_barchart(parent_node)
+
 
 
 
