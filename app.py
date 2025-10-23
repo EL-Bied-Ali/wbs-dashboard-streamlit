@@ -263,11 +263,14 @@ def render_section_level2(parent_node: dict):
     with st.container(key=mount_key):
         with st.expander("", expanded=bool(st.session_state.get(key, False))):
             ver = st.session_state[ver_key] % 2
-            st.markdown(f'<div class="n3load v{ver}"></div>', unsafe_allow_html=True)  # ← AJOUT/REMPLACE
+            st.markdown(f'<div class="n3load v{ver}"></div>', unsafe_allow_html=True)
 
             if parent_node.get("children"):
                 render_detail_table(parent_node)
+                st.markdown('<div class="n3chart">', unsafe_allow_html=True)   # 👈 AJOUT
                 render_barchart(parent_node)
+                st.markdown('</div>', unsafe_allow_html=True)                  # 👈 AJOUT
+
 
 
 

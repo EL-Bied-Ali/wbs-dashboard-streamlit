@@ -273,13 +273,6 @@ div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpande
   .mbar-wrap.v .mval{animation:none;opacity:1}
 }
 
-
-
-
-
-
-
-
 /* N3: alternance v0/v1 pour forcer le replay des barres */
 @keyframes n3FillA { from{width:0} to{width:var(--to,0%)} }
 @keyframes n3FillB { from{width:0} to{width:var(--to,0%)} }
@@ -295,6 +288,30 @@ div[data-testid="stExpanderDetails"]:has(.n3load.v1) .mbar-wrap.v .mval{ opacity
 /* Dans le drawer, on laisse l'animation piloter la largeur (pas de transition concurrente) */
 div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 
+
+
+
+
+
+
+
+
+
+
+
+/* ===== N3: animation du graphique ===== */
+@keyframes chartIn {
+  0% {opacity:0; transform:translateY(20px) scale(0.98);}
+  100% {opacity:1; transform:translateY(0) scale(1);}
+}
+
+/* quand le drawer contient .n3load → le graph s'anime */
+div[data-testid="stExpanderDetails"]:has(.n3load) .n3chart {
+  opacity:0;
+  animation:chartIn .7s cubic-bezier(.22,.61,.36,1) forwards;
+  animation-delay:.25s;   /* petit décalage après les barres */
+  will-change:opacity,transform;
+}
 
 
 
