@@ -299,30 +299,36 @@ div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 
 
 
-/* ========= Entrée du frame Plotly quand l’expander s’ouvre ========= */
+/* ========== Anim d’entrée du frame Plotly (à l’ouverture de l’expander) ========== */
 @keyframes n3ChartIn {
   from { opacity: 0; transform: translateY(12px) scale(.985); }
   to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 
-/* On se base sur <details open> (état d’ouverture) + adjacency à .n3chart */
-details[open] .n3chart + .stElementContainer [data-testid="stFullScreenFrame"],
-details[open] .n3chart + .stElementContainer [data-testid="stPlotlyChart"] {
+/* Le frame/chart qui vient juste après l’ElementContainer contenant .n3chart */
+details[open] [data-testid="stExpanderDetails"]
+  .stElementContainer:has(.n3chart) + .stElementContainer
+  [data-testid="stFullScreenFrame"],
+details[open] [data-testid="stExpanderDetails"]
+  .stElementContainer:has(.n3chart) + .stElementContainer
+  [data-testid="stPlotlyChart"]{
   opacity: 0;
   animation: n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
   will-change: opacity, transform;
 }
 
-/* ========= Croissance des barres ========= */
+/* ========== Anim de croissance des barres (SVG) ========== */
 @keyframes n3Grow {
   from { transform: scaleY(0.001); opacity: 0; }
   to   { transform: scaleY(1);     opacity: 1; }
 }
 
-/* Barres (SVG path) du plot juste après .n3chart */
-details[open] .n3chart + .stElementContainer .stPlotlyChart .main-svg .barlayer path,
-details[open] .n3chart + .stElementContainer [data-testid="stFullScreenFrame"] .main-svg .barlayer path {
+/* On anime toute la couche de barres pour plus de fiabilité */
+details[open] [data-testid="stExpanderDetails"]
+  .stElementContainer:has(.n3chart) + .stElementContainer
+  .main-svg .barlayer {
   transform-origin: bottom;
+  transform-box: view-box;   /* crucial pour l’origine sur SVG */
   transform: scaleY(0.001);
   opacity: 0;
   animation: n3Grow .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
@@ -331,15 +337,18 @@ details[open] .n3chart + .stElementContainer [data-testid="stFullScreenFrame"] .
 
 /* Accessibilité */
 @media (prefers-reduced-motion: reduce){
-  details[open] .n3chart + .stElementContainer [data-testid="stFullScreenFrame"],
-  details[open] .n3chart + .stElementContainer [data-testid="stPlotlyChart"],
-  details[open] .n3chart + .stElementContainer .stPlotlyChart .main-svg .barlayer path,
-  details[open] .n3chart + .stElementContainer [data-testid="stFullScreenFrame"] .main-svg .barlayer path {
+  details[open] [data-testid="stExpanderDetails"]
+    .stElementContainer:has(.n3chart) + .stElementContainer
+    [data-testid="stFullScreenFrame"],
+  details[open] [data-testid="stExpanderDetails"]
+    .stElementContainer:has(.n3chart) + .stElementContainer
+    [data-testid="stPlotlyChart"],
+  details[open] [data-testid="stExpanderDetails"]
+    .stElementContainer:has(.n3chart) + .stElementContainer
+    .main-svg .barlayer {
     animation: none !important; opacity: 1; transform: none;
   }
 }
-
-
 
 
 
