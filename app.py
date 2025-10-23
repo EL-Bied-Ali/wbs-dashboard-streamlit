@@ -259,16 +259,13 @@ def render_section_level2(parent_node: dict):
             if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
                 st.session_state[key] = not st.session_state[key]
 
-        # -- panneau N3 : rendu permanent, visibilité animée via CSS .n3-panel/.open
+        # -- panneau N3 animé via st.expander (fiable avec Streamlit)
         is_open = bool(st.session_state.get(key, False))
-        open_cls = "open" if is_open else ""
-        st.markdown(f'<div class="n3-panel {open_cls}">', unsafe_allow_html=True)
+        with st.expander("Détails niveau 3", expanded=is_open):
+            if parent_node.get("children"):
+                render_detail_table(parent_node)
+                render_barchart(parent_node)
 
-        if parent_node.get("children"):
-            render_detail_table(parent_node)
-            render_barchart(parent_node)
-
-        st.markdown('</div>', unsafe_allow_html=True)
 
 
 
