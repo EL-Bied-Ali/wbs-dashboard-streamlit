@@ -210,19 +210,6 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 
 
 
-/* ==== N3: déploiement fluide (aucune autre modif requise) ==== */
-.n3-panel{
-  overflow:hidden;
-  max-height:0;
-  opacity:0;
-  transform:translateY(-6px);
-  transition:max-height .45s ease, opacity .30s ease, transform .30s ease;
-}
-.n3-panel.open{
-  max-height:1800px;   /* large pour contenir ton tableau + graphe */
-  opacity:1;
-  transform:translateY(0);
-}
 
 
 

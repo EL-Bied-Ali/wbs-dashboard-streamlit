@@ -259,16 +259,9 @@ def render_section_level2(parent_node: dict):
             if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
                 st.session_state[key] = not st.session_state[key]
 
-        # panneau N3 toujours présent, on anime l'ouverture/fermeture via CSS
-        open_cls = "open" if st.session_state[key] else ""
-        st.markdown(f'<div class="n3-panel {open_cls}">', unsafe_allow_html=True)
-
-        if parent_node.get("children"):
+        if st.session_state[key] and parent_node.get("children"):
             render_detail_table(parent_node)
             render_barchart(parent_node)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
 
 
 
