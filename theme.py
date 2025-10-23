@@ -274,6 +274,18 @@ div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpande
 
 
 
+
+
+
+/* N3: (re)jouer l’animation des barres à l’ouverture */
+.n3load .mfill{width:0}  /* reset sur ouverture */
+.n3load .mfill.anim{animation:fillX .9s ease forwards}
+.n3load .mbar-wrap.v .mval{opacity:0;animation:valIn .5s ease .35s forwards}
+
+
+
+
+
 </style>
 """
 
