@@ -258,13 +258,16 @@ def render_section_level2(parent_node: dict):
             st.session_state[key] = not st.session_state[key]
             st.session_state[ver_key] += 1  # alterne 0/1 pour remount
 
-    # ---- expander N3 remount à chaque toggle ----
-    mount_key = f"{key}_mount_{st.session_state[ver_key] % 2}"
-    with st.container(key=mount_key):
-        with st.expander("", expanded=bool(st.session_state.get(key, False))):
-            if parent_node.get("children"):
-                render_detail_table(parent_node)
-                render_barchart(parent_node)
+    # ---- expander N3 custom (ouvre/ferme avec classes CSS animées) ----
+    is_open = bool(st.session_state.get(key, False))
+    state_cls = "open" if is_open else "close"
+
+    st.markdown(f'<div class="n3box {state_cls}">', unsafe_allow_html=True)
+    if parent_node.get("children"):
+        render_detail_table(parent_node)
+        render_barchart(parent_node)
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
