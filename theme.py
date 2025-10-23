@@ -118,6 +118,9 @@ table.neo tbody tr:hover{ background:rgba(148,163,184,.06); transition:backgroun
   position:relative; height:10px; background:#1f2a44; border-radius:999px; overflow:hidden; flex-shrink:0;
 }
 .mfill{display:block; height:100%; border-radius:999px; transition:width .35s ease;}
+/* Dans le drawer, on laisse l'animation piloter la largeur (pas de transition concurrente) */
+div[data-testid="stExpanderDetails"] .mfill{ transition:none }
+
 .mfill.blue{background:#3b82f6;} .mfill.green{background:#22c55e;}
 .mval{ font-weight:700; color:var(--text); font-size:0.95rem; min-width:52px; text-align:right; }
 .hero .mbar{width:150px!important; height:12px;} .section-card .mbar{width:130px!important; height:11px;}
@@ -277,10 +280,11 @@ div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpande
 
 
 
-/* N3: (re)jouer l’animation des barres à l’ouverture */
-.n3load .mfill{width:0}  /* reset sur ouverture */
-.n3load .mfill.anim{animation:fillX .9s ease forwards}
-.n3load .mbar-wrap.v .mval{opacity:0;animation:valIn .5s ease .35s forwards}
+/* N3: rejouer l’anim des barres quand le drawer contient .n3load (sentinelle) */
+div[data-testid="stExpanderDetails"]:has(.n3load) .mfill{ width:0 }
+div[data-testid="stExpanderDetails"]:has(.n3load) .mfill.anim{ animation:fillX .9s ease forwards }
+div[data-testid="stExpanderDetails"]:has(.n3load) .mbar-wrap.v .mval{ opacity:0; animation:valIn .5s ease .35s forwards }
+
 
 
 
