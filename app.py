@@ -268,15 +268,13 @@ def render_section_level2(parent_node: dict):
         if key not in st.session_state:
             st.session_state[key] = False
 
-        # -- ton chevron (bouton) qui bascule l'état au clic
-        if st.button("▾", key=f"{key}_btn"):
-            st.session_state[key] = not st.session_state[key]
-
-        # -- conteneur animé (st.expander) synchronisé avec l'état
-        with st.expander("", expanded=st.session_state[key]):
+        # ⚠️ IMPORTANT : ne crée PAS de nouveau bouton ici !
+        # On utilise juste le conteneur animé, piloté par ta clé existante (déjà basculée ailleurs).
+        with st.expander("", expanded=bool(st.session_state.get(key, False))):
             if parent_node.get("children"):
                 render_detail_table(parent_node)
                 render_barchart(parent_node)
+
 
 
 
