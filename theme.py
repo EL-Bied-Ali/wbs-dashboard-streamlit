@@ -223,6 +223,19 @@ div[data-testid="stExpander"] > details > div[role="region"]{margin:0!important;
 
 
 
+/* Adoucit l'expander sans laisser de ligne */
+div[data-testid="stExpander"]{
+  border:0!important; background:transparent!important; box-shadow:none!important; margin:0!important; padding:0!important;
+}
+div[data-testid="stExpander"] > details{
+  border:0!important; background:transparent!important; margin:0!important; padding:0!important;
+}
+div[data-testid="stExpander"] > details > summary{
+  display:none!important; height:0!important; line-height:0!important; padding:0!important; margin:0!important; border:0!important;
+}
+div[data-testid="stExpander"] > details > div[role="region"]{
+  margin:0!important; padding:0!important; border:0!important;
+}
 
 
 
