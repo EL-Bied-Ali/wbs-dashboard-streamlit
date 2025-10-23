@@ -48,77 +48,6 @@ def bar_html(pct: float, color: str, vertical: bool = True) -> str:
     """
 
 
-# ===== UI animée N3 + Graphiques animés =====
-import plotly.graph_objects as go
-
-def n3_collapsible(label: str, key: str) -> bool:
-    """En-tête cliquable + panneau animé (CSS .n3-panel). Retourne True si ouvert."""
-    left, right = st.columns([1, 0.22])
-    with left:
-        st.markdown(
-            f'<div class="n3-header"><div class="n3-title">{label}</div><div></div></div>',
-            unsafe_allow_html=True
-        )
-    with right:
-        opened = st.toggle("Détails", key=f"toggle_{key}")
-        st.markdown(
-            f'<div class="n3-toggle" aria-pressed={"true" if opened else "false"}>'
-            f'<span class="chev">▶</span><span>{"Ouvert" if opened else "Fermé"}</span></div>',
-            unsafe_allow_html=True
-        )
-    st.markdown(f'<div id="panel_{key}" class="n3-panel {"open" if opened else ""}">', unsafe_allow_html=True)
-    return opened
-
-def n3_collapsible_end():
-    st.markdown("</div>", unsafe_allow_html=True)
-
-def animated_bar_chart(x_labels, y1, y2, name1="Schedule %", name2="Earned %", title=""):
-    """Animation simple: barres qui montent progressivement jusqu’à leur valeur."""
-    import numpy as np
-    x = list(x_labels)
-    y1t, y2t = np.array(y1, float), np.array(y2, float)
-    steps = 24
-    frames = []
-    for i in range(1, steps + 1):
-        f1 = (y1t * i / steps).tolist()
-        f2 = (y2t * i / steps).tolist()
-        frames.append(go.Frame(data=[
-            go.Bar(x=x, y=f1, name=name1, offsetgroup="g1"),
-            go.Bar(x=x, y=f2, name=name2, offsetgroup="g2")
-        ], name=str(i)))
-
-    fig = go.Figure(
-        data=[
-            go.Bar(x=x, y=[0]*len(x), name=name1, offsetgroup="g1",
-                   marker=dict(color="#3b82f6"), hovertemplate=f"{name1}: %{{y:.2f}}%<extra>%{{x}}</extra>"),
-            go.Bar(x=x, y=[0]*len(x), name=name2, offsetgroup="g2",
-                   marker=dict(color="#22c55e"), hovertemplate=f"{name2}: %{{y:.2f}}%<extra>%{{x}}</extra>")
-        ],
-        frames=frames,
-        layout=go.Layout(
-            barmode="group", bargroupgap=0.18, bargap=0.26,
-            height=280, margin=dict(l=20, r=20, t=8, b=60),
-            plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-            legend=dict(orientation="h", yanchor="bottom", y=-0.32, xanchor="center", x=0.5,
-                        itemclick=False, itemdoubleclick=False, font=dict(size=12, color="#cbd5e1")),
-            xaxis=dict(title="", showgrid=False, tickfont=dict(size=13, color="#e5e7eb"), zeroline=False),
-            yaxis=dict(title="", showgrid=True, gridcolor="rgba(42,59,98,.55)", zeroline=False,
-                       tickfont=dict(size=12, color="#cbd5e1"), range=[0, 100]),
-            updatemenus=[{
-                "type": "buttons",
-                "buttons": [{
-                    "label": "▶ Play",
-                    "method": "animate",
-                    "args": [None, {"frame": {"duration": 40, "redraw": True},
-                                    "transition": {"duration": 200},
-                                    "fromcurrent": True}]
-                }],
-                "x": 0, "y": 1.12, "xanchor": "left", "yanchor": "top", "showactive": False
-            }],
-            transition={"duration": 250}
-        )
-    )
-    st.plotly_chart(fig, use_container_width=True)
 
 
 
@@ -313,33 +242,26 @@ def render_section_level2(parent_node: dict):
     level   = parent_node.get("level", 2)
     metrics = parent_node.get("metrics", {}) or {}
 
-    # wrapper visuel (sentinel pour le cadre N2)
+    key = f"n2_open::{label}_{level}".replace(" ", "_")
+    if key not in st.session_state:
+        st.session_state[key] = False
+
+    # --- wrapper logique ---
     with st.container():
+        # Sentinel au niveau du container -> le wrapper couvre TOUT (cols + bouton)
         st.markdown('<span class="n2-block-sentinel"></span>', unsafe_allow_html=True)
 
-        # En-tête N2
-        st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
+        left, right = st.columns([0.985, 0.015], gap="small")
+        with left:
+            st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
+        with right:
+            chevron = "▾" if st.session_state[key] else "▸"
+            if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
+                st.session_state[key] = not st.session_state[key]
 
-        # Dépliage animé N3
-        opened = n3_collapsible(f"{label} — Détails N3", key=f"{label}_{level}".replace(" ", "_"))
-
-        if opened and parent_node.get("children"):
-            # Tableau détaillé
+        if st.session_state[key] and parent_node.get("children"):
             render_detail_table(parent_node)
-
-            # Préparer séries pour le graphique animé
-            xs, sched, earn = [], [], []
-            for ch in parent_node.get("children", []) or []:
-                xs.append(ch.get("label",""))
-                m = ch.get("metrics", {}) or {}
-                sched.append(_safe_float(m.get("schedule", 0)))
-                earn.append(_safe_float(m.get("earned", m.get("units", 0))))
-
-            if xs:
-                animated_bar_chart(xs, sched, earn, name1="Schedule %", name2="Earned %", title="Avancement")
-
-        n3_collapsible_end()
-
+            render_barchart(parent_node)
 
 
 
