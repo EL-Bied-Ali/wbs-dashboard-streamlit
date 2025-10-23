@@ -230,7 +230,6 @@ div[data-testid="stExpander"] > details > summary{
 div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ display:none!important }
 
 /* --- ANIMATION FLUIDE À CHAQUE OUVERTURE/FERMETURE --- */
-/* On combine max-height (pour la place) + transform (garantit l’anim à chaque toggle) */
 div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
   overflow:hidden;
   max-height:0;                 /* fermé */
@@ -244,21 +243,22 @@ div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
   will-change: max-height, opacity, transform;
 }
 div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
-  max-height:2000px;            /* ouvert (suffisant pour table + graph) */
+  max-height:2000px;            /* ouvert */
   opacity:1;
   transform:scaleY(1) translateY(0);
   transition-timing-function: cubic-bezier(.22,.61,.36,1);
 }
 
-/* --- Effet “draw” des lignes : se réarme à chaque ouverture --- */
+/* --- Effet “draw” à l’ouverture + transition douce à la fermeture --- */
 @keyframes rowIn { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
 
-/* Quand FERMÉ: on remet les lignes en état initial (prêt pour la prochaine ouverture) */
-div[data-testid="stExpander"] > details:not([open]) .table-card table.neo tbody tr{
-  opacity:0; transform:translateY(6px); animation:none!important;
+/* Les lignes ont TOUJOURS une transition (sert pour la fermeture) */
+.table-card table.neo tbody tr{
+  transition: opacity .28s ease, transform .28s ease;
+  will-change: opacity, transform;
 }
 
-/* Quand OUVERT: on joue l’animation en cascade */
+/* OUVERT : “draw” en cascade */
 div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr{
   animation:rowIn .38s ease forwards;
 }
@@ -271,13 +271,10 @@ div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth
 div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(7){ animation-delay:.28s }
 div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(8){ animation-delay:.32s }
 
-
-div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
-  will-change: max-height, opacity, transform;
-}
-
-div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
-  transition-timing-function: cubic-bezier(.22,.61,.36,1); /* easing un peu plus “haut de gamme” */
+/* FERMÉ : fade/slide avec la transition (pas de coupure nette) */
+div[data-testid="stExpander"] > details:not([open]) .table-card table.neo tbody tr{
+  opacity:0; transform:translateY(6px);
+  animation: none;
 }
 
 
