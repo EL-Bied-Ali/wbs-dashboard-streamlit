@@ -299,30 +299,44 @@ div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 
 
 
-/* ===== N3: animation du graphique (cible le container Plotly du bloc suivant) ===== */
-@keyframes chartIn {
-  from { opacity:0; transform:translateY(14px) scale(.985); }
-  to   { opacity:1; transform:translateY(0)   scale(1); }
+/* ==== Animation entrée du graphe N3 (adjacent direct après .n3chart) ==== */
+@keyframes n3ChartIn {
+  from { opacity: 0; transform: translateY(12px) scale(.985); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 
-/* On prend l'ElementContainer qui CONTIENT .n3chart, puis on cible
-   tous les ElementContainer suivants (~) et on anime le Plotly dedans */
+/* Expander ouvert ET présence du marqueur N3 */
 div[data-testid="stExpanderDetails"]:has(.n3load)
-  .stElementContainer:has(.n3chart) ~ .stElementContainer [data-testid="stPlotlyChart"],
+  /* le container qui contient .n3chart */
+  .stElementContainer:has(.n3chart)
+  /* le container immédiatement suivant (celui du Plotly) */
+  + .stElementContainer
+  /* on anime le frame du graphe */
+  [data-testid="stFullScreenFrame"] {
+    opacity: 0;
+    animation: n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
+    will-change: opacity, transform;
+}
+
+/* fallback : anime aussi si on cible directement le wrapper Plotly */
 div[data-testid="stExpanderDetails"]:has(.n3load)
-  .stElementContainer:has(.n3chart) ~ .stElementContainer [data-testid="stFullScreenFrame"]{
-  opacity:0;
-  animation: chartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
-  will-change: opacity, transform;
+  .stElementContainer:has(.n3chart)
+  + .stElementContainer
+  [data-testid="stPlotlyChart"] {
+    opacity: 0;
+    animation: n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
+    will-change: opacity, transform;
 }
 
 /* Accessibilité */
 @media (prefers-reduced-motion: reduce){
   div[data-testid="stExpanderDetails"]:has(.n3load)
-    .stElementContainer:has(.n3chart) ~ .stElementContainer [data-testid="stPlotlyChart"],
+    .stElementContainer:has(.n3chart) + .stElementContainer
+    [data-testid="stFullScreenFrame"],
   div[data-testid="stExpanderDetails"]:has(.n3load)
-    .stElementContainer:has(.n3chart) ~ .stElementContainer [data-testid="stFullScreenFrame"]{
-    animation: none; opacity:1; transform:none;
+    .stElementContainer:has(.n3chart) + .stElementContainer
+    [data-testid="stPlotlyChart"] {
+      animation: none; opacity: 1; transform: none;
   }
 }
 
