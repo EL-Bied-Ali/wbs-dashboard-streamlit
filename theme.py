@@ -229,8 +229,6 @@ div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ displ
 
 
 
-
-
 /* --- Animations robustes (rejouent à CHAQUE toggle) --- */
 @keyframes n3Open {
   0%   { max-height:0;      opacity:0;  transform:scaleY(.98) translateY(-6px) }
@@ -241,15 +239,23 @@ div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ displ
   100% { max-height:0;      opacity:0;  transform:scaleY(.98) translateY(-6px) }
 }
 
-/* Wrapper de contenu de l’expander — pas de transition ici, uniquement des keyframes */
+/* Baseline: aucune transition/animation accidentelle sur le wrapper */
 div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
   overflow:hidden;
-  animation: n3Close .45s ease both;   /* joue à la FERMETURE */
   transform-origin: top;
+  animation: none !important;     /* on neutralise toute anim résiduelle */
+  transition: none !important;    /* idem pour les transitions */
   will-change: max-height, opacity, transform;
 }
+
+/* OUVERT -> force l’animation d’ouverture (rejoue à chaque bascule) */
 div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
-  animation: n3Open .55s cubic-bezier(.22,.61,.36,1) both;  /* joue à l’OUVERTURE */
+  animation: n3Open .60s cubic-bezier(.22,.61,.36,1) both !important;
+}
+
+/* FERMÉ -> force l’animation de fermeture */
+div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpanderDetails"]{
+  animation: n3Close .45s ease both !important;
 }
 
 /* --- Effet “draw” à l’ouverture + transition douce à la fermeture --- */
@@ -279,7 +285,6 @@ div[data-testid="stExpander"] > details:not([open]) .table-card table.neo tbody 
   opacity:0; transform:translateY(6px);
   animation:none;
 }
-
 
 
 
