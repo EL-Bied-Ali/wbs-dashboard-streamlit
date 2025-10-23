@@ -299,54 +299,80 @@ div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 
 
 
-/* ========== Anim d’entrée du frame Plotly (à l’ouverture de l’expander) ========== */
-@keyframes n3ChartIn {
-  from { opacity: 0; transform: translateY(12px) scale(.985); }
-  to   { opacity: 1; transform: translateY(0)    scale(1); }
-}
+/* ====== keyframes doublés pour rejouer (A/B) ====== */
+@keyframes n3ChartInA { from{opacity:0;transform:translateY(12px) scale(.985)} to{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes n3ChartInB { from{opacity:0;transform:translateY(12px) scale(.985)} to{opacity:1;transform:translateY(0) scale(1)} }
 
-/* Le frame/chart qui vient juste après l’ElementContainer contenant .n3chart */
+@keyframes n3GrowA { from{transform:scaleY(0.001);opacity:0} to{transform:scaleY(1);opacity:1} }
+@keyframes n3GrowB { from{transform:scaleY(0.001);opacity:0} to{transform:scaleY(1);opacity:1} }
+
+/* ========== ENTREE DU FRAME PLOTLY ========== */
+/* v0 -> utilise animation *A* */
 details[open] [data-testid="stExpanderDetails"]
-  .stElementContainer:has(.n3chart) + .stElementContainer
+  .stElementContainer:has(.n3load.v0) ~ .stElementContainer
   [data-testid="stFullScreenFrame"],
 details[open] [data-testid="stExpanderDetails"]
-  .stElementContainer:has(.n3chart) + .stElementContainer
+  .stElementContainer:has(.n3load.v0) ~ .stElementContainer
   [data-testid="stPlotlyChart"]{
-  opacity: 0;
-  animation: n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
+  opacity:0;
+  animation: n3ChartInA .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
   will-change: opacity, transform;
 }
 
-/* ========== Anim de croissance des barres (SVG) ========== */
-@keyframes n3Grow {
-  from { transform: scaleY(0.001); opacity: 0; }
-  to   { transform: scaleY(1);     opacity: 1; }
+/* v1 -> utilise animation *B* */
+details[open] [data-testid="stExpanderDetails"]
+  .stElementContainer:has(.n3load.v1) ~ .stElementContainer
+  [data-testid="stFullScreenFrame"],
+details[open] [data-testid="stExpanderDetails"]
+  .stElementContainer:has(.n3load.v1) ~ .stElementContainer
+  [data-testid="stPlotlyChart"]{
+  opacity:0;
+  animation: n3ChartInB .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
+  will-change: opacity, transform;
 }
 
-/* On anime toute la couche de barres pour plus de fiabilité */
+/* ========== CROISSANCE DES BARRES ========== */
+/* v0 -> *A* */
 details[open] [data-testid="stExpanderDetails"]
-  .stElementContainer:has(.n3chart) + .stElementContainer
-  .main-svg .barlayer {
+  .stElementContainer:has(.n3load.v0) ~ .stElementContainer
+  .main-svg .barlayer{
   transform-origin: bottom;
-  transform-box: view-box;   /* crucial pour l’origine sur SVG */
+  transform-box: view-box;
   transform: scaleY(0.001);
   opacity: 0;
-  animation: n3Grow .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
+  animation: n3GrowA .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
+  will-change: transform, opacity;
+}
+/* v1 -> *B* */
+details[open] [data-testid="stExpanderDetails"]
+  .stElementContainer:has(.n3load.v1) ~ .stElementContainer
+  .main-svg .barlayer{
+  transform-origin: bottom;
+  transform-box: view-box;
+  transform: scaleY(0.001);
+  opacity: 0;
+  animation: n3GrowB .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
   will-change: transform, opacity;
 }
 
 /* Accessibilité */
 @media (prefers-reduced-motion: reduce){
   details[open] [data-testid="stExpanderDetails"]
-    .stElementContainer:has(.n3chart) + .stElementContainer
+    .stElementContainer:has(.n3load.v0), 
+  details[open] [data-testid="stExpanderDetails"]
+    .stElementContainer:has(.n3load.v1){
+    /* neutralise toutes les animations ciblées ci-dessus */
+  }
+  details[open] [data-testid="stExpanderDetails"]
+    .stElementContainer:has(.n3load) ~ .stElementContainer
     [data-testid="stFullScreenFrame"],
   details[open] [data-testid="stExpanderDetails"]
-    .stElementContainer:has(.n3chart) + .stElementContainer
+    .stElementContainer:has(.n3load) ~ .stElementContainer
     [data-testid="stPlotlyChart"],
   details[open] [data-testid="stExpanderDetails"]
-    .stElementContainer:has(.n3chart) + .stElementContainer
-    .main-svg .barlayer {
-    animation: none !important; opacity: 1; transform: none;
+    .stElementContainer:has(.n3load) ~ .stElementContainer
+    .main-svg .barlayer{
+    animation:none !important; opacity:1 !important; transform:none !important;
   }
 }
 
