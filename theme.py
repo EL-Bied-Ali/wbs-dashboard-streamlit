@@ -229,46 +229,25 @@ div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ displ
 
 
 
-/* ================= N3: animations rejouées à chaque toggle ================= */
-@keyframes n3OpenA{
+/* =============== N3 animation simple (rejoue car remount) =============== */
+@keyframes n3Open{
   0%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
   100%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
 }
-@keyframes n3CloseA{
+@keyframes n3Close{
   0%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
   100%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
 }
-@keyframes n3OpenB{
-  0%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
-  100%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
-}
-@keyframes n3CloseB{
-  0%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
-  100%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
-}
-
-/* Baseline neutre pour l’expander N3 */
 div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
-  overflow:hidden;
-  transform-origin:top;
-  animation:none!important;
-  transition:none!important;
-  will-change:max-height,opacity,transform;
+  overflow:hidden; transform-origin:top; will-change:max-height,opacity,transform;
+}
+div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
+  animation:n3Open .60s cubic-bezier(.22,.61,.36,1) both;
+}
+div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpanderDetails"]{
+  animation:n3Close .45s ease both;
 }
 
-/* Alternance odd/even pour FORCER le replay à chaque clic */
-.n3v-odd div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
-  animation:n3OpenA .60s cubic-bezier(.22,.61,.36,1) both!important;
-}
-.n3v-odd div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpanderDetails"]{
-  animation:n3CloseA .45s ease both!important;
-}
-.n3v-even div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
-  animation:n3OpenB .60s cubic-bezier(.22,.61,.36,1) both!important;
-}
-.n3v-even div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpanderDetails"]{
-  animation:n3CloseB .45s ease both!important;
-}
 
 
 
