@@ -258,6 +258,15 @@ div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetai
 .table-card table.neo tbody tr:nth-child(7){ animation-delay:.28s }
 .table-card table.neo tbody tr:nth-child(8){ animation-delay:.32s }
 
+div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
+  will-change: max-height, opacity, transform;
+}
+
+div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
+  transition-timing-function: cubic-bezier(.22,.61,.36,1); /* easing un peu plus “haut de gamme” */
+}
+
+
 
 
 

@@ -261,13 +261,6 @@ def render_section_level2(parent_node: dict):
 
 
 
-
-
-
-        # Fermé par défaut si la clé n'existe pas (ne crée pas de nouveau bouton ici)
-        if key not in st.session_state:
-            st.session_state[key] = False
-
         # Conteneur animé natif, piloté par ta clé existante
         with st.expander("", expanded=bool(st.session_state.get(key, False))):
             if parent_node.get("children"):
