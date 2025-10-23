@@ -210,13 +210,6 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 
 
 
-
-
-
-
-
-
-
 /* Expander invisible (pas de ligne grise) */
 div[data-testid="stExpander"],
 div[data-testid="stExpander"] > details,
@@ -229,38 +222,48 @@ div[data-testid="stExpander"] > details > summary{
 }
 div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ display:none!important }
 
-/* --- ANIMATION FLUIDE À CHAQUE OUVERTURE/FERMETURE --- */
+
+
+
+
+
+
+
+
+
+/* --- Animations robustes (rejouent à CHAQUE toggle) --- */
+@keyframes n3Open {
+  0%   { max-height:0;      opacity:0;  transform:scaleY(.98) translateY(-6px) }
+  100% { max-height:2000px; opacity:1;  transform:scaleY(1)   translateY(0)    }
+}
+@keyframes n3Close {
+  0%   { max-height:2000px; opacity:1;  transform:scaleY(1)   translateY(0)    }
+  100% { max-height:0;      opacity:0;  transform:scaleY(.98) translateY(-6px) }
+}
+
+/* Wrapper de contenu de l’expander — pas de transition ici, uniquement des keyframes */
 div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
   overflow:hidden;
-  max-height:0;                 /* fermé */
-  opacity:0;
-  transform:scaleY(.98) translateY(-6px);
+  animation: n3Close .45s ease both;   /* joue à la FERMETURE */
   transform-origin: top;
-  transition:
-    max-height .55s cubic-bezier(.25,.8,.25,1),
-    opacity    .35s ease,
-    transform  .35s ease;
   will-change: max-height, opacity, transform;
 }
 div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
-  max-height:2000px;            /* ouvert */
-  opacity:1;
-  transform:scaleY(1) translateY(0);
-  transition-timing-function: cubic-bezier(.22,.61,.36,1);
+  animation: n3Open .55s cubic-bezier(.22,.61,.36,1) both;  /* joue à l’OUVERTURE */
 }
 
 /* --- Effet “draw” à l’ouverture + transition douce à la fermeture --- */
 @keyframes rowIn { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
 
-/* Les lignes ont TOUJOURS une transition (sert pour la fermeture) */
+/* Base: petite transition utile pour la fermeture */
 .table-card table.neo tbody tr{
   transition: opacity .28s ease, transform .28s ease;
   will-change: opacity, transform;
 }
 
-/* OUVERT : “draw” en cascade */
+/* OUVERT : “draw” en cascade (rejoue à chaque ouverture) */
 div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr{
-  animation:rowIn .38s ease forwards;
+  animation: rowIn .38s ease forwards;
 }
 div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(1){ animation-delay:.04s }
 div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(2){ animation-delay:.08s }
@@ -271,10 +274,10 @@ div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth
 div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(7){ animation-delay:.28s }
 div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(8){ animation-delay:.32s }
 
-/* FERMÉ : fade/slide avec la transition (pas de coupure nette) */
+/* FERMÉ : fade/slide (pas de coupure nette) */
 div[data-testid="stExpander"] > details:not([open]) .table-card table.neo tbody tr{
   opacity:0; transform:translateY(6px);
-  animation: none;
+  animation:none;
 }
 
 
