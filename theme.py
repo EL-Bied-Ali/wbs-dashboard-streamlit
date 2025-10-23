@@ -222,14 +222,6 @@ div[data-testid="stExpander"] > details > summary{
 }
 div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ display:none!important }
 
-
-
-
-
-
-
-
-
 /* ================= N3: animations (rejouent grâce au remount) ================= */
 @keyframes n3Open{
   0%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
@@ -249,6 +241,34 @@ div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpande
   animation:n3Close .45s ease both!important;
 }
 
+
+
+
+
+/* ===== Loaders Schedule/Earned (animation au chargement) ===== */
+.mbar{position:relative;display:block;width:100%;height:8px;border-radius:6px;background:rgba(148,163,184,.18);overflow:hidden}
+.mfill{display:block;height:100%;width:0;will-change:width}
+.mfill.anim{animation:fillX .9s ease forwards;animation-delay:var(--delay,0ms)}
+.mbar-wrap.v .mval{opacity:0;animation:valIn .5s ease forwards;animation-delay:calc(var(--delay,0ms) + .35s)}
+
+@keyframes fillX{
+  from{width:0}
+  to{width:var(--to,0%)}
+}
+@keyframes valIn{
+  from{opacity:0;transform:translateY(2px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Légers décalages pour un rendu plus fluide */
+.n2-grid .mbar-wrap.v{--delay:90ms}
+.table-card .mbar-wrap.v{--delay:40ms}
+
+/* Respecte l’accessibilité */
+@media (prefers-reduced-motion: reduce){
+  .mfill.anim{animation:none;width:var(--to,0%)}
+  .mbar-wrap.v .mval{animation:none;opacity:1}
+}
 
 
 
