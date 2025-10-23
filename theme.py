@@ -207,18 +207,6 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 </style>
 """
 
