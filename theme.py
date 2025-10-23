@@ -220,49 +220,43 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 /* Expander invisible (pas de ligne grise) */
 div[data-testid="stExpander"],
 div[data-testid="stExpander"] > details,
-div[data-testid="stExpander"] > details > summary { border:0!important; background:transparent!important; box-shadow:none!important; margin:0!important; padding:0!important }
-div[data-testid="stExpander"] > details > summary { display:none!important; height:0!important; line-height:0!important }
+div[data-testid="stExpander"] > details > summary{
+  border:0!important; background:transparent!important; box-shadow:none!important;
+  margin:0!important; padding:0!important;
+}
+div[data-testid="stExpander"] > details > summary{
+  display:none!important; height:0!important; line-height:0!important;
+}
 div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ display:none!important }
 
-/* --- Animations FLUIDES basées sur keyframes (robuste au rerun) --- */
-@keyframes n3Open {
-  0%   { max-height:0;      opacity:0; transform:translateY(-8px) }
-  100% { max-height:1800px; opacity:1; transform:translateY(0)    }
-}
-@keyframes n3Close {
-  0%   { max-height:1800px; opacity:1; transform:translateY(0)    }
-  100% { max-height:0;      opacity:0; transform:translateY(-8px) }
-}
-
-/* état par défaut (fermé) */
-div[data-testid="stExpander"] > details > div[role="region"]{
+/* <<< CIBLE CORRECTE : le vrai wrapper de contenu >>> */
+div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
   overflow:hidden;
-  animation: n3Close .45s ease both;
+  max-height:0;             /* fermé */
+  opacity:0;
+  transform:translateY(-6px);
+  transition:max-height .55s cubic-bezier(.25,.8,.25,1),
+             opacity .35s ease, transform .35s ease;
+}
+div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
+  max-height:2000px;        /* ouvert (assez grand pour ton tableau + graphe) */
+  opacity:1;
+  transform:translateY(0);
 }
 
-/* ouverture fluide quand [open] bascule à True */
-div[data-testid="stExpander"] > details[open] > div[role="region"]{
-  animation: n3Open .55s cubic-bezier(.25,.8,.25,1) both;
-}
-
-/* Effet “draw” perceptible: apparition en cascade des lignes du tableau */
+/* Petit effet “draw” en cascade sur les lignes du tableau */
 @keyframes rowIn { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
 .table-card table.neo tbody tr{
   opacity:0; transform:translateY(6px); animation:rowIn .38s ease forwards;
 }
-/* décalage progressif (stagger) */
-.table-card table.neo tbody tr:nth-child(1){ animation-delay:.03s }
-.table-card table.neo tbody tr:nth-child(2){ animation-delay:.06s }
-.table-card table.neo tbody tr:nth-child(3){ animation-delay:.09s }
-.table-card table.neo tbody tr:nth-child(4){ animation-delay:.12s }
-.table-card table.neo tbody tr:nth-child(5){ animation-delay:.15s }
-.table-card table.neo tbody tr:nth-child(6){ animation-delay:.18s }
-.table-card table.neo tbody tr:nth-child(7){ animation-delay:.21s }
-.table-card table.neo tbody tr:nth-child(8){ animation-delay:.24s }
-/* ajuste si tu as plus de lignes */
-
-/* Nettoyage marges parasites */
-div[data-testid="stExpander"] > details > div[role="region"] [data-testid="stMarkdownContainer"] > p{ margin:0!important }
+.table-card table.neo tbody tr:nth-child(1){ animation-delay:.04s }
+.table-card table.neo tbody tr:nth-child(2){ animation-delay:.08s }
+.table-card table.neo tbody tr:nth-child(3){ animation-delay:.12s }
+.table-card table.neo tbody tr:nth-child(4){ animation-delay:.16s }
+.table-card table.neo tbody tr:nth-child(5){ animation-delay:.20s }
+.table-card table.neo tbody tr:nth-child(6){ animation-delay:.24s }
+.table-card table.neo tbody tr:nth-child(7){ animation-delay:.28s }
+.table-card table.neo tbody tr:nth-child(8){ animation-delay:.32s }
 
 
 
