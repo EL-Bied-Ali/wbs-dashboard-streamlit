@@ -244,41 +244,40 @@ def render_section_level2(parent_node: dict):
     metrics = parent_node.get("metrics", {}) or {}
     has_children = bool(parent_node.get("children"))
 
-    # ---- header N2 + bouton chevron (toggle) ----
     key = f"n2_open::{label}_{level}".replace(" ", "_")
     ver_key = f"{key}_ver"
     if key not in st.session_state: st.session_state[key] = False
     if ver_key not in st.session_state: st.session_state[ver_key] = 0
 
     st.markdown('<span class="n2-block-sentinel"></span>', unsafe_allow_html=True)
-    if has_children:
-        left, right = st.columns([0.985, 0.015], gap="small")
-    else:
-        left = st.container()
-        right = None
+    left, right = st.columns([0.985, 0.015], gap="small")
 
     with left:
         st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
 
-    # Bouton uniquement si un N3 existe
-    if has_children and right:
-        chevron = "▾" if st.session_state[key] else "▸"
-        if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
-            st.session_state[key] = not st.session_state[key]
-            st.session_state[ver_key] += 1  # alterne 0/1 pour remount
+    # 👇 Bouton seulement s’il y a des enfants
+    with right:
+        if has_children:
+            chevron = "▾" if st.session_state[key] else "▸"
+            if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
+                st.session_state[key] = not st.session_state[key]
+                st.session_state[ver_key] += 1
+        else:
+            # espace invisible (évite le décalage vertical)
+            st.markdown("<div style='height:1.2rem'></div>", unsafe_allow_html=True)
 
-    # ---- expander N3 remount à chaque toggle ----
+    # Expander seulement si N3 existe
     if has_children:
         mount_key = f"{key}_mount_{st.session_state[ver_key] % 2}"
         with st.container(key=mount_key):
             with st.expander("", expanded=bool(st.session_state.get(key, False))):
                 ver = st.session_state[ver_key] % 2
                 st.markdown(f'<div class="n3load v{ver}"></div>', unsafe_allow_html=True)
-
                 render_detail_table(parent_node)
                 st.markdown('<div class="n3chart">', unsafe_allow_html=True)
                 render_barchart(parent_node)
                 st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
