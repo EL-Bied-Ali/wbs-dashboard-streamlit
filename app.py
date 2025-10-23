@@ -264,17 +264,16 @@ def render_section_level2(parent_node: dict):
 
 
 
-        # --- panneau N3 fluide contrôlé par CSS ---
-        is_open = bool(st.session_state.get(key, False))
-        open_cls = "open" if is_open else ""
+        # Fermé par défaut si la clé n'existe pas (ne crée pas de nouveau bouton ici)
+        if key not in st.session_state:
+            st.session_state[key] = False
 
-        # conteneur visible tout le temps, mais animé via CSS
-        with st.container():
-            st.markdown(f'<div class="n3-panel {open_cls}">', unsafe_allow_html=True)
+        # Conteneur animé natif, piloté par ta clé existante
+        with st.expander("", expanded=bool(st.session_state.get(key, False))):
             if parent_node.get("children"):
                 render_detail_table(parent_node)
                 render_barchart(parent_node)
-            st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 

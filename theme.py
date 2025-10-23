@@ -215,21 +215,37 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 
 
 
-/* === N3 déroulement fluide (sans expander, sans ligne grise) === */
-.n3-panel {
-  overflow: hidden;
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: max-height 0.55s cubic-bezier(0.25, 0.8, 0.25, 1),
-              opacity 0.4s ease, transform 0.4s ease;
+
+
+/* Expander totalement invisible (aucune ligne, aucun padding/margin) */
+div[data-testid="stExpander"],
+div[data-testid="stExpander"] > details,
+div[data-testid="stExpander"] > details > summary,
+div[data-testid="stExpander"] > details > summary *{
+  border:0!important; background:transparent!important; box-shadow:none!important;
+  margin:0!important; padding:0!important;
 }
-.n3-panel.open {
-  max-height: 1800px; /* assez grand pour table + graph */
-  opacity: 1;
-  transform: translateY(0);
+div[data-testid="stExpander"] > details > summary{ display:none!important; height:0!important; line-height:0!important }
+div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ display:none!important }
+
+/* Animation FLUIDE du contenu interne (le “draw”) */
+div[data-testid="stExpander"] > details > div[role="region"]{
+  overflow:hidden;
+  max-height:0;           /* fermé */
+  opacity:0;
+  transform:translateY(-6px);
+  transition:max-height .55s cubic-bezier(.25,.8,.25,1),
+             opacity .35s ease, transform .35s ease;
+}
+div[data-testid="stExpander"] > details[open] > div[role="region"]{
+  max-height:1800px;      /* ouvert (assez grand pour table + graph) */
+  opacity:1;
+  transform:translateY(0);
 }
 
+/* Écrase toute marge parente potentielle qui pourrait dessiner une “ligne grise” */
+div[data-testid="stExpander"] ~ div[data-testid="stMarkdownContainer"] > p { margin:0!important }
+div[data-testid="stExpander"] { outline:0!important }
 
 
 
