@@ -299,44 +299,43 @@ div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 
 
 
-/* ==== Animation entrée du graphe N3 (adjacent direct après .n3chart) ==== */
+/* ========= Entrée du frame Plotly quand l’expander s’ouvre ========= */
 @keyframes n3ChartIn {
   from { opacity: 0; transform: translateY(12px) scale(.985); }
   to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 
-/* Expander ouvert ET présence du marqueur N3 */
-div[data-testid="stExpanderDetails"]:has(.n3load)
-  /* le container qui contient .n3chart */
-  .stElementContainer:has(.n3chart)
-  /* le container immédiatement suivant (celui du Plotly) */
-  + .stElementContainer
-  /* on anime le frame du graphe */
-  [data-testid="stFullScreenFrame"] {
-    opacity: 0;
-    animation: n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
-    will-change: opacity, transform;
+/* On se base sur <details open> (état d’ouverture) + adjacency à .n3chart */
+details[open] .n3chart + .stElementContainer [data-testid="stFullScreenFrame"],
+details[open] .n3chart + .stElementContainer [data-testid="stPlotlyChart"] {
+  opacity: 0;
+  animation: n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
+  will-change: opacity, transform;
 }
 
-/* fallback : anime aussi si on cible directement le wrapper Plotly */
-div[data-testid="stExpanderDetails"]:has(.n3load)
-  .stElementContainer:has(.n3chart)
-  + .stElementContainer
-  [data-testid="stPlotlyChart"] {
-    opacity: 0;
-    animation: n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
-    will-change: opacity, transform;
+/* ========= Croissance des barres ========= */
+@keyframes n3Grow {
+  from { transform: scaleY(0.001); opacity: 0; }
+  to   { transform: scaleY(1);     opacity: 1; }
+}
+
+/* Barres (SVG path) du plot juste après .n3chart */
+details[open] .n3chart + .stElementContainer .stPlotlyChart .main-svg .barlayer path,
+details[open] .n3chart + .stElementContainer [data-testid="stFullScreenFrame"] .main-svg .barlayer path {
+  transform-origin: bottom;
+  transform: scaleY(0.001);
+  opacity: 0;
+  animation: n3Grow .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
+  will-change: transform, opacity;
 }
 
 /* Accessibilité */
 @media (prefers-reduced-motion: reduce){
-  div[data-testid="stExpanderDetails"]:has(.n3load)
-    .stElementContainer:has(.n3chart) + .stElementContainer
-    [data-testid="stFullScreenFrame"],
-  div[data-testid="stExpanderDetails"]:has(.n3load)
-    .stElementContainer:has(.n3chart) + .stElementContainer
-    [data-testid="stPlotlyChart"] {
-      animation: none; opacity: 1; transform: none;
+  details[open] .n3chart + .stElementContainer [data-testid="stFullScreenFrame"],
+  details[open] .n3chart + .stElementContainer [data-testid="stPlotlyChart"],
+  details[open] .n3chart + .stElementContainer .stPlotlyChart .main-svg .barlayer path,
+  details[open] .n3chart + .stElementContainer [data-testid="stFullScreenFrame"] .main-svg .barlayer path {
+    animation: none !important; opacity: 1; transform: none;
   }
 }
 
