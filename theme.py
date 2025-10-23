@@ -229,34 +229,48 @@ div[data-testid="stExpander"] > details > summary{
 }
 div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ display:none!important }
 
-/* <<< CIBLE CORRECTE : le vrai wrapper de contenu >>> */
+/* --- ANIMATION FLUIDE À CHAQUE OUVERTURE/FERMETURE --- */
+/* On combine max-height (pour la place) + transform (garantit l’anim à chaque toggle) */
 div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
   overflow:hidden;
-  max-height:0;             /* fermé */
+  max-height:0;                 /* fermé */
   opacity:0;
-  transform:translateY(-6px);
-  transition:max-height .55s cubic-bezier(.25,.8,.25,1),
-             opacity .35s ease, transform .35s ease;
+  transform:scaleY(.98) translateY(-6px);
+  transform-origin: top;
+  transition:
+    max-height .55s cubic-bezier(.25,.8,.25,1),
+    opacity    .35s ease,
+    transform  .35s ease;
+  will-change: max-height, opacity, transform;
 }
 div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
-  max-height:2000px;        /* ouvert (assez grand pour ton tableau + graphe) */
+  max-height:2000px;            /* ouvert (suffisant pour table + graph) */
   opacity:1;
-  transform:translateY(0);
+  transform:scaleY(1) translateY(0);
+  transition-timing-function: cubic-bezier(.22,.61,.36,1);
 }
 
-/* Petit effet “draw” en cascade sur les lignes du tableau */
+/* --- Effet “draw” des lignes : se réarme à chaque ouverture --- */
 @keyframes rowIn { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
-.table-card table.neo tbody tr{
-  opacity:0; transform:translateY(6px); animation:rowIn .38s ease forwards;
+
+/* Quand FERMÉ: on remet les lignes en état initial (prêt pour la prochaine ouverture) */
+div[data-testid="stExpander"] > details:not([open]) .table-card table.neo tbody tr{
+  opacity:0; transform:translateY(6px); animation:none!important;
 }
-.table-card table.neo tbody tr:nth-child(1){ animation-delay:.04s }
-.table-card table.neo tbody tr:nth-child(2){ animation-delay:.08s }
-.table-card table.neo tbody tr:nth-child(3){ animation-delay:.12s }
-.table-card table.neo tbody tr:nth-child(4){ animation-delay:.16s }
-.table-card table.neo tbody tr:nth-child(5){ animation-delay:.20s }
-.table-card table.neo tbody tr:nth-child(6){ animation-delay:.24s }
-.table-card table.neo tbody tr:nth-child(7){ animation-delay:.28s }
-.table-card table.neo tbody tr:nth-child(8){ animation-delay:.32s }
+
+/* Quand OUVERT: on joue l’animation en cascade */
+div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr{
+  animation:rowIn .38s ease forwards;
+}
+div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(1){ animation-delay:.04s }
+div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(2){ animation-delay:.08s }
+div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(3){ animation-delay:.12s }
+div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(4){ animation-delay:.16s }
+div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(5){ animation-delay:.20s }
+div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(6){ animation-delay:.24s }
+div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(7){ animation-delay:.28s }
+div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(8){ animation-delay:.32s }
+
 
 div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
   will-change: max-height, opacity, transform;
