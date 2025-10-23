@@ -299,19 +299,27 @@ div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 
 
 
-/* ===== N3: animation du graphique ===== */
+/* ===== N3: animation du graphique (compatible Streamlit blocks) ===== */
 @keyframes chartIn {
-  0% {opacity:0; transform:translateY(20px) scale(0.98);}
-  100% {opacity:1; transform:translateY(0) scale(1);}
+  from { opacity:0; transform:translateY(14px) scale(.985); }
+  to   { opacity:1; transform:translateY(0)   scale(1); }
 }
 
-/* quand le drawer contient .n3load → le graph s'anime */
-div[data-testid="stExpanderDetails"]:has(.n3load) .n3chart {
+/* On anime le PLOTLY qui vient juste APRÈS le marqueur .n3chart */
+div[data-testid="stExpanderDetails"]:has(.n3load)
+  .n3chart + div  [data-testid="stPlotlyChart"]{
   opacity:0;
-  animation:chartIn .7s cubic-bezier(.22,.61,.36,1) forwards;
-  animation-delay:.25s;   /* petit décalage après les barres */
-  will-change:opacity,transform;
+  animation: chartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
+  will-change: opacity, transform;
 }
+
+/* garde-fous: selon versions, on anime aussi le conteneur fullscreen */
+div[data-testid="stExpanderDetails"]:has(.n3load)
+  .n3chart + div  [data-testid="stFullScreenFrame"]{
+  opacity:0;
+  animation: chartIn .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
+}
+
 
 
 
