@@ -280,10 +280,21 @@ div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpande
 
 
 
-/* N3: rejouer l’anim des barres quand le drawer contient .n3load (sentinelle) */
-div[data-testid="stExpanderDetails"]:has(.n3load) .mfill{ width:0 }
-div[data-testid="stExpanderDetails"]:has(.n3load) .mfill.anim{ animation:fillX .9s ease forwards }
-div[data-testid="stExpanderDetails"]:has(.n3load) .mbar-wrap.v .mval{ opacity:0; animation:valIn .5s ease .35s forwards }
+/* N3: alternance v0/v1 pour forcer le replay des barres */
+@keyframes n3FillA { from{width:0} to{width:var(--to,0%)} }
+@keyframes n3FillB { from{width:0} to{width:var(--to,0%)} }
+
+div[data-testid="stExpanderDetails"]:has(.n3load.v0) .mfill{ width:0 }
+div[data-testid="stExpanderDetails"]:has(.n3load.v0) .mfill.anim{ animation:n3FillA .9s ease forwards }
+div[data-testid="stExpanderDetails"]:has(.n3load.v0) .mbar-wrap.v .mval{ opacity:0; animation:valIn .5s ease .35s forwards }
+
+div[data-testid="stExpanderDetails"]:has(.n3load.v1) .mfill{ width:0 }
+div[data-testid="stExpanderDetails"]:has(.n3load.v1) .mfill.anim{ animation:n3FillB .9s ease forwards }
+div[data-testid="stExpanderDetails"]:has(.n3load.v1) .mbar-wrap.v .mval{ opacity:0; animation:valIn .5s ease .35s forwards }
+
+/* Dans le drawer, on laisse l'animation piloter la largeur (pas de transition concurrente) */
+div[data-testid="stExpanderDetails"] .mfill{ transition:none }
+
 
 
 
