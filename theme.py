@@ -229,61 +229,45 @@ div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ displ
 
 
 
-/* --- Animations robustes (rejouent à CHAQUE toggle) --- */
-@keyframes n3Open {
-  0%   { max-height:0;      opacity:0;  transform:scaleY(.98) translateY(-6px) }
-  100% { max-height:2000px; opacity:1;  transform:scaleY(1)   translateY(0)    }
+/* ================= N3: animations rejouées à chaque toggle ================= */
+@keyframes n3OpenA{
+  0%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
+  100%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
 }
-@keyframes n3Close {
-  0%   { max-height:2000px; opacity:1;  transform:scaleY(1)   translateY(0)    }
-  100% { max-height:0;      opacity:0;  transform:scaleY(.98) translateY(-6px) }
+@keyframes n3CloseA{
+  0%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
+  100%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
+}
+@keyframes n3OpenB{
+  0%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
+  100%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
+}
+@keyframes n3CloseB{
+  0%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
+  100%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
 }
 
-/* Baseline: aucune transition/animation accidentelle sur le wrapper */
+/* Baseline neutre pour l’expander N3 */
 div[data-testid="stExpander"] > details > div[data-testid="stExpanderDetails"]{
   overflow:hidden;
-  transform-origin: top;
-  animation: none !important;     /* on neutralise toute anim résiduelle */
-  transition: none !important;    /* idem pour les transitions */
-  will-change: max-height, opacity, transform;
+  transform-origin:top;
+  animation:none!important;
+  transition:none!important;
+  will-change:max-height,opacity,transform;
 }
 
-/* OUVERT -> force l’animation d’ouverture (rejoue à chaque bascule) */
-div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
-  animation: n3Open .60s cubic-bezier(.22,.61,.36,1) both !important;
+/* Alternance odd/even pour FORCER le replay à chaque clic */
+.n3v-odd div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
+  animation:n3OpenA .60s cubic-bezier(.22,.61,.36,1) both!important;
 }
-
-/* FERMÉ -> force l’animation de fermeture */
-div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpanderDetails"]{
-  animation: n3Close .45s ease both !important;
+.n3v-odd div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpanderDetails"]{
+  animation:n3CloseA .45s ease both!important;
 }
-
-/* --- Effet “draw” à l’ouverture + transition douce à la fermeture --- */
-@keyframes rowIn { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
-
-/* Base: petite transition utile pour la fermeture */
-.table-card table.neo tbody tr{
-  transition: opacity .28s ease, transform .28s ease;
-  will-change: opacity, transform;
+.n3v-even div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"]{
+  animation:n3OpenB .60s cubic-bezier(.22,.61,.36,1) both!important;
 }
-
-/* OUVERT : “draw” en cascade (rejoue à chaque ouverture) */
-div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr{
-  animation: rowIn .38s ease forwards;
-}
-div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(1){ animation-delay:.04s }
-div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(2){ animation-delay:.08s }
-div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(3){ animation-delay:.12s }
-div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(4){ animation-delay:.16s }
-div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(5){ animation-delay:.20s }
-div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(6){ animation-delay:.24s }
-div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(7){ animation-delay:.28s }
-div[data-testid="stExpander"] > details[open] .table-card table.neo tbody tr:nth-child(8){ animation-delay:.32s }
-
-/* FERMÉ : fade/slide (pas de coupure nette) */
-div[data-testid="stExpander"] > details:not([open]) .table-card table.neo tbody tr{
-  opacity:0; transform:translateY(6px);
-  animation:none;
+.n3v-even div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpanderDetails"]{
+  animation:n3CloseB .45s ease both!important;
 }
 
 

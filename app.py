@@ -242,15 +242,14 @@ def render_section_level2(parent_node: dict):
     level   = parent_node.get("level", 2)
     metrics = parent_node.get("metrics", {}) or {}
 
+    # ...dans render_section_level2()
     key = f"n2_open::{label}_{level}".replace(" ", "_")
-    if key not in st.session_state:
-        st.session_state[key] = False
+    ver_key = f"{key}_ver"
+    if key not in st.session_state: st.session_state[key] = False
+    if ver_key not in st.session_state: st.session_state[ver_key] = 0
 
-    # --- wrapper logique ---
     with st.container():
-        # Sentinel au niveau du container -> le wrapper couvre TOUT (cols + bouton)
         st.markdown('<span class="n2-block-sentinel"></span>', unsafe_allow_html=True)
-
         left, right = st.columns([0.985, 0.015], gap="small")
         with left:
             st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
@@ -258,14 +257,16 @@ def render_section_level2(parent_node: dict):
             chevron = "▾" if st.session_state[key] else "▸"
             if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
                 st.session_state[key] = not st.session_state[key]
+                st.session_state[ver_key] += 1   # ← alterne
 
-
-
-        # Conteneur animé natif, piloté par ta clé existante
+        wrap_cls = "n3v-odd" if (st.session_state[ver_key] % 2) else "n3v-even"
+        st.markdown(f'<div class="{wrap_cls}">', unsafe_allow_html=True)
         with st.expander("", expanded=bool(st.session_state.get(key, False))):
             if parent_node.get("children"):
                 render_detail_table(parent_node)
                 render_barchart(parent_node)
+        st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
