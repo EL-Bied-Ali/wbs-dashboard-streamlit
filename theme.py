@@ -207,6 +207,34 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 
 
 
+
+
+
+/* ===== N3: panneau dépliable animé ===== */
+.n3-panel{
+  overflow:hidden;
+  max-height:0;            /* fermé */
+  opacity:0;
+  transform:translateY(-6px);
+  transition:
+    max-height .45s cubic-bezier(.22,.61,.36,1),
+    opacity    .30s cubic-bezier(.22,.61,.36,1),
+    transform  .30s cubic-bezier(.22,.61,.36,1);
+}
+.n3-panel.open{
+  max-height:1800px;       /* assez grand pour le tableau + graph */
+  opacity:1;
+  transform:translateY(0);
+}
+
+
+
+
+
+
+
+
+
 </style>
 """
 
