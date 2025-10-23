@@ -242,18 +242,30 @@ def render_section_level2(parent_node: dict):
     level   = parent_node.get("level", 2)
     metrics = parent_node.get("metrics", {}) or {}
 
-    # ---- avant l'expander N3 (on a déjà key, ver_key et on toggle st.session_state[key]) ----
-    mount_key = f"{key}_mount_{st.session_state[ver_key] % 2}"  # alterne 0/1 -> remount
+    # ---- header N2 + bouton chevron (toggle) ----
+    key = f"n2_open::{label}_{level}".replace(" ", "_")
+    ver_key = f"{key}_ver"
+    if key not in st.session_state: st.session_state[key] = False
+    if ver_key not in st.session_state: st.session_state[ver_key] = 0
 
+    st.markdown('<span class="n2-block-sentinel"></span>', unsafe_allow_html=True)
+    left, right = st.columns([0.985, 0.015], gap="small")
+    with left:
+        st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
+    with right:
+        chevron = "▾" if st.session_state[key] else "▸"
+        if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
+            st.session_state[key] = not st.session_state[key]
+            st.session_state[ver_key] += 1  # alterne 0/1 pour remount
+
+    # ---- expander N3 remount à chaque toggle ----
+    mount_key = f"{key}_mount_{st.session_state[ver_key] % 2}"
     with st.container(key=mount_key):
-        # (optionnel) petit div marqueur si tu veux debugger
-        # st.markdown(f'<div class="n3-flag v{st.session_state[ver_key] % 2}"></div>', unsafe_allow_html=True)
-
-        # L’expander se remonte entièrement à chaque changement de ver_key
         with st.expander("", expanded=bool(st.session_state.get(key, False))):
             if parent_node.get("children"):
                 render_detail_table(parent_node)
                 render_barchart(parent_node)
+
 
 
 
