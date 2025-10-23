@@ -231,6 +231,21 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 /* Masque l’entête du st.expander (on garde ton bouton chevron) */
 div[data-testid="stExpander"] > details > summary { display:none; }
 
+/* ==== N3: animation fluide par conteneur-sentinel ==== */
+div[data-testid="stVerticalBlock"]:has(> .n3-start){
+  max-height:0;
+  opacity:0;
+  transform:translateY(-6px);
+  overflow:hidden;
+  transition:max-height .45s ease, opacity .30s ease, transform .30s ease;
+}
+div[data-testid="stVerticalBlock"]:has(> .n3-start.open){
+  max-height:1800px;   /* assez grand pour table + graphes */
+  opacity:1;
+  transform:translateY(0);
+}
+/* (si tu avais ajouté un masque pour st.expander, supprime-le pour enlever la ligne grise) */
+
 
 
 

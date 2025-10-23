@@ -259,12 +259,24 @@ def render_section_level2(parent_node: dict):
             if st.button(chevron, key=f"{key}_btn", help="Afficher/masquer le Niveau 3", use_container_width=True):
                 st.session_state[key] = not st.session_state[key]
 
-        # -- panneau N3 animé via st.expander (fiable avec Streamlit)
+        # 1) fermé par défaut si la clé n'existe pas
+        if key not in st.session_state:
+            st.session_state[key] = False
+
         is_open = bool(st.session_state.get(key, False))
-        with st.expander("Détails niveau 3", expanded=is_open):
+        open_cls = "open" if is_open else ""
+
+        # 2) Conteneur Streamlit dédié à N3 + sentinelles (CSS cible ce container, pas les éléments internes)
+        with st.container():
+            st.markdown(f'<div class="n3-start {open_cls}"></div>', unsafe_allow_html=True)
+
             if parent_node.get("children"):
+                # -- ton contenu N3 habituel
                 render_detail_table(parent_node)
                 render_barchart(parent_node)
+
+            st.markdown('<div class="n3-end"></div>', unsafe_allow_html=True)
+
 
 
 
