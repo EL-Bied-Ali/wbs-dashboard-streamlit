@@ -204,6 +204,10 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
   border-color:rgba(125,211,252,.9);
 }
 
+/* === Fix: dimensions des barres au Niveau 2 (sans .section-card) === */
+.n2-grid .mbar{ width:130px!important; height:11px; }
+.n2-grid .mval{ font-size:1.02rem; font-weight:700; }
+
 
 
 
