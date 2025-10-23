@@ -211,6 +211,27 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 
 
 
+
+
+
+
+/* ==== N3: panneau à ouverture/fermeture fluide ==== */
+.n3-panel{
+  overflow:hidden;
+  max-height:0;
+  opacity:0;
+  transform:translateY(-6px);
+  transition:max-height .45s ease, opacity .30s ease, transform .30s ease;
+}
+.n3-panel.open{
+  max-height:1800px;   /* assez grand pour le tableau + graphes */
+  opacity:1;
+  transform:translateY(0);
+}
+
+
+
+
 </style>
 """
 
