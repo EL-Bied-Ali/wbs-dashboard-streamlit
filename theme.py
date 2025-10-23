@@ -215,27 +215,21 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stButton button:hove
 
 
 
-/* Expander 100% invisible (on ne garde que l’animation de hauteur) */
-div[data-testid="stExpander"]{border:0!important;background:transparent!important;box-shadow:none!important;margin:0!important;padding:0!important}
-div[data-testid="stExpander"] > details{border:0!important;margin:0!important;padding:0!important;background:transparent!important}
-div[data-testid="stExpander"] > details > summary{display:none!important;height:0!important;line-height:0!important;padding:0!important;margin:0!important;border:0!important}
-div[data-testid="stExpander"] > details > div[role="region"]{margin:0!important;padding:0!important;border:0!important}
+/* === N3 déroulement fluide (sans expander, sans ligne grise) === */
+.n3-panel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: max-height 0.55s cubic-bezier(0.25, 0.8, 0.25, 1),
+              opacity 0.4s ease, transform 0.4s ease;
+}
+.n3-panel.open {
+  max-height: 1800px; /* assez grand pour table + graph */
+  opacity: 1;
+  transform: translateY(0);
+}
 
-
-
-/* Adoucit l'expander sans laisser de ligne */
-div[data-testid="stExpander"]{
-  border:0!important; background:transparent!important; box-shadow:none!important; margin:0!important; padding:0!important;
-}
-div[data-testid="stExpander"] > details{
-  border:0!important; background:transparent!important; margin:0!important; padding:0!important;
-}
-div[data-testid="stExpander"] > details > summary{
-  display:none!important; height:0!important; line-height:0!important; padding:0!important; margin:0!important; border:0!important;
-}
-div[data-testid="stExpander"] > details > div[role="region"]{
-  margin:0!important; padding:0!important; border:0!important;
-}
 
 
 
