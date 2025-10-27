@@ -410,8 +410,6 @@ idx = st.sidebar.radio(
 sel = packs[idx]
 st.sidebar.caption(f"Feuille: {sel.get('sheet','?')} • Zone: {sel.get('range','?')}")
 root = sel["wbs"]
-with st.sidebar.expander("WBS à afficher", expanded=True):
-    idx = st.radio("", options=range(len(labels)), format_func=lambda i: labels[i], index=0)
 
 
 
