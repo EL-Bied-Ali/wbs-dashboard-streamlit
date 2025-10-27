@@ -24,10 +24,11 @@ def _safe_float(x):
 def fmt_pct(x, signed=False):
     try:
         v = float(x)
-        sign = "+" if signed and v > 0 else ""
-        return f"{sign}{v:.2f}%"
+        return f"{v:.2f}%"
     except Exception:
         return str(x)
+
+
 
 def to_number_j(val):
     s = str(val).replace("j", "").strip()
