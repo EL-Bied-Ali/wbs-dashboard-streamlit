@@ -380,6 +380,27 @@ details[open] [data-testid="stExpanderDetails"]
 
 
 
+
+
+
+/* === Sidebar select (disable typing + hide hover tooltip) === */
+section[data-testid="stSidebar"] div[role="combobox"] input{
+  caret-color: transparent !important;     /* no blinking text cursor */
+  pointer-events: none !important;         /* prevent typing */
+}
+section[data-testid="stSidebar"] div[role="combobox"] input::placeholder{
+  opacity: 0 !important;                   /* hide placeholder */
+}
+/* Remove the native hover tooltip box that blocks clicks */
+section[data-testid="stSidebar"] div[role="combobox"] [title]{
+  pointer-events: none !important;
+}
+
+
+
+
+
+
 </style>
 """
 
