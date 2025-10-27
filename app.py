@@ -360,12 +360,23 @@ if uploaded is not None:
 if not packs:
     st.info("🔹 Veuillez importer un fichier Excel pour générer le WBS.")
     st.stop()
+    
+    
+    
 
 # ---------- Sélecteur et rendu ----------
-labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}  [{p.get('sheet','') or '?'} {p.get('range','') or ''}]"
-          for i, p in enumerate(packs)]
+labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}" for i, p in enumerate(packs)]
 idx = st.sidebar.selectbox("WBS à afficher", options=range(len(labels)), format_func=lambda i: labels[i], index=0 if packs else 0)
-root = packs[idx]["wbs"] if packs else {"label":"Aucun WBS","level":1,"metrics":{},"children":[]}
+
+# Affiche les infos détaillées sous le sélecteur (évite d’allonger le label)
+sel = packs[idx]
+st.sidebar.caption(f"Feuille: {sel.get('sheet','?')} • Zone: {sel.get('range','?')}")
+root = sel["wbs"]
+
+
+
+
+
 
 render_all_open_native(root)
 

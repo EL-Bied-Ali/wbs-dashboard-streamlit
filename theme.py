@@ -383,18 +383,22 @@ details[open] [data-testid="stExpanderDetails"]
 
 
 
-/* === Sidebar select (disable typing + hide hover tooltip) === */
+/* === Sidebar select (disable typing, hide tooltip & remove focus glow) === */
 section[data-testid="stSidebar"] div[role="combobox"] input{
-  caret-color: transparent !important;     /* no blinking text cursor */
-  pointer-events: none !important;         /* prevent typing */
+  caret-color: transparent !important;   /* no blinking cursor */
+  pointer-events: none !important;       /* prevent typing */
 }
 section[data-testid="stSidebar"] div[role="combobox"] input::placeholder{
-  opacity: 0 !important;                   /* hide placeholder */
+  opacity: 0 !important;                 /* hide placeholder */
 }
-/* Remove the native hover tooltip box that blocks clicks */
 section[data-testid="stSidebar"] div[role="combobox"] [title]{
-  pointer-events: none !important;
+  pointer-events: none !important;       /* kill native hover tooltip */
 }
+section[data-testid="stSidebar"] div[role="combobox"] *:focus{
+  outline: none !important;              /* remove blue/red glow */
+  box-shadow: none !important;
+}
+
 
 
 
