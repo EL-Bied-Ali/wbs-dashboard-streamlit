@@ -368,3 +368,7 @@ idx = st.sidebar.selectbox("WBS à afficher", options=range(len(labels)), format
 root = packs[idx]["wbs"] if packs else {"label":"Aucun WBS","level":1,"metrics":{},"children":[]}
 
 render_all_open_native(root)
+
+# Ajoute un petit espace visuel en bas de la page
+st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
+
