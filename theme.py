@@ -382,7 +382,7 @@ details[open] [data-testid="stExpanderDetails"]
 
 
 
-/* ===== Sidebar radio: inline alignment + clean selected state ===== */
+/* ===== Sidebar radio: full-width inline, equal-size buttons ===== */
 section[data-testid="stSidebar"] [role="radiogroup"]{
   display:flex; flex-direction:column; gap:6px;
 }
@@ -390,38 +390,41 @@ section[data-testid="stSidebar"] [role="radiogroup"]{
 /* Each option row */
 section[data-testid="stSidebar"] label[data-baseweb="radio"]{
   position:relative;
-  display:flex; align-items:center; gap:10px;      /* <- inline, centered */
-  padding:8px 12px; border-radius:10px;
+  display:flex; align-items:center; gap:10px;
+  width:100%;                                 /* 👈 all same width */
+  box-sizing:border-box;                      /* respect padding + border */
+  padding:8px 12px;
+  border-radius:10px;
   background:linear-gradient(180deg,#0f1a31,#0b1326);
   border:1px solid rgba(96,165,250,.25);
   transition:border-color .15s ease, background .15s ease, transform .10s ease;
   cursor:pointer;
 }
 
-/* Hide the native input so it doesn't shift layout */
+/* Hide native input */
 section[data-testid="stSidebar"] label[data-baseweb="radio"] > input{
   position:absolute; opacity:0; width:0; height:0; pointer-events:none;
 }
 
-/* Keep the little circle container inline (first div) */
+/* Align icon + text inline */
 section[data-testid="stSidebar"] label[data-baseweb="radio"] > div:first-child{
   flex:0 0 auto; display:flex; align-items:center;
 }
-
-/* Text container (last div) should sit on the same row */
 section[data-testid="stSidebar"] label[data-baseweb="radio"] > div:last-child{
   flex:1 1 auto; display:flex; align-items:center;
 }
 section[data-testid="stSidebar"] label[data-baseweb="radio"] [data-testid="stMarkdownContainer"]{
-  margin:0; line-height:1.2;
+  margin:0; line-height:1.2; width:100%;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
-/* Hover / selected */
+/* Hover effect */
 section[data-testid="stSidebar"] label[data-baseweb="radio"]:hover{
-  border-color:rgba(125,211,252,.7); transform:translateY(-1px);
+  border-color:rgba(125,211,252,.7);
+  transform:translateY(-1px);
 }
 
-/* Left accent when checked (uses :has for robustness) */
+/* Selected (with left accent bar) */
 section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked){
   border-color:rgba(125,211,252,.95);
   background:linear-gradient(180deg,#0f1b34,#0b1326);
@@ -432,6 +435,7 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   background:linear-gradient(180deg,#60a5fa,#22c55e);
   border-top-left-radius:10px; border-bottom-left-radius:10px;
 }
+
 
 
 
