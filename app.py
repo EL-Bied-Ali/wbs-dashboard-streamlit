@@ -337,23 +337,24 @@ uploaded = st.sidebar.file_uploader(
 packs = []
 
 if uploaded is not None:
-    # sauvegarder en fichier temp pour openpyxl
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
         tmp.write(uploaded.read())
         tmp_path = tmp.name
     try:
-        packs = extract_all_wbs(tmp_path)  # ← renvoie une liste [{sheet, range, wbs}, ...]
+        packs = extract_all_wbs(tmp_path)
         if not packs:
-            st.warning("Aucun tableau valide détecté dans ce fichier. Vérifie les en-têtes requis.")
+            st.sidebar.warning("Aucun tableau valide détecté dans ce fichier. Vérifie les en-têtes requis.")
         else:
-            st.success(f"{len(packs)} tableau(x) WBS détecté(s) • Feuilles: " + ", ".join({p['sheet'] for p in packs}))
+            sheets = ", ".join(sorted({p.get("sheet", "?") for p in packs}))
+            st.sidebar.success(f"{len(packs)} tableau(x) WBS détecté(s) • Feuilles: {sheets}")
     except Exception as e:
-        st.error(f"Erreur d’extraction: {e}")
+        st.sidebar.error(f"Erreur d’extraction: {e}")
     finally:
         try:
             os.unlink(tmp_path)
         except:
             pass
+
 
 # Aucun fichier uploadé : on reste vide
 if not packs:
