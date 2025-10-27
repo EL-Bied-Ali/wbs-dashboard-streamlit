@@ -382,16 +382,23 @@ details[open] [data-testid="stExpanderDetails"]
 
 
 
-/* ===== Sidebar radio: compact list with left accent ===== */
+/* ===== Sidebar radio: inline, left accent when selected ===== */
 section[data-testid="stSidebar"] [data-baseweb="radio"]{
   display:flex; flex-direction:column; gap:6px;
 }
 section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"]{
-  position:relative; cursor:pointer;
+  display:flex; align-items:center;             /* 👈 aligns button + label inline */
+  cursor:pointer;
   border:1px solid rgba(96,165,250,.25);
   background:linear-gradient(180deg,#0f1a31,#0b1326);
-  border-radius:10px; padding:8px 12px;
-  color:#e5e7eb; transition:border-color .15s ease, background .15s ease, transform .10s ease;
+  border-radius:10px;
+  padding:8px 12px;
+  color:#e5e7eb;
+  transition:border-color .15s ease, background .15s ease, transform .10s ease;
+}
+section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"] label{
+  margin-left:8px;                              /* space between circle and label */
+  cursor:pointer;
 }
 section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"]:hover{
   border-color:rgba(125,211,252,.7);
@@ -407,8 +414,6 @@ section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"][aria-chec
   background:linear-gradient(180deg,#60a5fa,#22c55e);
   border-top-left-radius:10px; border-bottom-left-radius:10px;
 }
-section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"]::before{ content:none } /* no bullets */
-
 
 
 
