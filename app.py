@@ -368,4 +368,3 @@ idx = st.sidebar.selectbox("WBS à afficher", options=range(len(labels)), format
 root = packs[idx]["wbs"] if packs else {"label":"Aucun WBS","level":1,"metrics":{},"children":[]}
 
 render_all_open_native(root)
-st.caption("Import Excel → extraction auto → rendu hiérarchique. Les colonnes requises: Planned/Forecast/Schedule/Earned/ecart/impact/Glissement.")
