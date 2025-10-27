@@ -366,7 +366,15 @@ if not packs:
 
 # ---------- Sélecteur et rendu ----------
 labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}" for i, p in enumerate(packs)]
-idx = st.sidebar.selectbox("WBS à afficher", options=range(len(labels)), format_func=lambda i: labels[i], index=0 if packs else 0)
+idx = st.sidebar.selectbox(
+    "WBS à afficher",
+    options=range(len(labels)),
+    format_func=lambda i: labels[i],
+    index=0 if packs else 0,
+    label_visibility="visible",
+    disabled=False,
+    key="wbs_selector"
+)
 
 # Affiche les infos détaillées sous le sélecteur (évite d’allonger le label)
 sel = packs[idx]

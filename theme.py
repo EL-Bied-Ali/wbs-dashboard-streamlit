@@ -402,6 +402,17 @@ section[data-testid="stSidebar"] div[role="combobox"] *:focus{
 
 
 
+/* Sidebar select: disable text input entirely (click only) */
+section[data-testid="stSidebar"] div[role="combobox"] input {
+  caret-color: transparent !important;
+  pointer-events: none !important;   /* cannot type */
+}
+section[data-testid="stSidebar"] div[role="combobox"] input::placeholder {
+  color: transparent !important;     /* hides "Search..." text */
+}
+
+
+
 
 
 
