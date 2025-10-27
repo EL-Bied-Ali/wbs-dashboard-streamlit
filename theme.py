@@ -378,6 +378,42 @@ details[open] [data-testid="stExpanderDetails"]
 
 
 
+
+
+
+
+/* ===== Sidebar radio: pill cards ===== */
+section[data-testid="stSidebar"] [data-baseweb="radio"]{
+  display:flex; flex-direction:column; gap:8px;
+}
+section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"]{
+  position:relative; cursor:pointer;
+  border:1px solid rgba(96,165,250,.35);
+  background:linear-gradient(180deg,#0f1b34,#0b1326);
+  border-radius:12px; padding:10px 12px;
+  color:#e5e7eb; transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+}
+section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"]::before{
+  content:"●"; font-size:.8rem; line-height:1; 
+  color:#60a5fa; margin-right:8px; opacity:.9;
+}
+section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"]:hover{
+  transform:translateY(-1px);
+  box-shadow:0 8px 18px rgba(59,130,246,.18);
+  border-color:rgba(125,211,252,.8);
+}
+section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"][aria-checked="true"]{
+  border-color:rgba(125,211,252,.95);
+  background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));
+  box-shadow:0 10px 22px rgba(59,130,246,.28), inset 0 0 0 1px rgba(96,165,250,.55);
+}
+section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"][aria-checked="true"]::before{
+  content:"✓"; color:#22c55e; font-weight:800;
+}
+
+
+
+
 </style>
 """
 
