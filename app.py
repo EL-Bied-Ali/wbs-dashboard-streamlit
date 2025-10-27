@@ -10,6 +10,39 @@ import tempfile, os
 st.set_page_config(page_title="WBS – Projet", layout="wide", initial_sidebar_state="expanded")
 inject_theme()
 
+import streamlit.components.v1 as components
+
+# Disable typing in sidebar selectbox while keeping click-to-open
+components.html("""
+<script>
+(function(){
+  function lockSelectboxInputs(){
+    const inputs = document.querySelectorAll('section[data-testid="stSidebar"] [role="combobox"] input');
+    inputs.forEach(inp => {
+      if (!inp.hasAttribute('data-locked')) {
+        inp.setAttribute('readonly','readonly');           // no typing
+        inp.setAttribute('data-locked','1');
+        inp.style.caretColor = 'transparent';              // hide caret
+        // Block keyboard input (arrow keys still work to navigate list)
+        inp.addEventListener('keydown', e => {
+          const k = e.key.toLowerCase();
+          const allowed = ['arrowdown','arrowup','home','end','tab','escape','enter',' '];
+          if (!allowed.includes(k)) e.preventDefault();
+        }, {capture:true});
+      }
+    });
+  }
+  // Observe re-renders and apply
+  const obs = new MutationObserver(lockSelectboxInputs);
+  obs.observe(document.body, {subtree:true, childList:true});
+  // Initial pass
+  lockSelectboxInputs();
+})();
+</script>
+""", height=0)
+
+
+
 # ---------- Helpers ----------
 def _minify(html: str) -> str:
     return "".join(line.strip() for line in html.splitlines())

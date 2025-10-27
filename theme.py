@@ -383,21 +383,19 @@ details[open] [data-testid="stExpanderDetails"]
 
 
 
-/* === Sidebar select (disable typing, hide tooltip & remove focus glow) === */
+/* Sidebar select: allow click, just hide caret/placeholder */
 section[data-testid="stSidebar"] div[role="combobox"] input{
-  caret-color: transparent !important;   /* no blinking cursor */
-  pointer-events: none !important;       /* prevent typing */
+  caret-color: transparent !important;   /* keep if you like */
+  /* pointer-events: none !important;   <- REMOVE this line */
 }
 section[data-testid="stSidebar"] div[role="combobox"] input::placeholder{
-  opacity: 0 !important;                 /* hide placeholder */
-}
-section[data-testid="stSidebar"] div[role="combobox"] [title]{
-  pointer-events: none !important;       /* kill native hover tooltip */
+  opacity: 0 !important;
 }
 section[data-testid="stSidebar"] div[role="combobox"] *:focus{
-  outline: none !important;              /* remove blue/red glow */
+  outline: none !important;
   box-shadow: none !important;
 }
+
 
 
 
