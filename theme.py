@@ -382,38 +382,57 @@ details[open] [data-testid="stExpanderDetails"]
 
 
 
-/* ===== Sidebar radio: inline, left accent when selected ===== */
-section[data-testid="stSidebar"] [data-baseweb="radio"]{
+/* ===== Sidebar radio: inline alignment + clean selected state ===== */
+section[data-testid="stSidebar"] [role="radiogroup"]{
   display:flex; flex-direction:column; gap:6px;
 }
-section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"]{
-  display:flex; align-items:center;             /* 👈 aligns button + label inline */
-  cursor:pointer;
-  border:1px solid rgba(96,165,250,.25);
+
+/* Each option row */
+section[data-testid="stSidebar"] label[data-baseweb="radio"]{
+  position:relative;
+  display:flex; align-items:center; gap:10px;      /* <- inline, centered */
+  padding:8px 12px; border-radius:10px;
   background:linear-gradient(180deg,#0f1a31,#0b1326);
-  border-radius:10px;
-  padding:8px 12px;
-  color:#e5e7eb;
+  border:1px solid rgba(96,165,250,.25);
   transition:border-color .15s ease, background .15s ease, transform .10s ease;
-}
-section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"] label{
-  margin-left:8px;                              /* space between circle and label */
   cursor:pointer;
 }
-section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"]:hover{
-  border-color:rgba(125,211,252,.7);
-  transform:translateY(-1px);
+
+/* Hide the native input so it doesn't shift layout */
+section[data-testid="stSidebar"] label[data-baseweb="radio"] > input{
+  position:absolute; opacity:0; width:0; height:0; pointer-events:none;
 }
-section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"][aria-checked="true"]{
+
+/* Keep the little circle container inline (first div) */
+section[data-testid="stSidebar"] label[data-baseweb="radio"] > div:first-child{
+  flex:0 0 auto; display:flex; align-items:center;
+}
+
+/* Text container (last div) should sit on the same row */
+section[data-testid="stSidebar"] label[data-baseweb="radio"] > div:last-child{
+  flex:1 1 auto; display:flex; align-items:center;
+}
+section[data-testid="stSidebar"] label[data-baseweb="radio"] [data-testid="stMarkdownContainer"]{
+  margin:0; line-height:1.2;
+}
+
+/* Hover / selected */
+section[data-testid="stSidebar"] label[data-baseweb="radio"]:hover{
+  border-color:rgba(125,211,252,.7); transform:translateY(-1px);
+}
+
+/* Left accent when checked (uses :has for robustness) */
+section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked){
   border-color:rgba(125,211,252,.95);
   background:linear-gradient(180deg,#0f1b34,#0b1326);
   box-shadow:inset 0 0 0 1px rgba(96,165,250,.45);
 }
-section[data-testid="stSidebar"] [data-baseweb="radio"] [role="radio"][aria-checked="true"]::after{
+section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked)::before{
   content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
   background:linear-gradient(180deg,#60a5fa,#22c55e);
   border-top-left-radius:10px; border-bottom-left-radius:10px;
 }
+
 
 
 
