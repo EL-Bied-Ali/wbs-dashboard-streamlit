@@ -123,7 +123,6 @@ def render_detail_table(node: dict, compact: bool = False):
 
 
 def render_barchart(node: dict):
-    # --- data ---
     labels, schedule, earned = [], [], []
     for ch in node.get("children", []) or []:
         labels.append(ch.get("label", ""))
@@ -135,17 +134,15 @@ def render_barchart(node: dict):
         st.info("Aucun enfant pour le graphique.")
         return
 
-    # max pour caler la grille (garde 0–100 si %)
     max_v = max([0] + schedule + earned)
     ymax = 100 if max_v <= 100 else math.ceil(max_v / 5) * 5
 
     fig = go.Figure()
 
-    # bar styles communs (ne pas activer d'animation Plotly superflue)
+    # commun sans 'marker'
     bar_common = dict(
-        x=labels, width=0.42, cliponaxis=False,  # labels hors cadre OK
-        marker=dict(line=dict(width=0)),
-        hoverinfo="skip"  # on passe par hovertemplate
+        x=labels, width=0.42, cliponaxis=False,
+        hoverinfo="skip"
     )
 
     fig.add_bar(
@@ -165,31 +162,22 @@ def render_barchart(node: dict):
 
     fig.update_layout(
         barmode="group", bargroupgap=0.18, bargap=0.26,
-        height=300,
-        margin=dict(l=24, r=24, t=10, b=60),
-        # Thème sombre aligné à ton CSS
+        height=300, margin=dict(l=24, r=24, t=10, b=60),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         font=dict(size=13, color="#e5e7eb"),
-        legend=dict(
-            orientation="h", yanchor="bottom", y=-0.32, xanchor="center", x=0.5,
-            itemclick=False, itemdoubleclick=False, font=dict(size=12, color="#cbd5e1")
-        ),
-        xaxis=dict(
-            title="", showgrid=False, zeroline=False, tickangle=0,
-            tickfont=dict(size=13, color="#e5e7eb"), automargin=True
-        ),
-        yaxis=dict(
-            title="", range=[0, ymax], ticksuffix="%", dtick=25 if ymax == 100 else None,
-            showgrid=True, gridcolor="rgba(42,59,98,.55)", zeroline=False,
-            tickfont=dict(size=12, color="#cbd5e1"), automargin=True
-        ),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.32, xanchor="center", x=0.5,
+                    itemclick=False, itemdoubleclick=False, font=dict(size=12, color="#cbd5e1")),
+        xaxis=dict(title="", showgrid=False, zeroline=False,
+                   tickfont=dict(size=13, color="#e5e7eb"), automargin=True),
+        yaxis=dict(title="", range=[0, ymax], ticksuffix="%",
+                   dtick=25 if ymax == 100 else None, showgrid=True,
+                   gridcolor="rgba(42,59,98,.55)", zeroline=False,
+                   tickfont=dict(size=12, color="#cbd5e1"), automargin=True),
         hovermode="x unified",
         hoverlabel=dict(bgcolor="#0f172a", font=dict(color="#e5e7eb", size=12)),
-        # Transition légère (ne gêne pas tes keyframes CSS .barlayer)
         transition={'duration': 200}
     )
 
-    # Modebar discret
     st.plotly_chart(
         fig,
         use_container_width=True,
@@ -197,7 +185,8 @@ def render_barchart(node: dict):
             "displaylogo": False,
             "displayModeBar": "hover",
             "modeBarButtonsToRemove": [
-                "select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"
+                "select2d","lasso2d","autoScale2d","zoomIn2d",
+                "zoomOut2d","toggleSpikelines"
             ],
             "responsive": True
         }
