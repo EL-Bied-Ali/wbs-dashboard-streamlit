@@ -490,56 +490,21 @@ border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0}
   100% { background-position: 0 0; }
 }
 
-/* === Overlay clic pleine largeur + hover unifié pour les lignes N2 === */
-
-/* 1) Le bouton invisible recouvre TOUTE la ligne (même zone pour clic et hover) */
+/* Overlay clic pleine largeur (même zone pour clic + hover) */
 div[class*="st-key-n2_"][class*="__rowbtn"]{
-  position: relative; 
-  z-index: 5;
-  margin-top: -56px;   /* = hauteur visuelle de ta .n2-grid (ajuste 48–60 si besoin) */
+  position: relative;
+  z-index: 10;
+  margin-top: -56px;   /* ajuste 48–60 si besoin */
   height: 56px;
 }
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
   width:100%; height:100%;
   background: transparent; border:0; padding:0; margin:0; cursor:pointer;
+  border-radius:12px;
 }
 
-/* Effet d’éclairage directement sur le bouton overlay */
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
-  box-shadow:
-    inset 0 0 0 1px rgba(88,113,179,.35),
-    inset 0 0 80px rgba(37,99,235,.10);
-  transition: box-shadow .15s ease;
-}
-
-
-/* 2) Hover unifié : survol du bouton invisible = survol de la .n2-grid */
-div[data-testid="stVerticalBlock"]:has(> div[class*="__rowbtn"] .stButton button:hover) .n2-grid,
-.n2-grid:hover{
-  filter: brightness(1.05);
-  box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
-  transition: filter .15s ease, box-shadow .15s ease;
-}
-
-/* 3) Curseur main partout */
-.n2-grid{ cursor:pointer; }
-
-
-
-
-
-
-
-/* Overlay clic pleine largeur, au-dessus de la ligne */
-div[class*="st-key-n2_"][class*="__rowbtn"]{ position:relative; z-index:10; margin-top:-56px; height:56px; } /* ajuste 48–60 */
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
-  width:100%; height:100%; background:transparent; border:0; padding:0; margin:0; cursor:pointer;
-  border-radius:12px;  /* même arrondi visuel que la ligne */
-}
-
-/* Donne au bouton le même éclairage/anim que .n2-grid:hover */
+/* Même glow/anim que la ligne directement SUR le bouton overlay */
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
   background: linear-gradient(90deg,
     rgba(37,99,235,0.05) 0%,
@@ -550,8 +515,13 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
   box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
 }
 
-/* (optionnel) si tu veux une seule source d'effet, commente la règle suivante :*/
-.n2-grid:hover { ... } 
+/* (optionnel) garde aussi le hover direct sur la ligne */
+.n2-grid:hover{
+  filter: brightness(1.05);
+  box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
+  transition: filter .15s ease, box-shadow .15s ease;
+}
+
 
 
 
