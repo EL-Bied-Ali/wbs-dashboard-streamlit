@@ -527,7 +527,7 @@ div[class*="st-key-n2_"][class*="__rowbtn"] {
   z-index: 10;
 
   /* 🔽 Décalage vertical : plus négatif = plus haut, moins négatif = plus bas */
-  margin-top: -59px;    /* ← monte le bouton de ~3px (ajuste à -58, -60, etc.) */
+  margin-top: -63px;    /* ← monte le bouton de ~3px (ajuste à -58, -60, etc.) */
 
   /* 🔼 Hauteur totale du bouton : plus grand = couvre plus bas */
   height: 57px;         /* ← augmente légèrement la zone cliquable */
