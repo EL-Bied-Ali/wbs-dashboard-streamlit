@@ -550,8 +550,8 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
   box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
 }
 
-/* (optionnel) si tu veux une seule source d'effet, commente la règle suivante :
-.n2-grid:hover { ... } */
+/* (optionnel) si tu veux une seule source d'effet, commente la règle suivante :*/
+.n2-grid:hover { ... } 
 
 
 
