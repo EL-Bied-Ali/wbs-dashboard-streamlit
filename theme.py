@@ -602,13 +602,12 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
   margin:0; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
-/* Un peu d’espace à gauche du tableau principal */
-.hero .n1-grid,
-.section-card .n2-grid,
-.table-card table.neo {
-  margin-left: 40px !important;   /* 👈 augmente doucement l’espace gauche */
-  width: calc(100% + 40px) !important;  /* compense pour ne pas tasser le reste */
+/* Utilise tout l’espace horizontal libre (pousse le tableau vers la gauche) */
+.block-container {
+  padding-left: 4px !important;   /* Réduit la marge interne à gauche */
+  margin-left: -80px !important;  /* 👈 pousse le contenu vers la gauche pour combler la zone vide */
 }
+
 
 
 
