@@ -339,11 +339,16 @@ def render_section_level2(parent_node: dict):
     if has_children and st.session_state[base]:
         st.markdown('<div class="n3load v1"></div>', unsafe_allow_html=True)
         render_detail_table(parent_node)
-        # n3chart uniquement si on affiche vraiment un graphe
-        if parent_node.get("children"):
+
+        # n'affiche la section chart que si un vrai graphe est rendu
+        has_chart_data = parent_node.get("children") and any(
+            c.get("metrics") for c in parent_node["children"]
+        )
+        if has_chart_data:
             st.markdown('<div class="n3chart">', unsafe_allow_html=True)
             render_barchart(parent_node)
             st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
