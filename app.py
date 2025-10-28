@@ -342,9 +342,7 @@ def render_section_level2(parent_node: dict):
                 ver = st.session_state[ver_key] % 2
                 st.markdown(f'<div class="n3load v{ver}"></div>', unsafe_allow_html=True)  # << MARQUEUR
                 render_detail_table(parent_node)
-                st.markdown('<div class="n3chart">', unsafe_allow_html=True)
                 render_barchart(parent_node)  # transition=None déjà OK
-                st.markdown('</div>', unsafe_allow_html=True)
 
 
 
