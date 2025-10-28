@@ -609,6 +609,39 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
 }
 
 
+/* === Panneau fixe à droite pour les boutons WBS === */
+#onpage-selector-panel{
+  position: fixed;
+  top: 68px;
+  right: 16px;
+  width: 260px;
+  z-index: 120;
+  padding: 10px 12px;
+  background: linear-gradient(180deg,#0f1a31,#0b1326);
+  border: 1px solid rgba(96,165,250,.28);
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(0,0,0,.35);
+}
+
+/* Radios stylisées dans le panneau fixe */
+#onpage-selector-panel + div [role="radiogroup"]{
+  display:flex; flex-direction:column; gap:6px; max-height:72vh; overflow:auto;
+}
+#onpage-selector-panel + div label[data-baseweb="radio"]{
+  display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px;
+  background:linear-gradient(180deg,#0f1b34,#0b1326);
+  border:1px solid rgba(96,165,250,.28); cursor:pointer;
+}
+#onpage-selector-panel + div label[data-baseweb="radio"]:hover{
+  border-color:rgba(125,211,252,.8); transform:translateY(-1px);
+}
+#onpage-selector-panel + div label[data-baseweb="radio"]:has(input:checked){
+  border-color:rgba(125,211,252,.95); box-shadow:inset 0 0 0 1px rgba(96,165,250,.45);
+}
+
+/* Donne toute la largeur restante au tableau */
+.block-container{ padding-right: 300px !important; }
+
 
 
 </style>
