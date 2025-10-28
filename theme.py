@@ -553,6 +553,17 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
   animation:n3GrowB .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
 }
 
+/* ===== Mini-bars dans le tableau (.mfill avec --to) ===== */
+.table-card .mbar{ display:block; overflow:hidden; border-radius:6px; }
+.table-card .mfill{ display:block; height:8px; width:0; border-radius:6px; }
+
+/* Rejoue l’animation à chaque rendu (compatible avec ton --to inline) */
+.table-card .mfill.anim{ animation:mfillGrow .8s cubic-bezier(.22,.61,.36,1) forwards; }
+@keyframes mfillGrow{ 0%{ width:0 } 100%{ width:var(--to) } }
+
+/* Valeur qui fade-in */
+.table-card .mbar-wrap.v .mval{ opacity:0; transform:translateY(2px); animation:valIn .45s ease .25s forwards; }
+@keyframes valIn{ to{ opacity:1; transform:none } }
 
 
 
