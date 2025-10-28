@@ -602,6 +602,13 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
   margin:0; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
+/* Un peu d’espace à gauche du tableau principal */
+.hero .n1-grid,
+.section-card .n2-grid,
+.table-card table.neo {
+  margin-left: 20px !important;   /* 👈 augmente doucement l’espace gauche */
+  width: calc(100% + 20px) !important;  /* compense pour ne pas tasser le reste */
+}
 
 
 
