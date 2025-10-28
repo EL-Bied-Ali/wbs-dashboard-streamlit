@@ -343,10 +343,19 @@ def render_section_level2(parent_node: dict):
 
     # ----- N3 -----
     if has_children and st.session_state[base]:
-        st.markdown('<div class="n3load v1"></div>', unsafe_allow_html=True)
+        # alterner v0/v1 pour forcer le replay
+        ab_key = f"{base}__ab"
+        if ab_key not in st.session_state:
+            st.session_state[ab_key] = 0
+        variant = "v0" if st.session_state[ab_key] == 0 else "v1"
+        st.session_state[ab_key] = 1 - st.session_state[ab_key]
+
+        # scope N3: permet aux sélecteurs CSS de s'appliquer sans expander
+        st.markdown(f'<div class="n3-scope"><i class="n3load {variant}"></i>', unsafe_allow_html=True)
         render_detail_table(parent_node)
-        _ = render_barchart(parent_node, chart_key=f"chart_{_slug(label)}_{level}")  # <- chart_key
-        # ⛔️ supprime tout le bloc has_chart_data + n3chart
+        _ = render_barchart(parent_node, chart_key=f"chart_{_slug(label)}_{level}")
+        st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
