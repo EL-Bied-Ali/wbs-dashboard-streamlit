@@ -531,35 +531,28 @@ div[data-testid="stVerticalBlock"]:has(> div[class*="__rowbtn"] .stButton button
 
 
 
-
-/* Le conteneur overlay doit être au-dessus */
-div[class*="st-key-n2_"][class*="__rowbtn"]{ position:relative; z-index:10; }
-
-/* Dessine la lueur au-dessus de la ligne via un pseudo-élément du bouton */
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:relative; }
+/* Overlay clic pleine largeur, au-dessus de la ligne */
+div[class*="st-key-n2_"][class*="__rowbtn"]{ position:relative; z-index:10; margin-top:-56px; height:56px; } /* ajuste 48–60 */
+div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
   width:100%; height:100%; background:transparent; border:0; padding:0; margin:0; cursor:pointer;
-}
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover::before{
-  content:"";
-  position:absolute;
-  left:0; right:0;
-  top:-56px;                 /* = hauteur visuelle de ta .n2-grid (ajuste si besoin) */
-  height:56px;               /* idem */
-  border-radius:12px;
-  box-shadow:
-    inset 0 0 0 1px rgba(88,113,179,.35),
-    inset 0 0 80px rgba(37,99,235,.10);
-  pointer-events:none;       /* ne bloque pas le clic */
-  transition: box-shadow .15s ease;
+  border-radius:12px;  /* même arrondi visuel que la ligne */
 }
 
-/* Garde aussi le hover direct sur la ligne si tu veux */
-.n2-grid:hover{
-  filter: brightness(1.05);
+/* Donne au bouton le même éclairage/anim que .n2-grid:hover */
+div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
+  background: linear-gradient(90deg,
+    rgba(37,99,235,0.05) 0%,
+    rgba(37,99,235,0.18) 50%,
+    rgba(37,99,235,0.05) 100%);
+  background-size: 200% 100%;
+  animation: n2RowGlow .9s ease forwards;
   box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
-  transition: filter .15s ease, box-shadow .15s ease;
 }
+
+/* (optionnel) si tu veux une seule source d'effet, commente la règle suivante :
+.n2-grid:hover { ... } */
+
 
 
 </style>
