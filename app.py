@@ -123,16 +123,16 @@ def render_detail_table(node: dict, compact: bool = False):
 
 
 
-def render_barchart(node: dict):
+def render_barchart(node: dict) -> bool:
     labels, schedule, earned = [], [], []
-    for ch in node.get("children", []) or []:
+    for ch in (node.get("children") or []):
         labels.append(ch.get("label",""))
         m = (ch.get("metrics") or {})
         schedule.append(_safe_float(m.get("schedule",0)))
         earned.append(_safe_float(m.get("earned", m.get("units",0))))
 
     if not labels:
-        st.info("Aucun enfant pour le graphique."); return
+        return False  # rien à tracer
 
     vmax = max([0]+schedule+earned)
     ymax = 100 if vmax <= 100 else math.ceil(vmax/5)*5
@@ -224,6 +224,8 @@ def render_barchart(node: dict):
             "select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"
         ], "responsive": True
     })
+    return True   # ← ajoute ceci
+
 
 
 # ---------- En-têtes N1/N2 (avec loaders KPI) ----------
@@ -339,6 +341,8 @@ def render_section_level2(parent_node: dict):
     if has_children and st.session_state[base]:
         st.markdown('<div class="n3load v1"></div>', unsafe_allow_html=True)
         render_detail_table(parent_node)
+        _ = render_barchart(parent_node)  # pas de wrapper n3chart -> plus de div vide
+
 
         # n'affiche la section chart que si un vrai graphe est rendu
         has_chart_data = parent_node.get("children") and any(
