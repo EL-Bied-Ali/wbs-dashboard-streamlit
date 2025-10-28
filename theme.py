@@ -490,29 +490,15 @@ border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0}
   100% { background-position: 0 0; }
 }
 
-/* Le bouton qui suit immédiatement une ligne N2 couvre visuellement la ligne */
-div[data-testid="stVerticalBlock"] .n2-grid + div:has(> .stButton) { position: relative; }
-div[data-testid="stVerticalBlock"] .n2-grid + div:has(> .stButton) .stButton button{
-  position: relative;
-  display:block; width:100%;
-  /* adapter ces 2 valeurs à la hauteur de ta ligne si besoin */
-  margin-top: -44px;   /* remonte par-dessus la .n2-grid */
-  height: 44px;        /* même hauteur que la .n2-grid */
-  opacity:0; background:transparent; border:0; padding:0; cursor:pointer;
-}
+/* === Overlay clic pleine largeur + hover unifié pour les lignes N2 === */
 
-
-/* === Clic sur toute la ligne N2 : overlay 100% invisible mais cliquable === */
-/* Le container du bouton a une classe stable "st-key-...__rowbtn" => on l'overlap */
+/* 1) Le bouton invisible recouvre TOUTE la ligne (même zone pour clic et hover) */
 div[class*="st-key-n2_"][class*="__rowbtn"]{
-  position: relative;
+  position: relative; 
   z-index: 5;
-  /* adapte ces valeurs à la hauteur réelle de ta .n2-grid */
-  margin-top: -44px;   /* remonte sur la ligne */
-  height: 44px;        /* = hauteur visuelle de la ligne */
+  margin-top: -56px;   /* = hauteur visuelle de ta .n2-grid (ajuste 48–60 si besoin) */
+  height: 56px;
 }
-
-/* Le bouton occupe 100% du container et reste invisible */
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
   width:100%; height:100%;
@@ -520,63 +506,17 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
   cursor:pointer;
 }
 
-/* (Optionnel) Sur desktop, indique bien que la ligne est cliquable */
-.n2-grid{ cursor:pointer; }
-
-
-/* 1) Le bouton invisible recouvre TOUTE la ligne (même zone pour clic et hover) */
-div[class*="st-key-n2_"][class*="__rowbtn"]{
-  position: relative; z-index: 5;
-  margin-top: -56px;   /* = hauteur de ta .n2-grid */
-  height: 56px;        /* ajuste 48–60px si besoin */
-}
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
-  width:100%; height:100%; opacity:0; background:transparent; border:0; padding:0; margin:0;
-  cursor:pointer;
-}
-
-/* 2) Mirroir du hover : si l’overlay est survolé, applique l’effet sur la .n2-grid */
-.n2-grid:hover{ filter: brightness(1.05); box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset; }
-div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel)
-  :has(> div[class*="st-key-n2_"][class*="__rowbtn"]:hover) .n2-grid{
-  filter: brightness(1.05);
-  box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
-}
-
-/* 3) Curseur main partout */
-.n2-grid{ cursor:pointer; }
-
-
-/* === Synchronise le hover du bouton invisible avec la ligne === */
-
-/* quand on survole le bouton overlay → applique la même lumière à la .n2-grid */
-div[class*="st-key-n2_"][class*="__rowbtn"]:hover ~ div:has(.n2-grid),
-div[class*="st-key-n2_"][class*="__rowbtn"]:hover + div .n2-grid,
-div[class*="st-key-n2_"][class*="__rowbtn"]:hover .n2-grid {
-  filter: brightness(1.05);
-  box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
-}
-
-/* bonus : léger feedback au clic */
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:active {
-  transform: scale(0.995);
-  transition: transform 0.08s ease;
-}
-
-/* === Hover unifié N2 : survol bouton = survol ligne === */
-
-/* Quand le bouton invisible est survolé, applique le glow sur la .n2-grid du même bloc */
-div[data-testid="stVerticalBlock"]:has(> div[class*='__rowbtn']:hover) .n2-grid {
+/* 2) Hover unifié : survol du bouton invisible = survol de la .n2-grid */
+div[data-testid="stVerticalBlock"]:has(> div[class*="__rowbtn"] .stButton button:hover) .n2-grid,
+.n2-grid:hover{
   filter: brightness(1.05);
   box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
   transition: filter .15s ease, box-shadow .15s ease;
 }
 
-/* Curseur main partout */
-.n2-grid { cursor: pointer; }
+/* 3) Curseur main partout */
+.n2-grid{ cursor:pointer; }
 
-}
 
 
 </style>
