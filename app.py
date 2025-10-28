@@ -24,11 +24,13 @@ def _safe_float(x):
 def fmt_pct(x, signed=False):
     try:
         v = float(x)
-        # formate avec au plus 2 décimales, sans forcer les zéros inutiles
+        sign = "+" if signed and v >= 0 else ""
         txt = f"{v:.2f}".rstrip("0").rstrip(".")
-        return f"{txt}%"
+        return f"{sign}{txt}%"
     except Exception:
         return str(x)
+
+
 
 
 
