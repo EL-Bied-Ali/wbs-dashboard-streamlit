@@ -219,12 +219,15 @@ def render_barchart(node: dict, chart_key: str | None = None) -> bool:
     )
 
     st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={ ... },
+        fig, use_container_width=True,
+        config={
+            "displaylogo": False, "displayModeBar": "hover",
+            "modeBarButtonsToRemove": ["select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"],
+            "responsive": True
+        },
         key=chart_key or f"plt_{_slug(node.get('label','root'))}_{len(labels)}"
     )
-    return True
+
 
 
 
@@ -342,17 +345,12 @@ def render_section_level2(parent_node: dict):
     if has_children and st.session_state[base]:
         st.markdown('<div class="n3load v1"></div>', unsafe_allow_html=True)
         render_detail_table(parent_node)
-        _ = render_barchart(parent_node, key=f"chart_{_slug(label)}_{level}")
+        _ = render_barchart(parent_node, chart_key=f"chart_{_slug(label)}_{level}")  # <- chart_key
+        # ⛔️ supprime tout le bloc has_chart_data + n3chart
 
 
-        # n'affiche la section chart que si un vrai graphe est rendu
-        has_chart_data = parent_node.get("children") and any(
-            c.get("metrics") for c in parent_node["children"]
-        )
-        if has_chart_data:
-            st.markdown('<div class="n3chart">', unsafe_allow_html=True)
-            render_barchart(parent_node)
-            st.markdown('</div>', unsafe_allow_html=True)
+
+
 
 
 
