@@ -474,6 +474,22 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
 border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0}
 .n3chart .modebar{background:rgba(15,23,42,.65)!important;border-radius:8px}
 
+/* === Animation lueur horizontale sur toute la ligne (niveau 2) === */
+.n2-grid:hover {
+  position: relative;
+  background: linear-gradient(90deg,
+    rgba(37,99,235,0.05) 0%,
+    rgba(37,99,235,0.18) 50%,
+    rgba(37,99,235,0.05) 100%);
+  background-size: 200% 100%;
+  animation: n2RowGlow 0.9s ease forwards;
+}
+
+@keyframes n2RowGlow {
+  0%   { background-position: 200% 0; }
+  100% { background-position: 0 0; }
+}
+
 
 
 </style>
