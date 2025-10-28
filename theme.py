@@ -727,6 +727,47 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
 /* Laisse de la place à droite pour ne pas masquer le tableau */
 .block-container{ padding-right: 300px !important; } /* 260px + marge */
 
+/* === Radio WBS : plus grand, plus bas, scrollable === */
+.st-key-wbs_selector_onpage[data-testid="stElementContainer"]{
+  position: fixed;
+  top: 110px;                 /* ↓ descendre */
+  right: 24px;
+  width: 300px;               /* ↑ plus large */
+  max-height: 72vh;           /* scroll si long */
+  overflow: auto;
+  z-index: 1200;
+  padding: 12px 14px;
+  background: linear-gradient(180deg,#0f1b34,#0b1326);
+  border: 1px solid rgba(96,165,250,.35);
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(59,130,246,.15);
+}
+
+/* Titre intégré (WBS à afficher) + style options */
+.st-key-wbs_selector_onpage [data-testid="stWidgetLabel"]{
+  margin: 0 0 10px; color:#e5e7eb; font-weight:800; text-align:center;
+  font-size:1.05rem; letter-spacing:.2px;
+}
+.st-key-wbs_selector_onpage [role="radiogroup"]{ display:flex; flex-direction:column; gap:6px; }
+.st-key-wbs_selector_onpage label[data-baseweb="radio"]{
+  background: linear-gradient(180deg,#0f1a31,#0b1326);
+  border:1px solid rgba(96,165,250,.25);
+  border-radius:10px; padding:8px 10px;
+  transition: all .15s ease; cursor:pointer;
+}
+.st-key-wbs_selector_onpage label[data-baseweb="radio"]:hover{
+  border-color: rgba(125,211,252,.7); transform: translateY(-1px);
+}
+.st-key-wbs_selector_onpage label[data-baseweb="radio"]:has(input:checked){
+  border-color: rgba(125,211,252,.95); box-shadow: inset 0 0 0 1px rgba(96,165,250,.45);
+}
+
+/* Laisse la place au panneau (largeur 300 + marge) */
+.block-container{ padding-right: 340px !important; }
+
+/* Masque l'ancien header derrière si présent */
+h3#wbs-a-afficher{ display:none !important; }
+
 
 </style>
 """
