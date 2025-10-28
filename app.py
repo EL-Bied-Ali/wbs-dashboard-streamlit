@@ -6,6 +6,7 @@ from data import load_all_wbs
 from extract_wbs_json import extract_all_wbs  # <- utilise ton script d’extraction
 import pandas as pd
 import tempfile, os
+import math  # <- NEW
 
 st.set_page_config(page_title="WBS – Projet", layout="wide", initial_sidebar_state="expanded")
 inject_theme()
@@ -119,9 +120,7 @@ def render_detail_table(node: dict, compact: bool = False):
     </div>
     """), unsafe_allow_html=True)
 
-# ---------- Graph barres ----------
-# app.py — ajoute en haut:
-import math  # <- NEW
+
 
 def render_barchart(node: dict):
     # --- data ---
