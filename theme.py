@@ -469,6 +469,10 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   box-shadow: 0 0 5px rgba(59,130,246,.5);
 }
 
+/* theme.py */
+.n3chart{background:linear-gradient(180deg,rgba(15,23,42,.65),rgba(11,18,36,.6));
+border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0}
+.n3chart .modebar{background:rgba(15,23,42,.65)!important;border-radius:8px}
 
 
 
