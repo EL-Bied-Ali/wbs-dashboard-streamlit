@@ -648,6 +648,52 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
   max-width: 2100px !important;   /* laisse respirer les barres horizontales */
 }
 
+/* ===== Panneau WBS fixe à droite ===== */
+#onpage-selector-panel {
+  position: fixed;
+  top: 40px;
+  right: 30px;
+  width: 220px;
+  background: linear-gradient(180deg,#0f1b34,#0b1326);
+  border: 1px solid rgba(96,165,250,.35);
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.35), inset 0 0 0 1px rgba(59,130,246,.15);
+  padding: 14px 16px;
+  z-index: 999;
+}
+
+/* Style du titre dans le panneau fixe */
+#onpage-selector-panel h3 {
+  margin-top: 0;
+  color: #e5e7eb;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px rgba(96,165,250,.4);
+}
+
+/* Boutons radio dans le panneau fixe */
+#onpage-selector-panel [role="radiogroup"] {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#onpage-selector-panel label[data-baseweb="radio"] {
+  background: linear-gradient(180deg,#0f1a31,#0b1326);
+  border: 1px solid rgba(96,165,250,.25);
+  border-radius: 10px;
+  padding: 6px 10px;
+  transition: all .15s ease;
+}
+#onpage-selector-panel label[data-baseweb="radio"]:hover {
+  border-color: rgba(125,211,252,.7);
+  transform: translateY(-1px);
+}
+#onpage-selector-panel label[data-baseweb="radio"]:has(input:checked) {
+  border-color: rgba(125,211,252,.95);
+  box-shadow: inset 0 0 0 1px rgba(96,165,250,.45);
+}
 
 
 
