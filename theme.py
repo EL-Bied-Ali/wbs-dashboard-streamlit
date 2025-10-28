@@ -564,6 +564,13 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:active {
   transition: transform 0.08s ease;
 }
 
+/* Le hover sur le bouton overlay allume aussi la .n2-grid */
+div[data-testid="stVerticalBlock"]:has(div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover) .n2-grid{
+  filter: brightness(1.05);
+  box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
+  transition: filter .15s ease, box-shadow .15s ease;
+}
+
 
 </style>
 """
