@@ -7,6 +7,7 @@ import argparse, json, re
 import pandas as pd
 from openpyxl import load_workbook
 from datetime import datetime, date
+from typing import Any
 
 REQUIRED_COLS = [
     "Planned Finish", "Forecast Finish", "Schedule %", "Earned %",
@@ -20,28 +21,32 @@ def as_text(v: Any) -> str:
         return v.strftime("%d-%b-%y")
     return "" if v is None else str(v)
 
-def parse_percent_float(v):
+
+
+def parse_percent_float(v: Any) -> float:
+    """
+    Retourne la valeur NUMÉRIQUE telle quelle, sans *aucune* majoration ni arrondi.
+    - "75.51%" -> 75.51
+    - "0.7551" -> 0.7551
+    - 0.7551   -> 0.7551
+    - "1.2%"   -> 1.2
+    - 1.2      -> 1.2
+    """
     if v is None or v == "":
         return 0.0
-    percent_seen = False
     if isinstance(v, str):
-        s_raw = v
-        percent_seen = "%" in s_raw
-        s = re.sub(r"[^\d\-\.,%]", "", s_raw).replace(",", ".").replace("%", "").strip()
+        s = re.sub(r"[^\d\-\.,%]", "", v).replace(",", ".").replace("%", "").strip()
         if s in ("", "-", "."):
             return 0.0
         try:
-            val = float(s)
+            return float(s)   # ← pas d’arrondi ni *100
         except Exception:
             return 0.0
-    else:
-        try:
-            val = float(v)
-        except Exception:
-            return 0.0
-    if not percent_seen and 0 <= abs(val) <= 1.0:  # ← plus strict et dépend de la présence de %
-        val *= 100.0
-    return round(val, 2)
+    try:
+        return float(v)       # ← pas d’arrondi
+    except Exception:
+        return 0.0
+
 
 
 def parse_percent_int(v: Any) -> int:
@@ -194,8 +199,8 @@ def to_wbs_tree(df: pd.DataFrame, label_col: str) -> Dict:
             "forecast_finish": as_text(r.get("Forecast Finish")),
             "schedule": schedule,
             "earned":   earned,
-            "ecart":    parse_percent_int(r.get("ecart")),
-            "impact":   parse_percent_int(r.get("impact")),
+            "ecart":    parse_percent_float(r.get("ecart")),
+            "impact":   parse_percent_float(r.get("impact")),
             "glissement": as_text(r.get("Glissement")),
         }
 

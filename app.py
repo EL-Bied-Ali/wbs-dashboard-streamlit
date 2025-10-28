@@ -24,9 +24,10 @@ def _safe_float(x):
 def fmt_pct(x, signed=False):
     try:
         v = float(x)
-        return f"{v:.2f}%"
+        return f"{v}%"   # ← plus d’arrondi
     except Exception:
         return str(x)
+
 
 
 
@@ -238,7 +239,6 @@ def header_level2_grid(label, level, m):
     </div>
     """)
 
-# ---------- Rendu global ----------
 # ---------- Rendu global ----------
 def render_section_level2(parent_node: dict):
     label   = parent_node.get("label", "")
