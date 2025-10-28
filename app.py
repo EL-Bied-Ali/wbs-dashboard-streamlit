@@ -138,43 +138,50 @@ def render_barchart(node: dict):
     vmax = max([0] + schedule + earned)
     ymax = 100 if vmax <= 100 else math.ceil(vmax / 5) * 5
 
-    # Couleurs du loader/tableau
+    # Couleurs cohérentes (Schedule bleu, Earned vert)
     c_text = "#e5e7eb"
     c_grid = "rgba(42,59,98,.55)"
-    c_sched = "#3b82f6"  # bleu
-    c_earn = "#22c55e"   # vert
+    c_sched = "#3b82f6"
+    c_earn = "#22c55e"
 
     fig = go.Figure()
 
-    # Réduction de largeur des barres + espacement plus large
     bar_width = 0.25
-    offset = bar_width / 1.4  # équilibre visuel
+    offset = bar_width / 1.4  # distance entre les deux barres
 
+    # Barres bleue et verte
     fig.add_bar(
         name="Schedule %",
-        x=labels, y=schedule,
+        x=list(range(len(labels))), y=schedule,
         width=bar_width, offset=-offset, offsetgroup="sched",
         marker=dict(color=c_sched),
         text=[f"{v:.1f}%" for v in schedule], textposition="outside",
         textfont=dict(size=12, color=c_text),
-        hovertemplate="<b>%{x}</b><br>Schedule&nbsp;: %{y:.2f}%<extra></extra>",
+        hovertemplate="<b>%{customdata}</b><br>Schedule&nbsp;: %{y:.2f}%<extra></extra>",
+        customdata=labels,
         cliponaxis=False
     )
     fig.add_bar(
         name="Earned %",
-        x=labels, y=earned,
+        x=list(range(len(labels))), y=earned,
         width=bar_width, offset=offset, offsetgroup="earn",
         marker=dict(color=c_earn),
         text=[f"{v:.1f}%" for v in earned], textposition="outside",
         textfont=dict(size=12, color=c_text),
-        hovertemplate="<b>%{x}</b><br>Earned&nbsp;: %{y:.2f}%<extra></extra>",
+        hovertemplate="<b>%{customdata}</b><br>Earned&nbsp;: %{y:.2f}%<extra></extra>",
+        customdata=labels,
         cliponaxis=False
     )
 
-    # Centrage des labels (tickvals au milieu entre les barres)
-    tickvals = list(range(len(labels)))
-    ticktext = [lbl for lbl in labels]
-    fig.update_xaxes(tickvals=tickvals, ticktext=ticktext, tickfont=dict(size=13, color=c_text))
+    # → labels centrés : tickvals = positions moyennes entre les 2 barres
+    tickvals = [i for i in range(len(labels))]
+    ticktext = labels
+    fig.update_xaxes(
+        tickvals=[v for v in tickvals],
+        ticktext=ticktext,
+        tickfont=dict(size=13, color=c_text),
+        tickangle=0
+    )
 
     shapes = []
     if ymax == 100:
@@ -183,7 +190,7 @@ def render_barchart(node: dict):
 
     fig.update_layout(
         barmode="group",
-        bargap=0.55,  # <- plus d’espace
+        bargap=0.55,
         bargroupgap=0.25,
         height=300,
         margin=dict(l=10, r=24, t=12, b=60),
@@ -203,7 +210,8 @@ def render_barchart(node: dict):
             zeroline=False,
             tickfont=dict(size=13, color=c_text),
             automargin=True,
-            showspikes=False
+            showspikes=False,
+            tickangle=0
         ),
         yaxis=dict(
             title="",
