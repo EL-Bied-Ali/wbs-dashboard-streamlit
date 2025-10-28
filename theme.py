@@ -110,7 +110,6 @@ table.neo tbody tr:hover{ background:rgba(148,163,184,.06); transition:backgroun
 .ok{color:var(--ok); font-weight:700;} .bad{color:var(--bad); font-weight:700;}
 .table-card table.neo, .table-card table.neo *{ border:0 !important; box-shadow:none !important; }
 .table-card table.neo thead{ display:none !important; }
-.ok::before{ content:"+"; margin-right:2px; }
 
 /* ==== Barres horizontales (si tu les réactives) ==== */
 .mbar-wrap{display:flex; align-items:center; gap:8px;}
