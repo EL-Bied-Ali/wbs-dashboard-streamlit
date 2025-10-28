@@ -343,18 +343,50 @@ def render_section_level2(parent_node: dict):
 
     # ----- N3 -----
     if has_children and st.session_state[base]:
-        # alterner v0/v1 pour forcer le replay
-        ab_key = f"{base}__ab"
-        if ab_key not in st.session_state:
-            st.session_state[ab_key] = 0
-        variant = "v0" if st.session_state[ab_key] == 0 else "v1"
-        st.session_state[ab_key] = 1 - st.session_state[ab_key]
+        # id unique pour cibler ce N3 à chaque toggle
+        n3_id = f"n3-{uuid.uuid4().hex[:8]}"
+        st.markdown(f'<div class="n3-scope pending" id="{n3_id}">', unsafe_allow_html=True)
 
-        # scope N3: permet aux sélecteurs CSS de s'appliquer sans expander
-        st.markdown(f'<div class="n3-scope"><i class="n3load {variant}"></i>', unsafe_allow_html=True)
         render_detail_table(parent_node)
         _ = render_barchart(parent_node, chart_key=f"chart_{_slug(label)}_{level}")
+
+        # Kick JS: anime g.barlayer dès qu’il existe (Plotly recrée le DOM)
+        st.markdown(f"""
+        <script>
+        (function() {{
+          const root = document.getElementById("{n3_id}");
+          if(!root) return;
+
+          function kick() {{
+            // cherche la couche de barres quelle que soit la structure
+            const g = root.querySelector("svg.main-svg g.barlayer") ||
+                      root.querySelector("svg .cartesianlayer .plot .barlayer");
+            if(!g) {{ requestAnimationFrame(kick); return; }}
+
+            // état initial (si CSS .pending pas encore appliqué)
+            g.style.transformOrigin = "bottom";
+            g.style.willChange = "transform,opacity";
+            g.style.transition = "transform 700ms cubic-bezier(.22,.61,.36,1), opacity 700ms";
+            g.style.transform = "scaleY(0.001)";
+            g.style.opacity = "0";
+
+            // double rAF pour forcer le reflow puis l'animation
+            requestAnimationFrame(() => {{
+              requestAnimationFrame(() => {{
+                g.style.transform = "scaleY(1)";
+                g.style.opacity = "1";
+                // retire l'état "pending" pour ne pas bloquer les descendants
+                root.classList.remove("pending");
+              }});
+            }});
+          }}
+          kick();
+        }})();
+        </script>
+        """, unsafe_allow_html=True)
+
         st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 

@@ -456,23 +456,27 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   transition: background .2s ease, border-color .2s ease;
 }
 
+/* === N2 LABELS & GLOW === */
 .n2g-label:hover {
   border-color: #60a5fa;
   background: linear-gradient(90deg, rgba(37,99,235,.35), rgba(15,23,42,.5));
 }
-
 .n2g-label .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  width: 8px; height: 8px; border-radius: 50%;
   background: linear-gradient(180deg,#60a5fa,#22c55e);
   box-shadow: 0 0 5px rgba(59,130,246,.5);
 }
 
-/* theme.py */
-.n3chart{background:linear-gradient(180deg,rgba(15,23,42,.65),rgba(11,18,36,.6));
-border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0}
-.n3chart .modebar{background:rgba(15,23,42,.65)!important;border-radius:8px}
+/* === N3 CHART STYLE === */
+.n3chart {
+  background: linear-gradient(180deg, rgba(15,23,42,.65), rgba(11,18,36,.6));
+  border: 1px solid #1f2a44; border-radius: 14px;
+  padding: 10px 12px; margin: 8px 0;
+}
+.n3chart .modebar {
+  background: rgba(15,23,42,.65)!important;
+  border-radius: 8px;
+}
 
 /* === Animation lueur horizontale sur toute la ligne (niveau 2) === */
 .n2-grid:hover {
@@ -484,57 +488,33 @@ border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0}
   background-size: 200% 100%;
   animation: n2RowGlow 0.9s ease forwards;
 }
-
 @keyframes n2RowGlow {
   0%   { background-position: 200% 0; }
   100% { background-position: 0 0; }
 }
 
-/* Overlay clic pleine largeur (même zone pour clic + hover) */
+/* === Overlay clic pleine largeur (N2) === */
 div[class*="st-key-n2_"][class*="__rowbtn"]{
-  position: relative;
-  z-index: 10;
-  margin-top: -56px;   /* ajuste 48–60 si besoin */
-  height: 56px;
+  position: relative; z-index: 10;
+  margin-top: -70px; height: 57px;
+  margin-left: 2mm; width: calc(100% - 1mm);
 }
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
-  width:100%; height:100%;
-  background: transparent; border:0; padding:0; margin:0; cursor:pointer;
-  border-radius:12px;
+  width:100%; height:100%; background:transparent; border:0; padding:0; margin:0;
+  cursor:pointer; border-radius:12px;
 }
-
-/* Même glow/anim que la ligne directement SUR le bouton overlay */
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
-  background: linear-gradient(90deg,
-    rgba(37,99,235,0.05) 0%,
-    rgba(37,99,235,0.18) 50%,
-    rgba(37,99,235,0.05) 100%);
-  background-size: 200% 100%;
-  animation: n2RowGlow .9s ease forwards;
-  box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
+  background:linear-gradient(90deg,rgba(37,99,235,.05),rgba(37,99,235,.18),rgba(37,99,235,.05));
+  background-size:200% 100%; animation:n2RowGlow .9s ease forwards;
+  box-shadow:0 0 0 1px rgba(88,113,179,.35) inset;
 }
 
 /* (optionnel) garde aussi le hover direct sur la ligne */
-.n2-grid:hover{
+.n2-grid:hover {
   filter: brightness(1.05);
   box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
   transition: filter .15s ease, box-shadow .15s ease;
-}
-
-div[class*="st-key-n2_"][class*="__rowbtn"] {
-  position: relative;
-  z-index: 10;
-
-  /* 🔽 Décalage vertical : plus négatif = plus haut, moins négatif = plus bas */
-  margin-top: -70px;    /* ← monte le bouton de ~3px (ajuste à -58, -60, etc.) */
-
-  /* 🔼 Hauteur totale du bouton : plus grand = couvre plus bas */
-  height: 57px;         /* ← augmente légèrement la zone cliquable */
-
-  /* Tu peux aussi ajouter un léger décalage latéral si besoin */
-  margin-left: 2mm;     /* ← décale vers la droite d’environ 1 millimètre */
-  width: calc(100% - 1mm); /* ← pour que la largeur reste équilibrée */
 }
 
 /* ===== N3 sans expander : scope + alternance A/B ===== */
@@ -549,7 +529,7 @@ div[class*="st-key-n2_"][class*="__rowbtn"] {
 .n3-scope:has(.n3load.v1) .mfill.anim{ animation:n3FillB .9s ease forwards }
 .n3-scope:has(.n3load.v1) .mbar-wrap.v .mval{ opacity:0; animation:valIn .5s ease .35s forwards }
 
-/* Entrée douce du frame Plotly + croissance des barres */
+/* Entrée douce du frame Plotly */
 .n3-scope:has(.n3load.v0) [data-testid="stFullScreenFrame"],
 .n3-scope:has(.n3load.v0) [data-testid="stPlotlyChart"]{
   opacity:0; animation:n3ChartInA .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
@@ -559,17 +539,20 @@ div[class*="st-key-n2_"][class*="__rowbtn"] {
   opacity:0; animation:n3ChartInB .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
 }
 
-/* Effet "grow" sur la couche de barres Plotly */
-.n3-scope:has(.n3load.v0) .main-svg .barlayer{
+/* Effet "grow" sur la couche de barres Plotly (robuste) */
+.n3-scope:has(.n3load.v0) svg .cartesianlayer .plot .barlayer,
+.n3-scope:has(.n3load.v0) svg g.barlayer{
   transform-origin:bottom; transform-box:view-box;
   transform:scaleY(0.001); opacity:0;
   animation:n3GrowA .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
 }
-.n3-scope:has(.n3load.v1) .main-svg .barlayer{
+.n3-scope:has(.n3load.v1) svg .cartesianlayer .plot .barlayer,
+.n3-scope:has(.n3load.v1) svg g.barlayer{
   transform-origin:bottom; transform-box:view-box;
   transform:scaleY(0.001); opacity:0;
   animation:n3GrowB .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
 }
+
 
 
 
