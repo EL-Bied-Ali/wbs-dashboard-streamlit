@@ -122,6 +122,7 @@ def render_detail_table(node: dict, compact: bool = False):
 
 
 
+
 def render_barchart(node: dict):
     labels, schedule, earned = [], [], []
     for ch in node.get("children", []) or []:
@@ -137,21 +138,23 @@ def render_barchart(node: dict):
     vmax = max([0] + schedule + earned)
     ymax = 100 if vmax <= 100 else math.ceil(vmax / 5) * 5
 
-    # Couleurs (loader/tableau): Schedule = bleu, Earned = vert
+    # Couleurs cohérentes avec ton thème (bleu / vert)
     c_text = "#e5e7eb"
     c_grid = "rgba(42,59,98,.55)"
-    c_sched = "#3b82f6"   # bleu
+    c_sched = "#3b82f6"
     c_sched_edge = "#60a5fa"
-    c_earn  = "#22c55e"   # vert
+    c_earn  = "#22c55e"
     c_earn_edge = "#34d399"
 
     fig = go.Figure()
 
-    # Barres nettes, pas d’ombre ni couche “fake-3D”
+    # Barres ajustées : décalage plus léger + libellés centraux
+    bar_width = 0.34
     fig.add_bar(
         name="Schedule %",
-        x=labels, y=schedule, width=0.34, offset=-0.18, offsetgroup="sched",
-        marker=dict(color=c_sched, line=dict(color=c_sched_edge, width=1.2)),
+        x=labels, y=schedule,
+        width=bar_width, offset=-bar_width/2.2, offsetgroup="sched",
+        marker=dict(color=c_sched, line=dict(color=c_sched_edge, width=1.1)),
         text=[f"{v:.1f}%" for v in schedule], textposition="outside",
         textfont=dict(size=12, color=c_text),
         hovertemplate="<b>%{x}</b><br>Schedule&nbsp;: %{y:.2f}%<extra></extra>",
@@ -159,37 +162,72 @@ def render_barchart(node: dict):
     )
     fig.add_bar(
         name="Earned %",
-        x=labels, y=earned, width=0.34, offset=+0.18, offsetgroup="earn",
-        marker=dict(color=c_earn, line=dict(color=c_earn_edge, width=1.2)),
+        x=labels, y=earned,
+        width=bar_width, offset=bar_width/2.2, offsetgroup="earn",
+        marker=dict(color=c_earn, line=dict(color=c_earn_edge, width=1.1)),
         text=[f"{v:.1f}%" for v in earned], textposition="outside",
         textfont=dict(size=12, color=c_text),
         hovertemplate="<b>%{x}</b><br>Earned&nbsp;: %{y:.2f}%<extra></extra>",
         cliponaxis=False
     )
 
+    # Ligne 100% facultative
     shapes = []
     if ymax == 100:
         shapes.append(dict(type="line", xref="paper", x0=0, x1=1, y0=100, y1=100,
                            line=dict(width=1, dash="dot", color=c_grid)))
 
     fig.update_layout(
-        barmode="group", bargap=0.34, bargroupgap=0.22,
-        height=300, margin=dict(l=24, r=24, t=12, b=60),
-        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+        barmode="group",
+        bargap=0.28, bargroupgap=0.18,
+        height=300,
+        margin=dict(l=10, r=24, t=12, b=60),  # ← décale le graphique vers la gauche
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
         font=dict(size=13, color=c_text),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.30, xanchor="center", x=0.5,
-                    itemclick=False, itemdoubleclick=False, font=dict(size=12, color="#cbd5e1")),
-        xaxis=dict(title="", showgrid=False, zeroline=False,
-                   tickfont=dict(size=13, color=c_text), automargin=True,
-                   showspikes=False),                 # <- pas de trait vertical
-        yaxis=dict(title="", range=[0, ymax], ticksuffix="%", dtick=25 if ymax == 100 else None,
-                   showgrid=True, gridcolor=c_grid, zeroline=False,
-                   tickfont=dict(size=12, color="#cbd5e1"), automargin=True,
-                   showspikes=False),                 # <- pas de trait horizontal
-        hovermode="closest",                          # <- pas de ligne de comparaison
-        hoverlabel=dict(bgcolor="#0f172a", font=dict(color=c_text, size=12), bordercolor="#1f2a44"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom", y=-0.30,
+            xanchor="center", x=0.5,
+            itemclick=False, itemdoubleclick=False,
+            font=dict(size=12, color="#cbd5e1")
+        ),
+        xaxis=dict(
+            title="",
+            showgrid=False,
+            zeroline=False,
+            tickfont=dict(size=13, color=c_text),
+            automargin=True,
+            showspikes=False,
+            tickangle=0
+        ),
+        yaxis=dict(
+            title="",
+            range=[0, ymax],
+            ticksuffix="%",
+            dtick=25 if ymax == 100 else None,
+            showgrid=True,
+            gridcolor=c_grid,
+            zeroline=False,
+            tickfont=dict(size=12, color="#cbd5e1"),
+            automargin=True,
+            showspikes=False
+        ),
+        hovermode="closest",
+        hoverlabel=dict(
+            bgcolor="#0f172a",
+            font=dict(color=c_text, size=12),
+            bordercolor="#1f2a44"
+        ),
         shapes=shapes,
         transition=None
+    )
+
+    # Style sans ombre ni effet 3D
+    st.markdown(
+        '<style>.n3chart{background:linear-gradient(180deg,rgba(15,23,42,.58),rgba(11,18,36,.54));'
+        'border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0;}</style>',
+        unsafe_allow_html=True
     )
 
     st.plotly_chart(
@@ -199,7 +237,8 @@ def render_barchart(node: dict):
             "displaylogo": False,
             "displayModeBar": "hover",
             "modeBarButtonsToRemove": [
-                "select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"
+                "select2d","lasso2d","autoScale2d",
+                "zoomIn2d","zoomOut2d","toggleSpikelines"
             ],
             "responsive": True
         }
