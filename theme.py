@@ -606,8 +606,8 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
 .hero .n1-grid,
 .section-card .n2-grid,
 .table-card table.neo {
-  margin-left: 20px !important;   /* 👈 augmente doucement l’espace gauche */
-  width: calc(100% + 20px) !important;  /* compense pour ne pas tasser le reste */
+  margin-left: 40px !important;   /* 👈 augmente doucement l’espace gauche */
+  width: calc(100% + 40px) !important;  /* compense pour ne pas tasser le reste */
 }
 
 
