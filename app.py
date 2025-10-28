@@ -344,31 +344,34 @@ def render_section_level2(parent_node: dict):
 
     # ----- N3 -----
     if has_children and st.session_state[base]:
-        import uuid  # au cas où
-        # alternance A/B -> rejoue à chaque toggle
-        ab_key = f"{base}__ab"
-        st.session_state.setdefault(ab_key, 0)
-        variant = "v0" if st.session_state[ab_key] == 0 else "v1"
-        st.session_state[ab_key] = 1 - st.session_state[ab_key]
+        # id scope pour CSS (si tu en as besoin ailleurs)
+        n3_id = f"n3-{uuid.uuid4().hex[:8]}"
+        st.markdown(f'<div class="n3-scope" id="{n3_id}">', unsafe_allow_html=True)
 
-        # 1) Table (rien à changer)
+        # --- Alternance A/B (sert à 1) le marker CSS et 2) la clé du chart
+        ab_key = f"ab__{_slug(label)}_{level}"
+        if ab_key not in st.session_state:
+            st.session_state[ab_key] = 0
+        cur = st.session_state[ab_key]           # 0 -> v0, 1 -> v1
+        variant = "v0" if cur == 0 else "v1"
+
+        # 1) MARQUEUR FRÈRE (doit être juste AVANT le chart)
+        st.markdown(f'<i class="n3marker {variant}"></i>', unsafe_allow_html=True)
+
+        # 2) TABLE
         render_detail_table(parent_node)
 
-        # 2) Marqueur FRÈRE juste avant le chart (pas de wrapper)
-        n3_id = f"n3m-{uuid.uuid4().hex[:8]}"
-        st.markdown(f'<i id="{n3_id}" class="n3marker {variant}"></i>', unsafe_allow_html=True)
+        # 3) CHART (clé inclut l’alternance pour remonter le DOM)
+        render_barchart(
+            parent_node,
+            chart_key=f"chart_{_slug(label)}_{level}_ab{cur}"
+        )
 
-        # 3) Chart (le chart sera le sibling direct du marqueur)
-        _ = render_barchart(parent_node, chart_key=f"chart_{_slug(label)}_{level}")
+        # flip pour la prochaine ouverture
+        st.session_state[ab_key] = 1 - cur
 
-        # (optionnel) petit kick pour re-déclencher les mini-bars du tableau si besoin
-        st.markdown("""
-        <script>(function(){
-          document.querySelectorAll('.table-card .mfill.anim').forEach(el=>{
-            el.classList.remove('anim'); void el.offsetWidth; el.classList.add('anim');
-          });
-        })();</script>
-        """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
