@@ -548,6 +548,23 @@ div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel)
 .n2-grid{ cursor:pointer; }
 
 
+/* === Synchronise le hover du bouton invisible avec la ligne === */
+
+/* quand on survole le bouton overlay → applique la même lumière à la .n2-grid */
+div[class*="st-key-n2_"][class*="__rowbtn"]:hover ~ div:has(.n2-grid),
+div[class*="st-key-n2_"][class*="__rowbtn"]:hover + div .n2-grid,
+div[class*="st-key-n2_"][class*="__rowbtn"]:hover .n2-grid {
+  filter: brightness(1.05);
+  box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
+}
+
+/* bonus : léger feedback au clic */
+div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:active {
+  transform: scale(0.995);
+  transition: transform 0.08s ease;
+}
+
+
 </style>
 """
 
