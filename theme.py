@@ -524,6 +524,30 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
 .n2-grid{ cursor:pointer; }
 
 
+/* 1) Le bouton invisible recouvre TOUTE la ligne (même zone pour clic et hover) */
+div[class*="st-key-n2_"][class*="__rowbtn"]{
+  position: relative; z-index: 5;
+  margin-top: -56px;   /* = hauteur de ta .n2-grid */
+  height: 56px;        /* ajuste 48–60px si besoin */
+}
+div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
+div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
+  width:100%; height:100%; opacity:0; background:transparent; border:0; padding:0; margin:0;
+  cursor:pointer;
+}
+
+/* 2) Mirroir du hover : si l’overlay est survolé, applique l’effet sur la .n2-grid */
+.n2-grid:hover{ filter: brightness(1.05); box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset; }
+div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel)
+  :has(> div[class*="st-key-n2_"][class*="__rowbtn"]:hover) .n2-grid{
+  filter: brightness(1.05);
+  box-shadow: 0 0 0 1px rgba(88,113,179,.35) inset;
+}
+
+/* 3) Curseur main partout */
+.n2-grid{ cursor:pointer; }
+
+
 </style>
 """
 
