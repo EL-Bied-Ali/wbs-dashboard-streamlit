@@ -522,6 +522,21 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
   transition: filter .15s ease, box-shadow .15s ease;
 }
 
+div[class*="st-key-n2_"][class*="__rowbtn"] {
+  position: relative;
+  z-index: 10;
+
+  /* 🔽 Décalage vertical : plus négatif = plus haut, moins négatif = plus bas */
+  margin-top: -59px;    /* ← monte le bouton de ~3px (ajuste à -58, -60, etc.) */
+
+  /* 🔼 Hauteur totale du bouton : plus grand = couvre plus bas */
+  height: 57px;         /* ← augmente légèrement la zone cliquable */
+
+  /* Tu peux aussi ajouter un léger décalage latéral si besoin */
+  margin-left: 1mm;     /* ← décale vers la droite d’environ 1 millimètre */
+  width: calc(100% - 1mm); /* ← pour que la largeur reste équilibrée */
+}
+
 
 
 
