@@ -557,7 +557,7 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 .table-card .mbar{ display:block; overflow:hidden; border-radius:6px; }
 .table-card .mfill{ display:block; height:8px; width:0; border-radius:6px; }
 
-/* Rejoue l’animation à chaque rendu (compatible avec ton --to inline) */
+/* Rejoue l’animation à chaque rendu (compatible avec --to inline) */
 .table-card .mfill.anim{ animation:mfillGrow .8s cubic-bezier(.22,.61,.36,1) forwards; }
 @keyframes mfillGrow{ 0%{ width:0 } 100%{ width:var(--to) } }
 
@@ -566,9 +566,11 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 @keyframes valIn{ to{ opacity:1; transform:none } }
 
 /* ===== Animation chart via MARQUEUR FRÈRE ===== */
-/* Fade-in du conteneur Plotly quand le marqueur est présent */
-.n3marker.v0 + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"],
-.n3marker.v1 + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{
+/* Fade-in du conteneur Plotly quand le marqueur est présent (frère général) */
+.n3marker.v0 ~ [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
+.n3marker.v0 ~ [data-testid="stElementContainer"] [data-testid="stPlotlyChart"],
+.n3marker.v1 ~ [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
+.n3marker.v1 ~ [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{
   opacity:0; animation:n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .15s forwards;
 }
 @keyframes n3ChartIn{
@@ -577,14 +579,14 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 }
 
 /* Croissance des barres (selectors robustes) */
-.n3marker.v0 + [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
-.n3marker.v0 + [data-testid="stElementContainer"] svg g.barlayer{
+.n3marker.v0 ~ [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
+.n3marker.v0 ~ [data-testid="stElementContainer"] svg g.barlayer{
   transform-origin:bottom; transform-box:view-box;
   transform:scaleY(0.001); opacity:0;
   animation:n3GrowA .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
 }
-.n3marker.v1 + [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
-.n3marker.v1 + [data-testid="stElementContainer"] svg g.barlayer{
+.n3marker.v1 ~ [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
+.n3marker.v1 ~ [data-testid="stElementContainer"] svg g.barlayer{
   transform-origin:bottom; transform-box:view-box;
   transform:scaleY(0.001); opacity:0;
   animation:n3GrowB .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
@@ -592,17 +594,10 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 
 /* Accessibilité */
 @media (prefers-reduced-motion: reduce){
-  .n3marker + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{ animation:none!important; opacity:1!important; transform:none!important; }
-  .n3marker + [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
-  .n3marker + [data-testid="stElementContainer"] svg g.barlayer{ animation:none!important; opacity:1!important; transform:none!important; }
-}
-
-/* Fade-in du conteneur Plotly quand le marqueur est présent */
-.n3marker.v0 + [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
-.n3marker.v0 + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"],
-.n3marker.v1 + [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
-.n3marker.v1 + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{
-  opacity:0; animation:n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .15s forwards;
+  .n3marker ~ [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
+  .n3marker ~ [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{ animation:none!important; opacity:1!important; transform:none!important; }
+  .n3marker ~ [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
+  .n3marker ~ [data-testid="stElementContainer"] svg g.barlayer{ animation:none!important; opacity:1!important; transform:none!important; }
 }
 
 
