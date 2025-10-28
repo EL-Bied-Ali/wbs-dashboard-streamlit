@@ -137,52 +137,54 @@ def render_barchart(node: dict):
     vmax = max([0] + schedule + earned)
     ymax = 100 if vmax <= 100 else math.ceil(vmax / 5) * 5
 
+    # Palette premium
+    c_text = "#e5e7eb"
+    c_grid = "rgba(42,59,98,.55)"
+    c_sched = "#7dd3fc"  # Sky-300
+    c_sched_edge = "#38bdf8"
+    c_earn  = "#a78bfa"  # Violet-300
+    c_earn_edge = "#8b5cf6"
+    c_glass = "rgba(2,6,23,0.35)"
+
     fig = go.Figure()
 
-    # Shadow layer (barre plus large, faible opacité) -> effet de profondeur sans casser l’animation CSS
-    shadow_common = dict(x=labels, width=0.56, cliponaxis=False, hoverinfo="skip",
-                         marker=dict(color="rgba(15,23,42,0.45)", line=dict(width=0)),
-                         offsetgroup="sh", showlegend=False, text=None)
-    fig.add_bar(name="", y=[max(s, e) for s, e in zip(schedule, earned)], **shadow_common)
+    # Ombre douce derrière le groupe (fake 3D) — large, translucide, en premier
+    fig.add_bar(
+        x=labels,
+        y=[max(s, e) for s, e in zip(schedule, earned)],
+        width=0.62, offset=0.0, offsetgroup="shadow",
+        marker=dict(color="rgba(0,0,0,0.22)", line=dict(width=0)),
+        hoverinfo="skip", showlegend=False, opacity=1
+    )
 
-    # Couleurs “verre” harmonisées avec ton thème
-    c_sched = "#60a5fa"   # bleu clair
-    c_earn  = "#34d399"   # vert clair
-    c_text  = "#e5e7eb"
-    c_grid  = "rgba(42,59,98,.55)"
-
-    # Barre Schedule
+    # Barres — on réduit la largeur + décalage gauche/droite pour éviter toute collision
     fig.add_bar(
         name="Schedule %",
-        x=labels, y=schedule, offsetgroup="g1", width=0.42, cliponaxis=False,
-        marker=dict(color=c_sched, line=dict(width=0)),
-        text=[f"{v:.1f}%" for v in schedule],
-        textposition="outside",
+        x=labels, y=schedule, width=0.34, offset=-0.18, offsetgroup="sched",
+        marker=dict(color=c_sched, line=dict(color=c_sched_edge, width=1.4)),
+        text=[f"{v:.1f}%" for v in schedule], textposition="outside",
         textfont=dict(size=12, color=c_text),
         hovertemplate="<b>%{x}</b><br>Schedule&nbsp;: %{y:.2f}%<extra></extra>",
-        hoverinfo="skip"
+        cliponaxis=False
     )
-
-    # Barre Earned (léger décalage visuel via group)
     fig.add_bar(
         name="Earned %",
-        x=labels, y=earned, offsetgroup="g2", width=0.42, cliponaxis=False,
-        marker=dict(color=c_earn, line=dict(width=0)),
-        text=[f"{v:.1f}%" for v in earned],
-        textposition="outside",
+        x=labels, y=earned, width=0.34, offset=+0.18, offsetgroup="earn",
+        marker=dict(color=c_earn, line=dict(color=c_earn_edge, width=1.4)),
+        text=[f"{v:.1f}%" for v in earned], textposition="outside",
         textfont=dict(size=12, color=c_text),
         hovertemplate="<b>%{x}</b><br>Earned&nbsp;: %{y:.2f}%<extra></extra>",
-        hoverinfo="skip"
+        cliponaxis=False
     )
 
-    # Ligne de repère “objectif 100%” si pertinent
+    # Ligne 100% si pertinent
     shapes = []
     if ymax == 100:
         shapes.append(dict(type="line", xref="paper", x0=0, x1=1, y0=100, y1=100,
                            line=dict(width=1, dash="dot", color=c_grid)))
 
     fig.update_layout(
-        barmode="group", bargap=0.26, bargroupgap=0.18,
+        barmode="group", bargap=0.34, bargroupgap=0.22,
         height=300, margin=dict(l=24, r=24, t=12, b=60),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         font=dict(size=13, color=c_text),
@@ -196,13 +198,15 @@ def render_barchart(node: dict):
         hovermode="x unified",
         hoverlabel=dict(bgcolor="#0f172a", font=dict(color=c_text, size=12), bordercolor="#1f2a44"),
         shapes=shapes,
-        transition=None  # pas d’animation Plotly -> laisse tes keyframes CSS piloter
+        transition=None
     )
 
-    # Info hover unifié custom (schedule/earned côte à côte)
-    # Astuce: on s’appuie sur hovermode, pas d’animation ajoutée.
-    for tr in fig.data:
-        tr.update(hoverinfo="skip")
+    # Carte “verre” autour du chart (si tu l’entoures avec <div class="n3chart">...</div>)
+    st.markdown(
+        '<style>.n3chart{background:linear-gradient(180deg,rgba(15,23,42,.58),rgba(11,18,36,.54));'
+        'border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0;box-shadow:0 10px 30px rgba(0,0,0,.25), inset 0 0 0 1px rgba(31,42,68,.35)}</style>',
+        unsafe_allow_html=True
+    )
 
     st.plotly_chart(
         fig,
