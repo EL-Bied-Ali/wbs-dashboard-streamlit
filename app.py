@@ -343,50 +343,33 @@ def render_section_level2(parent_node: dict):
     #             st.session_state[base] = not st.session_state[base]
 
     # ----- N3 -----
-    # ----- N3 -----
     if has_children and st.session_state[base]:
-        # alternance A/B -> rejoue les keyframes CSS
+        import uuid  # au cas où
+        # alternance A/B -> rejoue à chaque toggle
         ab_key = f"{base}__ab"
         st.session_state.setdefault(ab_key, 0)
         variant = "v0" if st.session_state[ab_key] == 0 else "v1"
         st.session_state[ab_key] = 1 - st.session_state[ab_key]
 
-        # id unique pour cibler ce N3 à chaque toggle
-        n3_id = f"n3-{uuid.uuid4().hex[:8]}"
-        st.markdown(f'<div class="n3-scope pending" id="{n3_id}"><i class="n3load {variant}"></i>', unsafe_allow_html=True)
-
+        # 1) Table (rien à changer)
         render_detail_table(parent_node)
+
+        # 2) Marqueur FRÈRE juste avant le chart (pas de wrapper)
+        n3_id = f"n3m-{uuid.uuid4().hex[:8]}"
+        st.markdown(f'<i id="{n3_id}" class="n3marker {variant}"></i>', unsafe_allow_html=True)
+
+        # 3) Chart (le chart sera le sibling direct du marqueur)
         _ = render_barchart(parent_node, chart_key=f"chart_{_slug(label)}_{level}")
 
-        # Kick JS: anime g.barlayer même si Plotly rerend le DOM
-        st.markdown(f"""
-        <script>
-        (function() {{
-          const root = document.getElementById("{n3_id}");
-          if(!root) return;
-          function kick() {{
-            const g = root.querySelector("svg.main-svg g.barlayer") ||
-                      root.querySelector("svg .cartesianlayer .plot .barlayer");
-            if(!g) {{ requestAnimationFrame(kick); return; }}
-            g.style.transformOrigin = "bottom";
-            g.style.willChange = "transform,opacity";
-            g.style.transition = "transform 700ms cubic-bezier(.22,.61,.36,1), opacity 700ms";
-            g.style.transform = "scaleY(0.001)";
-            g.style.opacity = "0";
-            requestAnimationFrame(()=>{{
-              requestAnimationFrame(()=>{{
-                g.style.transform = "scaleY(1)";
-                g.style.opacity = "1";
-                root.classList.remove("pending");
-              }});
-            }});
-          }}
-          kick();
-        }})();
-        </script>
+        # (optionnel) petit kick pour re-déclencher les mini-bars du tableau si besoin
+        st.markdown("""
+        <script>(function(){
+          document.querySelectorAll('.table-card .mfill.anim').forEach(el=>{
+            el.classList.remove('anim'); void el.offsetWidth; el.classList.add('anim');
+          });
+        })();</script>
         """, unsafe_allow_html=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 

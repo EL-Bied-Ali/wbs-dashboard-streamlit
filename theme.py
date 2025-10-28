@@ -565,6 +565,37 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 .table-card .mbar-wrap.v .mval{ opacity:0; transform:translateY(2px); animation:valIn .45s ease .25s forwards; }
 @keyframes valIn{ to{ opacity:1; transform:none } }
 
+/* ===== Animation chart via MARQUEUR FRÈRE ===== */
+/* Fade-in du conteneur Plotly quand le marqueur est présent */
+.n3marker.v0 + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"],
+.n3marker.v1 + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{
+  opacity:0; animation:n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .15s forwards;
+}
+@keyframes n3ChartIn{
+  from{opacity:0; transform:translateY(-4px) scaleY(.99)}
+  to  {opacity:1; transform:translateY(0)    scaleY(1)}
+}
+
+/* Croissance des barres (selectors robustes) */
+.n3marker.v0 + [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
+.n3marker.v0 + [data-testid="stElementContainer"] svg g.barlayer{
+  transform-origin:bottom; transform-box:view-box;
+  transform:scaleY(0.001); opacity:0;
+  animation:n3GrowA .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
+}
+.n3marker.v1 + [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
+.n3marker.v1 + [data-testid="stElementContainer"] svg g.barlayer{
+  transform-origin:bottom; transform-box:view-box;
+  transform:scaleY(0.001); opacity:0;
+  animation:n3GrowB .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
+}
+
+/* Accessibilité */
+@media (prefers-reduced-motion: reduce){
+  .n3marker + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{ animation:none!important; opacity:1!important; transform:none!important; }
+  .n3marker + [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
+  .n3marker + [data-testid="stElementContainer"] svg g.barlayer{ animation:none!important; opacity:1!important; transform:none!important; }
+}
 
 
 </style>
