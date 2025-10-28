@@ -1,4 +1,4 @@
-# app.py — upload Excel -> extraction WBS instantanée (panel à gauche sur la page)
+# app.py — Sidebar conservée / boutons déplacés sur la page (gauche)
 import streamlit as st
 import plotly.graph_objects as go
 from theme import inject_theme
@@ -7,10 +7,9 @@ from extract_wbs_json import extract_all_wbs
 import pandas as pd
 import tempfile, os
 import math
-import uuid
 
-st.set_page_config(page_title="WBS – Projet", layout="wide", initial_sidebar_state="collapsed")
-inject_theme()  # garde nos styles globaux  :contentReference[oaicite:0]{index=0}
+st.set_page_config(page_title="WBS – Projet", layout="wide", initial_sidebar_state="expanded")
+inject_theme()
 
 # ---------- Helpers ----------
 def _minify(html: str) -> str:
@@ -38,11 +37,10 @@ def to_number_j(val):
     except:
         return 0.0
 
-def bar_html(pct: float, color: str, vertical: bool = True) -> str:
+def bar_html(pct: float, color: str) -> str:
     safe = max(0, min(100, pct or 0))
-    cls = "mbar-wrap v" if vertical else "mbar-wrap"
     return f"""
-    <span class="{cls}">
+    <span class="mbar-wrap">
       <span class="mbar">
         <span class="mfill anim {color}" style="--to:{safe}%;"></span>
       </span>
@@ -51,7 +49,7 @@ def bar_html(pct: float, color: str, vertical: bool = True) -> str:
     """
 
 # ---------- N3 (table) ----------
-def render_detail_table(node: dict, compact: bool = False):
+def render_detail_table(node: dict):
     rows = []
     for ch in node.get("children", []) or []:
         m = ch.get("metrics", {}) or {}
@@ -179,8 +177,9 @@ def render_barchart(node: dict, chart_key: str | None = None) -> bool:
         config={"displaylogo": False, "displayModeBar": "hover",
                 "modeBarButtonsToRemove": ["select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"],
                 "responsive": True},
-        key=chart_key or f"plt_{_slug(node.get('label','root'))}_{len(labels)}"
+        key=f"plt_{len(labels)}"
     )
+    return True
 
 # ---------- Headers ----------
 def header_level1_grid(label_n1: str, m: dict) -> str:
@@ -210,7 +209,7 @@ def header_level1_grid(label_n1: str, m: dict) -> str:
         <div class="n1g-cell"><span class="small">Glissement</span><b class="{gcls}">{gliss}</b></div>
       </div>
     </div>
-    """)  # structure initiale conservée  :contentReference[oaicite:1]{index=1}
+    """)
 
 def header_level2_grid(label, level, m):
     planned  = m.get("planned_finish","")
@@ -257,6 +256,7 @@ def render_section_level2(parent_node: dict):
     with left:
         st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
         if has_children:
+            # bouton "ligne entière" déjà sur la page (pas dans la sidebar)
             if st.button(" ", key=f"{base}__rowbtn", use_container_width=True):
                 st.session_state[base] = not st.session_state[base]
                 st.session_state[ver_key] += 1
@@ -265,8 +265,7 @@ def render_section_level2(parent_node: dict):
         mount_key = f"{base}__mount_{st.session_state[ver_key] % 2}"
         with st.container(key=mount_key):
             with st.expander("", expanded=True):
-                ver = st.session_state[ver_key] % 2
-                st.markdown(f'<div class="n3load v{ver}"></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="n3load v{st.session_state[ver_key] % 2}"></div>', unsafe_allow_html=True)
                 render_detail_table(parent_node)
                 render_barchart(parent_node)
 
@@ -280,59 +279,57 @@ def render_all_open_native(root: dict):
     for n2 in root.get("children", []) or []:
         render_section_level2(n2)
 
-# ===================== NOUVEAU: panneau gauche sur la page =====================
-# Layout principal: panel à gauche (fixe), contenu à droite
-panel_col, content_col = st.columns([0.28, 0.72], gap="large")
-
-with panel_col:
-    st.markdown("## ⚙️ WBS Control Panel")
-    with st.container(border=True):
-        uploaded = st.file_uploader(
-            "Importer un fichier Excel (.xlsx)",
-            type=["xlsx","xlsm"],
-            accept_multiple_files=False,
-            help="L’app détecte automatiquement Planned/Forecast/Schedule/Earned et reconstruit le WBS."
-        )
-
-        packs = []
-        if uploaded is not None:
-            import tempfile, os
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-                tmp.write(uploaded.read())
-                tmp_path = tmp.name
-            try:
-                packs = extract_all_wbs(tmp_path)
-                if not packs:
-                    st.warning("Aucun tableau valide détecté dans ce fichier.")
-                else:
-                    sheets = ", ".join(sorted({p.get("sheet", "?") for p in packs}))
-                    st.success(f"{len(packs)} tableau(x) détecté(s) • Feuilles: {sheets}")
-            except Exception as e:
-                st.error(f"Erreur d’extraction: {e}")
-            finally:
-                try: os.unlink(tmp_path)
-                except: pass
-
-        # Si des WBS détectés, affiche le sélecteur dans le panel
-        if packs:
-            labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}" for i, p in enumerate(packs)]
-            st.markdown("#### WBS à afficher")
-            idx = st.radio(
-                "WBS à afficher",
-                options=range(len(labels)),
-                format_func=lambda i: labels[i],
-                index=0,
-                label_visibility="collapsed",
-                key="wbs_selector_mainpanel"
-            )
+# ===================== Sidebar (conservée) =====================
+with st.sidebar:
+    st.header("📁 Import Excel")
+    uploaded = st.file_uploader(
+        "Importer un fichier Excel (.xlsx)",
+        type=["xlsx","xlsm"],
+        accept_multiple_files=False,
+        help="Détecte Planned/Forecast/Schedule/Earned et reconstruit le WBS."
+    )
+    packs = []
+    if uploaded is not None:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+            tmp.write(uploaded.read())
+            tmp_path = tmp.name
+        try:
+            packs = extract_all_wbs(tmp_path)
             st.session_state["_packs"] = packs
-            st.session_state["_idx"] = idx
+            if not packs:
+                st.warning("Aucun tableau valide détecté.")
+            else:
+                sheets = ", ".join(sorted({p.get("sheet", "?") for p in packs}))
+                st.success(f"{len(packs)} tableau(x) • Feuilles: {sheets}")
+        except Exception as e:
+            st.error(f"Erreur d’extraction: {e}")
+        finally:
+            try: os.unlink(tmp_path)
+            except: pass
 
-with content_col:
-    # Récup des données si déjà chargées
+# ===================== Page: boutons déplacés ici =====================
+page_left, page_right = st.columns([0.30, 0.70], gap="large")
+
+with page_left:
+    packs = st.session_state.get("_packs", [])
+    if packs:
+        st.markdown("### ⚙️ WBS à afficher")
+        labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}" for i, p in enumerate(packs)]
+        idx = st.radio(
+            "WBS à afficher",
+            options=range(len(labels)),
+            format_func=lambda i: labels[i],
+            index=0,
+            label_visibility="collapsed",
+            key="wbs_selector_onpage",
+        )
+        st.session_state["_idx"] = idx
+    else:
+        st.info("Importe un Excel dans la barre de gauche.")
+
+with page_right:
     packs = st.session_state.get("_packs", [])
     if not packs:
-        st.info("🔹 Importez un Excel à gauche pour générer le WBS, puis choisissez un WBS.")
         st.stop()
     idx = st.session_state.get("_idx", 0)
     sel = packs[idx]
@@ -340,5 +337,4 @@ with content_col:
     root = sel["wbs"]
     render_all_open_native(root)
 
-# pied de page
 st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)

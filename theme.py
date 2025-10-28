@@ -527,6 +527,46 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+/* Radiogroup à l’intérieur du contenu principal (hors sidebar) */
+div[data-testid="stVerticalBlock"] .main-radios [role="radiogroup"]{
+  display:flex; flex-direction:column; gap:8px;
+}
+div[data-testid="stVerticalBlock"] .main-radios label[data-baseweb="radio"],
+/* on cible aussi ceux créés simplement sur la page */
+div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]{
+  position:relative; display:flex; align-items:center; gap:10px; width:100%;
+  box-sizing:border-box; padding:10px 12px; border-radius:10px;
+  background:linear-gradient(180deg,#0f1a31,#0b1326); border:1px solid rgba(96,165,250,.28);
+  transition:border-color .15s ease, background .15s ease, transform .10s ease; cursor:pointer;
+}
+div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]:hover{
+  border-color:rgba(125,211,252,.8); transform:translateY(-1px);
+}
+div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked){
+  border-color:rgba(125,211,252,.95); background:linear-gradient(180deg,#0f1b34,#0b1326);
+  box-shadow:inset 0 0 0 1px rgba(96,165,250,.45);
+}
+div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#60a5fa,#22c55e);
+  border-top-left-radius:10px; border-bottom-left-radius:10px;
+}
+</style>
+"""
+
+
 </style>
 """
 
