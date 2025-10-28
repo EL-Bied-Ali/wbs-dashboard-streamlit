@@ -158,17 +158,7 @@ button[data-testid="stSidebarCollapseButton"]:focus{ outline:2px solid rgba(125,
 
 
 
-/* Grand wrapper autour de TOUT le N2 (header + tables + charts) */
-div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel){
-  background: linear-gradient(180deg, #0f1a31, #0b1326);
-  border: 1px solid #223355;
-  border-radius: 12px;
-  padding: 10px 12px;           /* air interne pour tout le bloc */
-  margin: 8px 0 14px;           /* espacement entre 2 blocs N2 */
-  box-shadow: 0 0 0 1px rgba(36,52,83,.35) inset;
-  overflow: hidden;
-  box-sizing: border-box;
-}
+
 
 /* Le sentinel doit exister dans le DOM mais rester invisible */
 .n2-block-sentinel{
