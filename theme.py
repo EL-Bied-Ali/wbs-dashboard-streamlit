@@ -502,6 +502,28 @@ div[data-testid="stVerticalBlock"] .n2-grid + div:has(> .stButton) .stButton but
 }
 
 
+/* === Clic sur toute la ligne N2 : overlay 100% invisible mais cliquable === */
+/* Le container du bouton a une classe stable "st-key-...__rowbtn" => on l'overlap */
+div[class*="st-key-n2_"][class*="__rowbtn"]{
+  position: relative;
+  z-index: 5;
+  /* adapte ces valeurs à la hauteur réelle de ta .n2-grid */
+  margin-top: -44px;   /* remonte sur la ligne */
+  height: 44px;        /* = hauteur visuelle de la ligne */
+}
+
+/* Le bouton occupe 100% du container et reste invisible */
+div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
+div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
+  width:100%; height:100%;
+  opacity:0; background:transparent; border:0; padding:0; margin:0;
+  cursor:pointer;
+}
+
+/* (Optionnel) Sur desktop, indique bien que la ligne est cliquable */
+.n2-grid{ cursor:pointer; }
+
+
 </style>
 """
 
