@@ -563,8 +563,6 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio
   background:linear-gradient(180deg,#60a5fa,#22c55e);
   border-top-left-radius:10px; border-bottom-left-radius:10px;
 }
-</style>
-"""
 
 
 </style>
