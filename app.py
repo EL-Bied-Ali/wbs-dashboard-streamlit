@@ -343,34 +343,32 @@ def render_section_level2(parent_node: dict):
     #             st.session_state[base] = not st.session_state[base]
 
     # ----- N3 -----
+# ----- N3 -----
     if has_children and st.session_state[base]:
-        # id scope pour CSS (si tu en as besoin ailleurs)
         n3_id = f"n3-{uuid.uuid4().hex[:8]}"
         st.markdown(f'<div class="n3-scope" id="{n3_id}">', unsafe_allow_html=True)
 
-        # --- Alternance A/B (sert à 1) le marker CSS et 2) la clé du chart
         ab_key = f"ab__{_slug(label)}_{level}"
         if ab_key not in st.session_state:
             st.session_state[ab_key] = 0
         cur = st.session_state[ab_key]           # 0 -> v0, 1 -> v1
         variant = "v0" if cur == 0 else "v1"
 
-        # 1) MARQUEUR FRÈRE (doit être juste AVANT le chart)
-        st.markdown(f'<i class="n3marker {variant}"></i>', unsafe_allow_html=True)
-
-        # 2) TABLE
+        # 1) TABLE FIRST
         render_detail_table(parent_node)
 
-        # 3) CHART (clé inclut l’alternance pour remonter le DOM)
+        # 2) MARKER NOW right before the chart
+        st.markdown(f'<i class="n3marker {variant}"></i>', unsafe_allow_html=True)
+
+        # 3) CHART
         render_barchart(
             parent_node,
             chart_key=f"chart_{_slug(label)}_{level}_ab{cur}"
         )
 
-        # flip pour la prochaine ouverture
         st.session_state[ab_key] = 1 - cur
-
         st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
