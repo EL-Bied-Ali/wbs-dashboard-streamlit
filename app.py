@@ -8,36 +8,6 @@ import tempfile, os, math
 st.set_page_config(page_title="WBS – Projet", layout="wide", initial_sidebar_state="expanded")
 inject_theme()
 
-# --- Nouveau layout : boutons fixes à droite, tableau pleine largeur ---
-st.markdown("""
-<div id="onpage-selector-panel">
-  <h3>WBS à afficher</h3>
-</div>
-""", unsafe_allow_html=True)
-
-packs = st.session_state.get("_packs", [])
-if packs:
-    labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}" for i,p in enumerate(packs)]
-    idx = st.radio(
-        "WBS à afficher",
-        options=range(len(labels)),
-        format_func=lambda i: labels[i],
-        index=0,
-        label_visibility="collapsed",
-        key="wbs_selector_onpage"
-    )
-    st.session_state["_idx"] = idx
-else:
-    st.info("Importe un Excel dans la barre de gauche.")
-    st.stop()
-
-i = st.session_state.get("_idx", 0)
-sel = packs[i]
-root = sel["wbs"]
-st.caption(f"Feuille: {sel.get('sheet','?')} • Zone: {sel.get('range','?')}")
-render_all(root)
-
-
 def _minify(s:str)->str: return "".join(l.strip() for l in s.splitlines())
 def _sf(x): 
     try: return float(x)
@@ -215,4 +185,32 @@ with st.sidebar:
             try: os.unlink(tmp_path)
             except: pass
 
+# ===== Page layout: FULL content + fixed right panel =====
+# (à mettre APRÈS la définition de render_all(...) et APRÈS le bloc with st.sidebar)
+
+st.markdown("""
+<div id="onpage-selector-panel"><h3>WBS à afficher</h3></div>
+""", unsafe_allow_html=True)
+
+packs = st.session_state.get("_packs", [])
+if not packs:
+    st.info("Importe un Excel dans la barre de gauche.")
+    st.stop()
+
+labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}" for i,p in enumerate(packs)]
+idx = st.radio(
+    "WBS à afficher",
+    options=range(len(labels)),
+    format_func=lambda i: labels[i],
+    index=0,
+    label_visibility="collapsed",
+    key="wbs_selector_onpage"
+)
+st.session_state["_idx"] = idx
+
+i = st.session_state.get("_idx", 0)
+sel = packs[i]
+root = sel["wbs"]
+st.caption(f"Feuille: {sel.get('sheet','?')} • Zone: {sel.get('range','?')}")
+render_all(root)
 
