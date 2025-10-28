@@ -126,7 +126,7 @@ def render_barchart(node: dict):
     labels, schedule, earned = [], [], []
     for ch in node.get("children", []) or []:
         labels.append(ch.get("label", ""))
-        m = ch.get("metrics", {}) or {}
+        m = (ch.get("metrics") or {})
         schedule.append(_safe_float(m.get("schedule", 0)))
         earned.append(_safe_float(m.get("earned", m.get("units", 0))))
 
@@ -134,49 +134,75 @@ def render_barchart(node: dict):
         st.info("Aucun enfant pour le graphique.")
         return
 
-    max_v = max([0] + schedule + earned)
-    ymax = 100 if max_v <= 100 else math.ceil(max_v / 5) * 5
+    vmax = max([0] + schedule + earned)
+    ymax = 100 if vmax <= 100 else math.ceil(vmax / 5) * 5
 
     fig = go.Figure()
 
-    # commun sans 'marker'
-    bar_common = dict(
-        x=labels, width=0.42, cliponaxis=False,
+    # Shadow layer (barre plus large, faible opacité) -> effet de profondeur sans casser l’animation CSS
+    shadow_common = dict(x=labels, width=0.56, cliponaxis=False, hoverinfo="skip",
+                         marker=dict(color="rgba(15,23,42,0.45)", line=dict(width=0)),
+                         offsetgroup="sh", showlegend=False, text=None)
+    fig.add_bar(name="", y=[max(s, e) for s, e in zip(schedule, earned)], **shadow_common)
+
+    # Couleurs “verre” harmonisées avec ton thème
+    c_sched = "#60a5fa"   # bleu clair
+    c_earn  = "#34d399"   # vert clair
+    c_text  = "#e5e7eb"
+    c_grid  = "rgba(42,59,98,.55)"
+
+    # Barre Schedule
+    fig.add_bar(
+        name="Schedule %",
+        x=labels, y=schedule, offsetgroup="g1", width=0.42, cliponaxis=False,
+        marker=dict(color=c_sched, line=dict(width=0)),
+        text=[f"{v:.1f}%" for v in schedule],
+        textposition="outside",
+        textfont=dict(size=12, color=c_text),
+        hovertemplate="<b>%{x}</b><br>Schedule&nbsp;: %{y:.2f}%<extra></extra>",
         hoverinfo="skip"
     )
 
+    # Barre Earned (léger décalage visuel via group)
     fig.add_bar(
-        name="Schedule %", y=schedule, offsetgroup="g1",
-        marker=dict(color="#3b82f6", line=dict(width=0)),
-        hovertemplate="<b>%{x}</b><br>Schedule: %{y:.2f}%<extra></extra>",
-        text=[f"{v:.1f}%" for v in schedule], textposition="outside",
-        **bar_common
-    )
-    fig.add_bar(
-        name="Earned %", y=earned, offsetgroup="g2",
-        marker=dict(color="#22c55e", line=dict(width=0)),
-        hovertemplate="<b>%{x}</b><br>Earned: %{y:.2f}%<extra></extra>",
-        text=[f"{v:.1f}%" for v in earned], textposition="outside",
-        **bar_common
+        name="Earned %",
+        x=labels, y=earned, offsetgroup="g2", width=0.42, cliponaxis=False,
+        marker=dict(color=c_earn, line=dict(width=0)),
+        text=[f"{v:.1f}%" for v in earned],
+        textposition="outside",
+        textfont=dict(size=12, color=c_text),
+        hovertemplate="<b>%{x}</b><br>Earned&nbsp;: %{y:.2f}%<extra></extra>",
+        hoverinfo="skip"
     )
 
+    # Ligne de repère “objectif 100%” si pertinent
+    shapes = []
+    if ymax == 100:
+        shapes.append(dict(type="line", xref="paper", x0=0, x1=1, y0=100, y1=100,
+                           line=dict(width=1, dash="dot", color=c_grid)))
+
     fig.update_layout(
-        barmode="group", bargroupgap=0.18, bargap=0.26,
-        height=300, margin=dict(l=24, r=24, t=10, b=60),
+        barmode="group", bargap=0.26, bargroupgap=0.18,
+        height=300, margin=dict(l=24, r=24, t=12, b=60),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(size=13, color="#e5e7eb"),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.32, xanchor="center", x=0.5,
+        font=dict(size=13, color=c_text),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.30, xanchor="center", x=0.5,
                     itemclick=False, itemdoubleclick=False, font=dict(size=12, color="#cbd5e1")),
         xaxis=dict(title="", showgrid=False, zeroline=False,
-                   tickfont=dict(size=13, color="#e5e7eb"), automargin=True),
-        yaxis=dict(title="", range=[0, ymax], ticksuffix="%",
-                   dtick=25 if ymax == 100 else None, showgrid=True,
-                   gridcolor="rgba(42,59,98,.55)", zeroline=False,
+                   tickfont=dict(size=13, color=c_text), automargin=True),
+        yaxis=dict(title="", range=[0, ymax], ticksuffix="%", dtick=25 if ymax == 100 else None,
+                   showgrid=True, gridcolor=c_grid, zeroline=False,
                    tickfont=dict(size=12, color="#cbd5e1"), automargin=True),
         hovermode="x unified",
-        hoverlabel=dict(bgcolor="#0f172a", font=dict(color="#e5e7eb", size=12)),
-        transition={'duration': 200}
+        hoverlabel=dict(bgcolor="#0f172a", font=dict(color=c_text, size=12), bordercolor="#1f2a44"),
+        shapes=shapes,
+        transition=None  # pas d’animation Plotly -> laisse tes keyframes CSS piloter
     )
+
+    # Info hover unifié custom (schedule/earned côte à côte)
+    # Astuce: on s’appuie sur hovermode, pas d’animation ajoutée.
+    for tr in fig.data:
+        tr.update(hoverinfo="skip")
 
     st.plotly_chart(
         fig,
@@ -185,8 +211,7 @@ def render_barchart(node: dict):
             "displaylogo": False,
             "displayModeBar": "hover",
             "modeBarButtonsToRemove": [
-                "select2d","lasso2d","autoScale2d","zoomIn2d",
-                "zoomOut2d","toggleSpikelines"
+                "select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"
             ],
             "responsive": True
         }
