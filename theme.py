@@ -19,8 +19,9 @@ html, body { font-size:17px; line-height:1.4; }
   --bg:#0b1220; --glass:#0f172a; --glass2:#0b1224; --line:#1f2a44;
   --text:#e5e7eb; --muted:#94a3b8; --ok:#22c55e; --bad:#ef4444; --accent:#60a5fa;
 
-  --col1:26%; --col2:10%; --col3:10%; --col4:15%;
-  --col5:15%; --col6:8%;  --col7:8%;  --col8:8%;
+  --col1:22%; --col2:11%; --col3:11%; --col4:14%;
+  --col5:14%; --col6:9%; --col7:9%; --col8:10%;
+
 
   --fs-n1-title:2.1rem; --fs-n1-kpi:1.55rem; --fs-n1-label:0.95rem;
   --fs-n2-title:1.55rem; --fs-n2-kpi:1.15rem; --fs-n2-label:0.90rem;
@@ -599,6 +600,14 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio
 /* Texte sur une ligne, coupe propre */
 div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownContainer"]{
   margin:0; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* === Tableau principal plus large (N1, N2, N3) === */
+.hero .n1-grid,
+.section-card .n2-grid,
+.table-card table.neo {
+  width: 115% !important;         /* 👈 agrandit le tableau au-delà de son conteneur */
+  transform: translateX(-3%) !important; /* recentre visuellement */
 }
 
 
