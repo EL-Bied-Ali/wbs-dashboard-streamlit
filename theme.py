@@ -623,6 +623,8 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
 
 
 
+
+
 /* === Panneau WBS (compact, sans scroll horizontal) === */
 .st-key-wbs_selector_onpage[data-testid="stElementContainer"]{
   position: fixed;
@@ -684,3 +686,10 @@ html, body, [data-testid="stAppViewBlockContainer"]{
   overflow-x: hidden !important;
 }
 
+
+
+</style>
+"""
+
+def inject_theme():
+    st.markdown(CSS, unsafe_allow_html=True)
