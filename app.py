@@ -218,13 +218,17 @@ def render_barchart(node: dict) -> bool:
         transition=None
     )
 
-    st.plotly_chart(fig, use_container_width=True, config={
-        "displaylogo": False, "displayModeBar": "hover",
-        "modeBarButtonsToRemove": [
-            "select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"
-        ], "responsive": True
-    })
-    return True   # ← ajoute ceci
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={
+            "displaylogo": False, "displayModeBar": "hover",
+            "modeBarButtonsToRemove": ["select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"],
+            "responsive": True
+        },
+        key=key or f"plt_{_slug(node.get('label','root'))}_{len(labels)}"
+    )
+    return True
 
 
 
@@ -319,6 +323,7 @@ def render_section_level2(parent_node: dict):
     has_children = bool(parent_node.get("children"))
 
     base = f"n2_open--{_slug(label)}_{level}"
+
     if base not in st.session_state:
         st.session_state[base] = False
 
@@ -341,7 +346,7 @@ def render_section_level2(parent_node: dict):
     if has_children and st.session_state[base]:
         st.markdown('<div class="n3load v1"></div>', unsafe_allow_html=True)
         render_detail_table(parent_node)
-        _ = render_barchart(parent_node)  # pas de wrapper n3chart -> plus de div vide
+        _ = render_barchart(parent_node, key=f"chart_{_slug(label)}_{level}")
 
 
         # n'affiche la section chart que si un vrai graphe est rendu
