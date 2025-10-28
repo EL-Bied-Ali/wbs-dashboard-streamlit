@@ -323,6 +323,11 @@ def render_section_level2(parent_node: dict):
 
     with left:
         st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
+        if has_children:
+            if st.button(" ", key=f"{key}_rowbtn", use_container_width=True, help="Ouvrir/fermer"):
+                st.session_state[key] = not st.session_state[key]
+                st.session_state[ver_key] += 1
+
 
     # 👇 Bouton seulement s’il y a des enfants
     with right:

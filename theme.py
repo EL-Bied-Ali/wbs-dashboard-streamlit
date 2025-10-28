@@ -490,6 +490,16 @@ border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0}
   100% { background-position: 0 0; }
 }
 
+/* Le bouton qui suit immédiatement une ligne N2 couvre visuellement la ligne */
+div[data-testid="stVerticalBlock"] .n2-grid + div:has(> .stButton) { position: relative; }
+div[data-testid="stVerticalBlock"] .n2-grid + div:has(> .stButton) .stButton button{
+  position: relative;
+  display:block; width:100%;
+  /* adapter ces 2 valeurs à la hauteur de ta ligne si besoin */
+  margin-top: -44px;   /* remonte par-dessus la .n2-grid */
+  height: 44px;        /* même hauteur que la .n2-grid */
+  opacity:0; background:transparent; border:0; padding:0; cursor:pointer;
+}
 
 
 </style>
