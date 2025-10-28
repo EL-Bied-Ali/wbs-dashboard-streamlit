@@ -142,8 +142,8 @@ def render_barchart(node: dict):
 
     n = len(labels)
     idx = list(range(n))
-    delta = 0.22                  # demi-écart entre les 2 barres
-    w = 0.30                      # largeur fine = vrai “bar” sans chevauchement
+    delta = 0.18
+    w = 0.34
 
     fig = go.Figure()
     fig.add_bar(
