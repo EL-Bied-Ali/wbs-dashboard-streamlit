@@ -23,15 +23,16 @@ def as_text(v: Any) -> str:
 
 
 
-def parse_percent_float(v: Any) -> float:
+def parse_percent_float(v):
     """
-    Retourne la valeur NUMÉRIQUE telle quelle, sans *aucune* majoration ni arrondi.
-    - "75.51%" -> 75.51
-    - "0.7551" -> 0.7551
-    - 0.7551   -> 0.7551
-    - "1.2%"   -> 1.2
-    - 1.2      -> 1.2
+    Lecture propre des pourcentages :
+    - '75.51%' -> 75.51
+    - 0.7551   -> 75.51
+    - '0.7551' -> 75.51
+    - '1.2%'   -> 1.2
+    - 75.51    -> 75.51
     """
+    import re
     if v is None or v == "":
         return 0.0
     if isinstance(v, str):
@@ -39,13 +40,21 @@ def parse_percent_float(v: Any) -> float:
         if s in ("", "-", "."):
             return 0.0
         try:
-            return float(s)   # ← pas d’arrondi ni *100
+            val = float(s)
         except Exception:
             return 0.0
-    try:
-        return float(v)       # ← pas d’arrondi
-    except Exception:
-        return 0.0
+    else:
+        try:
+            val = float(v)
+        except Exception:
+            return 0.0
+
+    # ✅ multiplie uniquement si la valeur est comprise entre -1 et 1
+    if -1.0 <= val <= 1.0:
+        val *= 100.0
+
+    return val
+
 
 
 
