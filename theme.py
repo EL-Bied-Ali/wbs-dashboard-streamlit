@@ -602,11 +602,6 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
   margin:0; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
-/* Utilise tout l’espace horizontal libre (pousse le tableau vers la gauche) */
-.block-container {
-  padding-left: 4px !important;   /* Réduit la marge interne à gauche */
-  margin-left: -300px !important;  /* 👈 pousse le contenu vers la gauche pour combler la zone vide */
-}
 
 
 /* === Panneau fixe à droite pour les boutons WBS === */
@@ -623,77 +618,10 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
   box-shadow: 0 8px 18px rgba(0,0,0,.35);
 }
 
-/* Radios stylisées dans le panneau fixe */
-#onpage-selector-panel + div [role="radiogroup"]{
-  display:flex; flex-direction:column; gap:6px; max-height:72vh; overflow:auto;
-}
-#onpage-selector-panel + div label[data-baseweb="radio"]{
-  display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px;
-  background:linear-gradient(180deg,#0f1b34,#0b1326);
-  border:1px solid rgba(96,165,250,.28); cursor:pointer;
-}
-#onpage-selector-panel + div label[data-baseweb="radio"]:hover{
-  border-color:rgba(125,211,252,.8); transform:translateY(-1px);
-}
-#onpage-selector-panel + div label[data-baseweb="radio"]:has(input:checked){
-  border-color:rgba(125,211,252,.95); box-shadow:inset 0 0 0 1px rgba(96,165,250,.45);
-}
 
-/* Donne toute la largeur restante au tableau */
-/* Étend le contenu principal vers la gauche */
-.block-container {
-  margin-left: -60px !important;  /* pousse le tableau vers la gauche */
-  padding-left: 0 !important;     /* supprime l’espace intérieur */
-  padding-right: 300px !important; /* espace pour le panneau fixe à droite */
-  max-width: 2100px !important;   /* laisse respirer les barres horizontales */
-}
 
-/* ===== Panneau WBS fixe à droite ===== */
-#onpage-selector-panel {
-  position: fixed;
-  top: 40px;
-  right: 30px;
-  width: 220px;
-  background: linear-gradient(180deg,#0f1b34,#0b1326);
-  border: 1px solid rgba(96,165,250,.35);
-  border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0,0,0,.35), inset 0 0 0 1px rgba(59,130,246,.15);
-  padding: 14px 16px;
-  z-index: 999;
-}
 
-/* Style du titre dans le panneau fixe */
-#onpage-selector-panel h3 {
-  margin-top: 0;
-  color: #e5e7eb;
-  font-size: 1.05rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 10px;
-  text-shadow: 0 0 10px rgba(96,165,250,.4);
-}
 
-/* Boutons radio dans le panneau fixe */
-#onpage-selector-panel [role="radiogroup"] {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-#onpage-selector-panel label[data-baseweb="radio"] {
-  background: linear-gradient(180deg,#0f1a31,#0b1326);
-  border: 1px solid rgba(96,165,250,.25);
-  border-radius: 10px;
-  padding: 6px 10px;
-  transition: all .15s ease;
-}
-#onpage-selector-panel label[data-baseweb="radio"]:hover {
-  border-color: rgba(125,211,252,.7);
-  transform: translateY(-1px);
-}
-#onpage-selector-panel label[data-baseweb="radio"]:has(input:checked) {
-  border-color: rgba(125,211,252,.95);
-  box-shadow: inset 0 0 0 1px rgba(96,165,250,.45);
-}
 
 /* === Panneau fixe pour le radio WBS (clé Streamlit) === */
 .st-key-wbs_selector_onpage[data-testid="stElementContainer"]{
