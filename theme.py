@@ -640,7 +640,14 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
 }
 
 /* Donne toute la largeur restante au tableau */
-.block-container{ padding-right: 300px !important; }
+/* Étend le contenu principal vers la gauche */
+.block-container {
+  margin-left: -60px !important;  /* pousse le tableau vers la gauche */
+  padding-left: 0 !important;     /* supprime l’espace intérieur */
+  padding-right: 300px !important; /* espace pour le panneau fixe à droite */
+  max-width: 2100px !important;   /* laisse respirer les barres horizontales */
+}
+
 
 
 
