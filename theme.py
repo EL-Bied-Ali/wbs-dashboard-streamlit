@@ -605,7 +605,7 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
 /* Utilise tout l’espace horizontal libre (pousse le tableau vers la gauche) */
 .block-container {
   padding-left: 4px !important;   /* Réduit la marge interne à gauche */
-  margin-left: -120px !important;  /* 👈 pousse le contenu vers la gauche pour combler la zone vide */
+  margin-left: -200px !important;  /* 👈 pousse le contenu vers la gauche pour combler la zone vide */
 }
 
 
