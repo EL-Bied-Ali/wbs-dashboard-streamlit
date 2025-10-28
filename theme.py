@@ -597,6 +597,15 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
   .n3marker + [data-testid="stElementContainer"] svg g.barlayer{ animation:none!important; opacity:1!important; transform:none!important; }
 }
 
+/* Fade-in du conteneur Plotly quand le marqueur est présent */
+.n3marker.v0 + [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
+.n3marker.v0 + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"],
+.n3marker.v1 + [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
+.n3marker.v1 + [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{
+  opacity:0; animation:n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .15s forwards;
+}
+
+
 
 </style>
 """
