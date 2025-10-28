@@ -186,7 +186,9 @@ with st.sidebar:
             except: pass
 
 # ===== Page layout: contenu à gauche | boutons à DROITE =====
-content_col, buttons_col = st.columns([0.74, 0.26], gap="large")
+content_col, buttons_col = st.columns([0.92, 0.08], gap="small")  # ou [0.95, 0.05]
+
+
 
 with buttons_col:
     packs = st.session_state.get("_packs", [])
