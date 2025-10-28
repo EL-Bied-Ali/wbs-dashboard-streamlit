@@ -20,17 +20,14 @@ def as_text(v: Any) -> str:
         return v.strftime("%d-%b-%y")
     return "" if v is None else str(v)
 
-def parse_percent_float(v: Any) -> float:
-    """
-    Pour Schedule/Earned: retourne un float 0–100 avec 2 décimales max
-    (ex: '75.51%' -> 75.51, 0.7551 -> 75.51)
-    """
+def parse_percent_float(v):
     if v is None or v == "":
         return 0.0
+    percent_seen = False
     if isinstance(v, str):
-        s = v.strip()
-        s = re.sub(r"[^\d\-\.,%]", "", s).replace(",", ".")
-        s = s.replace("%", "")
+        s_raw = v
+        percent_seen = "%" in s_raw
+        s = re.sub(r"[^\d\-\.,%]", "", s_raw).replace(",", ".").replace("%", "").strip()
         if s in ("", "-", "."):
             return 0.0
         try:
@@ -42,10 +39,10 @@ def parse_percent_float(v: Any) -> float:
             val = float(v)
         except Exception:
             return 0.0
-    if abs(val) <= 1.5:  # Excel peut stocker 75.51% sous 0.7551
+    if not percent_seen and 0 <= abs(val) <= 1.0:  # ← plus strict et dépend de la présence de %
         val *= 100.0
-    # arrondi technique, puis si c'est un entier, on gardera un int via tidy_num()
     return round(val, 2)
+
 
 def parse_percent_int(v: Any) -> int:
     """
