@@ -137,31 +137,21 @@ def render_barchart(node: dict):
     vmax = max([0] + schedule + earned)
     ymax = 100 if vmax <= 100 else math.ceil(vmax / 5) * 5
 
-    # Palette premium
+    # Couleurs (loader/tableau): Schedule = bleu, Earned = vert
     c_text = "#e5e7eb"
     c_grid = "rgba(42,59,98,.55)"
-    c_sched = "#7dd3fc"  # Sky-300
-    c_sched_edge = "#38bdf8"
-    c_earn  = "#a78bfa"  # Violet-300
-    c_earn_edge = "#8b5cf6"
-    c_glass = "rgba(2,6,23,0.35)"
+    c_sched = "#3b82f6"   # bleu
+    c_sched_edge = "#60a5fa"
+    c_earn  = "#22c55e"   # vert
+    c_earn_edge = "#34d399"
 
     fig = go.Figure()
 
-    # Ombre douce derrière le groupe (fake 3D) — large, translucide, en premier
-    fig.add_bar(
-        x=labels,
-        y=[max(s, e) for s, e in zip(schedule, earned)],
-        width=0.62, offset=0.0, offsetgroup="shadow",
-        marker=dict(color="rgba(0,0,0,0.22)", line=dict(width=0)),
-        hoverinfo="skip", showlegend=False, opacity=1
-    )
-
-    # Barres — on réduit la largeur + décalage gauche/droite pour éviter toute collision
+    # Barres nettes, pas d’ombre ni couche “fake-3D”
     fig.add_bar(
         name="Schedule %",
         x=labels, y=schedule, width=0.34, offset=-0.18, offsetgroup="sched",
-        marker=dict(color=c_sched, line=dict(color=c_sched_edge, width=1.4)),
+        marker=dict(color=c_sched, line=dict(color=c_sched_edge, width=1.2)),
         text=[f"{v:.1f}%" for v in schedule], textposition="outside",
         textfont=dict(size=12, color=c_text),
         hovertemplate="<b>%{x}</b><br>Schedule&nbsp;: %{y:.2f}%<extra></extra>",
@@ -170,14 +160,13 @@ def render_barchart(node: dict):
     fig.add_bar(
         name="Earned %",
         x=labels, y=earned, width=0.34, offset=+0.18, offsetgroup="earn",
-        marker=dict(color=c_earn, line=dict(color=c_earn_edge, width=1.4)),
+        marker=dict(color=c_earn, line=dict(color=c_earn_edge, width=1.2)),
         text=[f"{v:.1f}%" for v in earned], textposition="outside",
         textfont=dict(size=12, color=c_text),
         hovertemplate="<b>%{x}</b><br>Earned&nbsp;: %{y:.2f}%<extra></extra>",
         cliponaxis=False
     )
 
-    # Ligne 100% si pertinent
     shapes = []
     if ymax == 100:
         shapes.append(dict(type="line", xref="paper", x0=0, x1=1, y0=100, y1=100,
@@ -191,21 +180,16 @@ def render_barchart(node: dict):
         legend=dict(orientation="h", yanchor="bottom", y=-0.30, xanchor="center", x=0.5,
                     itemclick=False, itemdoubleclick=False, font=dict(size=12, color="#cbd5e1")),
         xaxis=dict(title="", showgrid=False, zeroline=False,
-                   tickfont=dict(size=13, color=c_text), automargin=True),
+                   tickfont=dict(size=13, color=c_text), automargin=True,
+                   showspikes=False),                 # <- pas de trait vertical
         yaxis=dict(title="", range=[0, ymax], ticksuffix="%", dtick=25 if ymax == 100 else None,
                    showgrid=True, gridcolor=c_grid, zeroline=False,
-                   tickfont=dict(size=12, color="#cbd5e1"), automargin=True),
-        hovermode="x unified",
+                   tickfont=dict(size=12, color="#cbd5e1"), automargin=True,
+                   showspikes=False),                 # <- pas de trait horizontal
+        hovermode="closest",                          # <- pas de ligne de comparaison
         hoverlabel=dict(bgcolor="#0f172a", font=dict(color=c_text, size=12), bordercolor="#1f2a44"),
         shapes=shapes,
         transition=None
-    )
-
-    # Carte “verre” autour du chart (si tu l’entoures avec <div class="n3chart">...</div>)
-    st.markdown(
-        '<style>.n3chart{background:linear-gradient(180deg,rgba(15,23,42,.58),rgba(11,18,36,.54));'
-        'border:1px solid #1f2a44;border-radius:14px;padding:10px 12px;margin:8px 0;box-shadow:0 10px 30px rgba(0,0,0,.25), inset 0 0 0 1px rgba(31,42,68,.35)}</style>',
-        unsafe_allow_html=True
     )
 
     st.plotly_chart(
