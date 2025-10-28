@@ -566,19 +566,20 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 @keyframes valIn{ to{ opacity:1; transform:none } }
 
 /* ===== Animation chart via MARQUEUR FRÈRE (frère général ~) ===== */
-/* Fade-in du conteneur Plotly */
+/* Fade-in container when marker present (works even if table is in between) */
 .n3marker.v0 ~ [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
-.n3marker.v0 ~ [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{
-  opacity:0; animation:n3ChartInA .6s cubic-bezier(.22,.61,.36,1) .15s forwards;
-}
+.n3marker.v0 ~ [data-testid="stElementContainer"] [data-testid="stPlotlyChart"],
 .n3marker.v1 ~ [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
 .n3marker.v1 ~ [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{
-  opacity:0; animation:n3ChartInB .6s cubic-bezier(.22,.61,.36,1) .15s forwards;
+  opacity:0; animation:n3ChartIn .6s cubic-bezier(.22,.61,.36,1) .15s forwards;
 }
-@keyframes n3ChartInA{ from{opacity:0;transform:translateY(-4px) scaleY(.99)} to{opacity:1;transform:translateY(0) scaleY(1)} }
-@keyframes n3ChartInB{ from{opacity:0;transform:translateY(-4px) scaleY(.99)} to{opacity:1;transform:translateY(0) scaleY(1)} }
 
-/* Croissance des barres Plotly (robuste) */
+@keyframes n3ChartIn{
+  from{opacity:0; transform:translateY(-4px) scaleY(.99)}
+  to  {opacity:1; transform:translateY(0)    scaleY(1)}
+}
+
+/* Grow effect on bar layers (robust) */
 .n3marker.v0 ~ [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
 .n3marker.v0 ~ [data-testid="stElementContainer"] svg g.barlayer{
   transform-origin:bottom; transform-box:view-box;
@@ -591,18 +592,18 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
   transform:scaleY(0.001); opacity:0;
   animation:n3GrowB .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
 }
-@keyframes n3GrowA{ from{transform:scaleY(0.001);opacity:0} to{transform:scaleY(1);opacity:1} }
-@keyframes n3GrowB{ from{transform:scaleY(0.001);opacity:0} to{transform:scaleY(1);opacity:1} }
 
-/* Accessibilité */
+/* Keyframes A/B to force replay */
+@keyframes n3GrowA { from{ transform:scaleY(0.001); opacity:0 } to{ transform:scaleY(1); opacity:1 } }
+@keyframes n3GrowB { from{ transform:scaleY(0.001); opacity:0 } to{ transform:scaleY(1); opacity:1 } }
+
+/* Accessibility */
 @media (prefers-reduced-motion: reduce){
-  .n3marker ~ [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
-  .n3marker ~ [data-testid="stElementContainer"] [data-testid="stPlotlyChart"],
+  .n3marker ~ [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]{ animation:none!important; opacity:1!important; transform:none!important; }
   .n3marker ~ [data-testid="stElementContainer"] svg .cartesianlayer .plot .barlayer,
-  .n3marker ~ [data-testid="stElementContainer"] svg g.barlayer{
-    animation:none!important; opacity:1!important; transform:none!important;
-  }
+  .n3marker ~ [data-testid="stElementContainer"] svg g.barlayer{ animation:none!important; opacity:1!important; transform:none!important; }
 }
+
 
 
 
