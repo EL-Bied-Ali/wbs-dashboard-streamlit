@@ -502,9 +502,17 @@ div[class*="st-key-n2_"][class*="__rowbtn"]{
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
 div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
   width:100%; height:100%;
-  opacity:0; background:transparent; border:0; padding:0; margin:0;
-  cursor:pointer;
+  background: transparent; border:0; padding:0; margin:0; cursor:pointer;
 }
+
+/* Effet d’éclairage directement sur le bouton overlay */
+div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
+  box-shadow:
+    inset 0 0 0 1px rgba(88,113,179,.35),
+    inset 0 0 80px rgba(37,99,235,.10);
+  transition: box-shadow .15s ease;
+}
+
 
 /* 2) Hover unifié : survol du bouton invisible = survol de la .n2-grid */
 div[data-testid="stVerticalBlock"]:has(> div[class*="__rowbtn"] .stButton button:hover) .n2-grid,
