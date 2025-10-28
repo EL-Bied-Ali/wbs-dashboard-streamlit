@@ -24,9 +24,12 @@ def _safe_float(x):
 def fmt_pct(x, signed=False):
     try:
         v = float(x)
-        return f"{v}%"   # ← plus d’arrondi
+        # formate avec au plus 2 décimales, sans forcer les zéros inutiles
+        txt = f"{v:.2f}".rstrip("0").rstrip(".")
+        return f"{txt}%"
     except Exception:
         return str(x)
+
 
 
 
