@@ -727,46 +727,67 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
 /* Laisse de la place à droite pour ne pas masquer le tableau */
 .block-container{ padding-right: 300px !important; } /* 260px + marge */
 
-/* === Radio WBS : plus grand, plus bas, scrollable === */
+/* === Panneau WBS fixe (plus large, police plus grande, sans scroll horizontal) === */
 .st-key-wbs_selector_onpage[data-testid="stElementContainer"]{
   position: fixed;
-  top: 110px;                 /* ↓ descendre */
+  top: 120px;                 /* ↓ descendre un peu plus */
   right: 24px;
-  width: 300px;               /* ↑ plus large */
-  max-height: 72vh;           /* scroll si long */
-  overflow: auto;
+  width: 360px;               /* ← plus large */
+  max-height: 80vh;           /* ↑ plus haut */
+  overflow-y: auto;           /* scroll vertical uniquement */
+  overflow-x: hidden !important; /* pas de scroll horizontal */
   z-index: 1200;
-  padding: 12px 14px;
+  padding: 16px 18px;
   background: linear-gradient(180deg,#0f1b34,#0b1326);
   border: 1px solid rgba(96,165,250,.35);
-  border-radius: 12px;
-  box-shadow: 0 8px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(59,130,246,.15);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.35), inset 0 0 0 1px rgba(59,130,246,.15);
 }
 
-/* Titre intégré (WBS à afficher) + style options */
+/* Titre dans le panneau */
 .st-key-wbs_selector_onpage [data-testid="stWidgetLabel"]{
-  margin: 0 0 10px; color:#e5e7eb; font-weight:800; text-align:center;
-  font-size:1.05rem; letter-spacing:.2px;
+  margin: 0 0 14px;
+  color:#e5e7eb;
+  font-weight:800;
+  text-align:center;
+  font-size:1.25rem;      /* ↑ police plus grande */
+  letter-spacing:.3px;
+  text-shadow:0 0 10px rgba(96,165,250,.4);
 }
-.st-key-wbs_selector_onpage [role="radiogroup"]{ display:flex; flex-direction:column; gap:6px; }
+
+/* Liste des boutons */
+.st-key-wbs_selector_onpage [role="radiogroup"]{
+  display:flex; flex-direction:column; gap:8px;
+}
 .st-key-wbs_selector_onpage label[data-baseweb="radio"]{
   background: linear-gradient(180deg,#0f1a31,#0b1326);
   border:1px solid rgba(96,165,250,.25);
-  border-radius:10px; padding:8px 10px;
+  border-radius:10px;
+  padding:10px 12px;
   transition: all .15s ease; cursor:pointer;
+  font-size:1.05rem;        /* ↑ texte boutons */
+  color:#e2e8f0;
 }
 .st-key-wbs_selector_onpage label[data-baseweb="radio"]:hover{
-  border-color: rgba(125,211,252,.7); transform: translateY(-1px);
+  border-color: rgba(125,211,252,.7);
+  transform: translateY(-1px);
 }
 .st-key-wbs_selector_onpage label[data-baseweb="radio"]:has(input:checked){
-  border-color: rgba(125,211,252,.95); box-shadow: inset 0 0 0 1px rgba(96,165,250,.45);
+  border-color: rgba(125,211,252,.95);
+  box-shadow: inset 0 0 0 1px rgba(96,165,250,.45);
 }
 
-/* Laisse la place au panneau (largeur 300 + marge) */
-.block-container{ padding-right: 340px !important; }
+/* Espace principal plus large pour le tableau */
+.block-container{ padding-right: 390px !important; }
 
-/* Masque l'ancien header derrière si présent */
+/* Supprime le vieux titre WBS à afficher */
 h3#wbs-a-afficher{ display:none !important; }
+
+/* Supprime tout scroll horizontal global */
+html, body{
+  overflow-x: hidden !important;
+}
+
 
 
 </style>
