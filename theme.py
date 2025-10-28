@@ -517,27 +517,7 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
   transition: filter .15s ease, box-shadow .15s ease;
 }
 
-/* ===== N3 sans expander : scope + alternance A/B ===== */
-.n3-scope{ overflow:hidden; }
 
-/* Rejouer l’animation des mini-barres (HTML) */
-.n3-scope:has(.n3load.v0) .mfill{ width:0 }
-.n3-scope:has(.n3load.v0) .mfill.anim{ animation:n3FillA .9s ease forwards }
-.n3-scope:has(.n3load.v0) .mbar-wrap.v .mval{ opacity:0; animation:valIn .5s ease .35s forwards }
-
-.n3-scope:has(.n3load.v1) .mfill{ width:0 }
-.n3-scope:has(.n3load.v1) .mfill.anim{ animation:n3FillB .9s ease forwards }
-.n3-scope:has(.n3load.v1) .mbar-wrap.v .mval{ opacity:0; animation:valIn .5s ease .35s forwards }
-
-/* Entrée douce du frame Plotly */
-.n3-scope:has(.n3load.v0) [data-testid="stFullScreenFrame"],
-.n3-scope:has(.n3load.v0) [data-testid="stPlotlyChart"]{
-  opacity:0; animation:n3ChartInA .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
-}
-.n3-scope:has(.n3load.v1) [data-testid="stFullScreenFrame"],
-.n3-scope:has(.n3load.v1) [data-testid="stPlotlyChart"]{
-  opacity:0; animation:n3ChartInB .6s cubic-bezier(.22,.61,.36,1) .25s forwards;
-}
 
 /* Effet "grow" sur la couche de barres Plotly (robuste) */
 .n3-scope:has(.n3load.v0) svg .cartesianlayer .plot .barlayer,
