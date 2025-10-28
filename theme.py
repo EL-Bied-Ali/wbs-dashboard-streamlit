@@ -715,6 +715,12 @@ html, body, [data-testid="stAppViewBlockContainer"]{
   overflow-x: hidden !important;
 }
 
+.block-container {
+  margin-left: 0 !important;
+  padding-right: 330px !important;
+}
+
+
 
 
 </style>
