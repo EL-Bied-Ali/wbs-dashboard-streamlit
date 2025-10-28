@@ -189,7 +189,6 @@ def header_level1_grid(label_n1: str, m: dict) -> str:
         <div class="n1g-label">
           <span class="dot"></span>
           <span class="title">{label_n1}</span>
-          <span class="badge">WBS Niveau 1</span>
         </div>
 
         <div class="n1g-cell"><span class="small">Planned</span><b>{planned}</b></div>
@@ -229,7 +228,6 @@ def header_level2_grid(label, level, m):
       <div class="n2g-label">
         <span class="dot"></span>
         <span class="title">{label}</span>
-        <span class="badge">WBS Niveau {level}</span>
       </div>
 
       <div class="n2g-cell"><span class="small">Planned</span><b>{planned}</b></div>
@@ -243,6 +241,7 @@ def header_level2_grid(label, level, m):
       <div class="n2g-cell gliss"><span class="small">Glissement</span><b class="{gcls}">{gliss}</b></div>
     </div>
     """)
+
 
 # ---------- Rendu global ----------
 def render_section_level2(parent_node: dict):
