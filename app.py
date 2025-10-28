@@ -322,26 +322,29 @@ def render_section_level2(parent_node: dict):
 
     # ----- Ligne visuelle
     left, right = st.columns([0.985, 0.015], gap="small")
+    # ... dans render_section_level2(...)
     with left:
         st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
         if has_children:
-            # bouton invisible sous la forme "...__rowbtn" (même base)
-            if st.button(" ", key=f"{base}__rowbtn", use_container_width=True, help="toggle"):
+            if st.button(" ", key=f"{base}__rowbtn", use_container_width=True):  # <- pas de help=
                 st.session_state[base] = not st.session_state[base]
 
-    with right:
-        # flèche (optionnelle). Si tu la gardes, elle toggle la même clé 'base'
-        if has_children:
-            if st.button("▾", key=f"{base}__btn"):
-                st.session_state[base] = not st.session_state[base]
+    # ----- supprime totalement la flèche de droite (Option A) -----
+    # with right:  # <- retire ce bloc si tu n'en veux plus
+    #     if has_children:
+    #         if st.button("▾", key=f"{base}__btn"):
+    #             st.session_state[base] = not st.session_state[base]
 
-    # ----- N3
+    # ----- N3 -----
     if has_children and st.session_state[base]:
         st.markdown('<div class="n3load v1"></div>', unsafe_allow_html=True)
         render_detail_table(parent_node)
-        st.markdown('<div class="n3chart">', unsafe_allow_html=True)
-        render_barchart(parent_node)
-        st.markdown('</div>', unsafe_allow_html=True)
+        # n3chart uniquement si on affiche vraiment un graphe
+        if parent_node.get("children"):
+            st.markdown('<div class="n3chart">', unsafe_allow_html=True)
+            render_barchart(parent_node)
+            st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
