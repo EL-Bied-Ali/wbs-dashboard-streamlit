@@ -377,10 +377,6 @@ details[open] [data-testid="stExpanderDetails"]
 
 
 
-
-
-
-
 /* ===== Sidebar radio: full-width inline, equal-size buttons ===== */
 section[data-testid="stSidebar"] [role="radiogroup"]{
   display:flex; flex-direction:column; gap:6px;
@@ -436,6 +432,42 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
 }
 
 
+
+
+
+
+
+
+/* ===== Style titres WBS Niveau 2 ===== */
+.n2g-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, rgba(30,58,138,.25), rgba(15,23,42,.4));
+  border-left: 3px solid #3b82f6;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.3px;
+  text-shadow: 0 0 4px rgba(59,130,246,.3);
+  transition: background .2s ease, border-color .2s ease;
+}
+
+.n2g-label:hover {
+  border-color: #60a5fa;
+  background: linear-gradient(90deg, rgba(37,99,235,.35), rgba(15,23,42,.5));
+}
+
+.n2g-label .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(180deg,#60a5fa,#22c55e);
+  box-shadow: 0 0 5px rgba(59,130,246,.5);
+}
 
 
 
