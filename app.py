@@ -138,32 +138,53 @@ def render_barchart(node: dict):
     ymax = 100 if vmax <= 100 else math.ceil(vmax/5)*5
 
     # Couleurs (loader): bleu = Schedule, vert = Earned
-    c_text="#e5e7eb"; c_grid="rgba(42,59,98,.55)"; c_sched="#3b82f6"; c_earn="#22c55e"
+    c_text="#e5e7eb"; c_grid="rgba(42,59,98,.55)"
+    c_sched="#3b82f6"; c_earn="#22c55e"
 
-    n = len(labels)
-    idx = list(range(n))
-    delta = 0.18
-    w = 0.34
+    n=len(labels)
+    idx=list(range(n))
+    delta=0.16      # rapproche les barres
+    w=0.26          # plus fines
+    gloss_alpha=0.45  # intensité du reflet
 
-    fig = go.Figure()
+    fig=go.Figure()
+
+    # Glossy trick = superposer 2 barres : base + reflet clair semi-transparent
+    # --- Schedule ---
+    fig.add_bar(
+        name="Schedule %", x=[i - delta for i in idx], y=[v*1.02 for v in schedule],
+        width=w, marker=dict(color=c_sched), opacity=1,
+        hoverinfo="skip", showlegend=False, cliponaxis=False
+    )
     fig.add_bar(
         name="Schedule %", x=[i - delta for i in idx], y=schedule,
-        width=w, marker=dict(color=c_sched),
+        width=w, marker=dict(
+            color=f"rgba(96,165,250,{gloss_alpha})", line=dict(color="#93c5fd", width=0.8)
+        ),
         text=[f"{v:.1f}%" for v in schedule], textposition="outside",
         textfont=dict(size=12, color=c_text),
         hovertemplate="<b>%{customdata}</b><br>Schedule: %{y:.2f}%<extra></extra>",
         customdata=labels, cliponaxis=False
     )
+
+    # --- Earned ---
+    fig.add_bar(
+        name="Earned %", x=[i + delta for i in idx], y=[v*1.02 for v in earned],
+        width=w, marker=dict(color=c_earn), opacity=1,
+        hoverinfo="skip", showlegend=False, cliponaxis=False
+    )
     fig.add_bar(
         name="Earned %", x=[i + delta for i in idx], y=earned,
-        width=w, marker=dict(color=c_earn),
+        width=w, marker=dict(
+            color=f"rgba(34,197,94,{gloss_alpha})", line=dict(color="#86efac", width=0.8)
+        ),
         text=[f"{v:.1f}%" for v in earned], textposition="outside",
         textfont=dict(size=12, color=c_text),
         hovertemplate="<b>%{customdata}</b><br>Earned: %{y:.2f}%<extra></extra>",
         customdata=labels, cliponaxis=False
     )
 
-    # Axe X linéaire + labels centrés exactement à i
+    # Centrage parfait
     fig.update_xaxes(
         type="linear", tickmode="array", tickvals=idx, ticktext=labels,
         tickfont=dict(size=13, color=c_text),
@@ -176,23 +197,32 @@ def render_barchart(node: dict):
                            line=dict(width=1, dash="dot", color=c_grid)))
 
     fig.update_layout(
-        barmode="overlay", bargap=0.30, height=300,
-        margin=dict(l=8, r=24, t=12, b=60),
+        barmode="overlay", bargap=0.3,
+        height=320, margin=dict(l=8, r=24, t=12, b=60),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         font=dict(size=13, color=c_text),
-        legend=dict(orientation="h", y=-0.30, x=0.5, xanchor="center",
-                    itemclick=False, itemdoubleclick=False),
-        yaxis=dict(title="", range=[0, ymax], ticksuffix="%",
-                   dtick=25 if ymax==100 else None, showgrid=True, gridcolor=c_grid,
-                   zeroline=False, tickfont=dict(size=12, color=c_text), showspikes=False),
-        hovermode="closest", hoverlabel=dict(bgcolor="#0f172a", font=dict(color=c_text, size=12)),
-        shapes=shapes, transition=None
+        legend=dict(
+            orientation="h", y=-0.30, x=0.5, xanchor="center",
+            itemclick=False, itemdoubleclick=False,
+            font=dict(size=12, color="#cbd5e1")
+        ),
+        yaxis=dict(
+            title="", range=[0, ymax*1.1], ticksuffix="%",
+            dtick=25 if ymax==100 else None,
+            showgrid=True, gridcolor=c_grid, zeroline=False,
+            tickfont=dict(size=12, color=c_text), showspikes=False
+        ),
+        hovermode="closest",
+        hoverlabel=dict(bgcolor="#0f172a", font=dict(color=c_text, size=12)),
+        shapes=shapes,
+        transition=None
     )
 
     st.plotly_chart(fig, use_container_width=True, config={
         "displaylogo": False, "displayModeBar": "hover",
-        "modeBarButtonsToRemove": ["select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"],
-        "responsive": True
+        "modeBarButtonsToRemove": [
+            "select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"
+        ], "responsive": True
     })
 
 
