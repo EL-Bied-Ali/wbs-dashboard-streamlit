@@ -188,7 +188,9 @@
     # ===== Page layout: FULL content + fixed right panel =====
     # (à mettre APRÈS la définition de render_all(...) et APRÈS le bloc with st.sidebar)
 
-
+    st.markdown("""
+    <div id="onpage-selector-panel"><h3>WBS à afficher</h3></div>
+    """, unsafe_allow_html=True)
 
     packs = st.session_state.get("_packs", [])
     if not packs:
