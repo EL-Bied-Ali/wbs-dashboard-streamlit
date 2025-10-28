@@ -323,51 +323,30 @@ def render_section_level2(parent_node: dict):
     has_children = bool(parent_node.get("children"))
 
     base = f"n2_open--{_slug(label)}_{level}"
+    ver_key = f"{base}__ver"
+    if base not in st.session_state: st.session_state[base] = False
+    if ver_key not in st.session_state: st.session_state[ver_key] = 0
 
-    if base not in st.session_state:
-        st.session_state[base] = False
-
-    # ----- Ligne visuelle
     left, right = st.columns([0.985, 0.015], gap="small")
-    # ... dans render_section_level2(...)
     with left:
         st.markdown(header_level2_grid(label, level, metrics), unsafe_allow_html=True)
         if has_children:
-            if st.button(" ", key=f"{base}__rowbtn", use_container_width=True):  # <- pas de help=
+            if st.button(" ", key=f"{base}__rowbtn", use_container_width=True):
                 st.session_state[base] = not st.session_state[base]
+                st.session_state[ver_key] += 1  # << alternance
 
-    # ----- supprime totalement la flèche de droite (Option A) -----
-    # with right:  # <- retire ce bloc si tu n'en veux plus
-    #     if has_children:
-    #         if st.button("▾", key=f"{base}__btn"):
-    #             st.session_state[base] = not st.session_state[base]
-
-    # ----- N3 -----
-# ----- N3 -----
     if has_children and st.session_state[base]:
-        n3_id = f"n3-{uuid.uuid4().hex[:8]}"
-        st.markdown(f'<div class="n3-scope" id="{n3_id}">', unsafe_allow_html=True)
+        mount_key = f"{base}__mount_{st.session_state[ver_key] % 2}"  # << remount
+        with st.container(key=mount_key):
+            with st.expander("", expanded=True):
+                ver = st.session_state[ver_key] % 2
+                st.markdown(f'<div class="n3load v{ver}"></div>', unsafe_allow_html=True)  # << MARQUEUR
+                render_detail_table(parent_node)
+                st.markdown('<div class="n3chart">', unsafe_allow_html=True)
+                render_barchart(parent_node)  # transition=None déjà OK
+                st.markdown('</div>', unsafe_allow_html=True)
 
-        ab_key = f"ab__{_slug(label)}_{level}"
-        if ab_key not in st.session_state:
-            st.session_state[ab_key] = 0
-        cur = st.session_state[ab_key]           # 0 -> v0, 1 -> v1
-        variant = "v0" if cur == 0 else "v1"
 
-        # 1) TABLE FIRST
-        render_detail_table(parent_node)
-
-        # 2) MARKER NOW right before the chart
-        st.markdown(f'<i class="n3marker {variant}"></i>', unsafe_allow_html=True)
-
-        # 3) CHART
-        render_barchart(
-            parent_node,
-            chart_key=f"chart_{_slug(label)}_{level}_ab{cur}"
-        )
-
-        st.session_state[ab_key] = 1 - cur
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 
