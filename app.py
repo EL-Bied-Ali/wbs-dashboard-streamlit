@@ -123,7 +123,7 @@ def render_detail_table(node: dict, compact: bool = False):
 
 
 
-def render_barchart(node: dict) -> bool:
+def render_barchart(node: dict, chart_key: str | None = None) -> bool:
     labels, schedule, earned = [], [], []
     for ch in (node.get("children") or []):
         labels.append(ch.get("label",""))
@@ -221,12 +221,8 @@ def render_barchart(node: dict) -> bool:
     st.plotly_chart(
         fig,
         use_container_width=True,
-        config={
-            "displaylogo": False, "displayModeBar": "hover",
-            "modeBarButtonsToRemove": ["select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"],
-            "responsive": True
-        },
-        key=key or f"plt_{_slug(node.get('label','root'))}_{len(labels)}"
+        config={ ... },
+        key=chart_key or f"plt_{_slug(node.get('label','root'))}_{len(labels)}"
     )
     return True
 
