@@ -100,12 +100,23 @@ def render_barchart(node:dict, chart_key:str|None=None)->bool:
         yaxis=dict(title="", range=[0, ymax*1.08], ticksuffix="%", dtick=25 if ymax==100 else None,
                    showgrid=True, gridcolor=c_grid, zeroline=False),
         hovermode="closest", hoverlabel=dict(bgcolor="#0f172a", font=dict(color=c_text, size=11)), shapes=shapes)
-    st.plotly_chart(fig, use_container_width=True,
-        config={"displaylogo":False,"displayModeBar":"hover",
-                "modeBarButtonsToRemove":["select2d","lasso2d","autoScale2d","zoomIn2d","zoomOut2d","toggleSpikelines"],
-                "responsive":True},
-        key=f"plt_{len(labels)}")
+    element_key = chart_key or f"plt_{len(labels)}"
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={
+            "displaylogo": False,
+            "displayModeBar": "hover",
+            "modeBarButtonsToRemove": [
+                "select2d", "lasso2d", "autoScale2d",
+                "zoomIn2d", "zoomOut2d", "toggleSpikelines"
+            ],
+            "responsive": True,
+        },
+        key=element_key,
+    )
     return True
+
 
 def _h1(label, m):
     planned  = m.get("planned_finish",""); forecast = m.get("forecast_finish","")
@@ -161,7 +172,9 @@ def render_section_level2(node:dict):
         with st.container(key=f"{base}__mount_{st.session_state[ver_key]%2}"):
             with st.expander("", expanded=True):
                 st.markdown(f'<div class="n3load v{st.session_state[ver_key]%2}"></div>', unsafe_allow_html=True)
-                render_detail_table(node); render_barchart(node)
+                render_detail_table(node)
+                render_barchart(node, chart_key=f"{base}__chart")
+
 
 def render_all(root:dict):
     st.markdown(_h1(root.get("label","GLOBAL"), root.get("metrics",{}) or {}), unsafe_allow_html=True)
