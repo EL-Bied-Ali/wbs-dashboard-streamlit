@@ -431,8 +431,8 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
 /* ===== Style titres WBS Niveau 2 ===== */
 .n2g-label {
   display: flex;
-  align-items: flex-start;     /* texte aligné en haut */
-  gap: 0;                      /* IMPORTANT : plus de gap entre point et texte */
+  align-items: flex-start;
+  gap: 0 !important;              /* annule l'ancien gap:8px!important */
   padding: 6px 12px;
   margin-bottom: 8px;
   background: linear-gradient(90deg, rgba(30,58,138,.25), rgba(15,23,42,.4));
@@ -447,7 +447,7 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
 
   /* réserve de la place à gauche pour le point */
   position: relative;
-  padding-left: 36px;          /* pousse le texte plus à droite du point */
+  padding-left: 36px !important;  /* ⬅ now overrides l’ancien padding!important */
 }
 
 /* point + glow + position fixe */
@@ -458,16 +458,16 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   background: linear-gradient(180deg,#60a5fa,#22c55e);
   box-shadow: 0 0 5px rgba(59,130,246,.5);
   position: absolute;
-  left: 16px;                  /* distance entre bord et point */
-  top: 50%;                    /* centre verticalement */
+  left: 16px;
+  top: 50%;
   transform: translateY(-50%);
 }
 
-/* Hover de la ligne N2 */
 .n2g-label:hover {
   border-color: #60a5fa;
   background: linear-gradient(90deg, rgba(37,99,235,.35), rgba(15,23,42,.5));
 }
+
 
 
 
