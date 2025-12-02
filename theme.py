@@ -448,8 +448,9 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
 
   /* réserve de la place à gauche pour le point */
   position: relative;
-  padding-left: 22px;
+  padding-left: 30px;   /* ⬅ AVANT: 22px */
 }
+
 
 /* point + glow + position fixe */
 .n2g-label .dot {
