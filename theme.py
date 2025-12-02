@@ -446,12 +446,11 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   text-shadow: 0 0 4px rgba(59,130,246,.3);
   transition: background .2s ease, border-color .2s ease;
 
-  /* nouveau : on réserve une zone à gauche pour le point */
+  /* 👇 IMPORTANT : réserve de la place à gauche pour le point */
   position: relative;
   padding-left: 22px;
 }
 
-/* === N2 LABELS & GLOW === */
 .n2g-label .dot {
   width: 8px;
   height: 8px;
@@ -459,12 +458,13 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   background: linear-gradient(180deg,#60a5fa,#22c55e);
   box-shadow: 0 0 5px rgba(59,130,246,.5);
 
-  /* nouveau : point fixé à gauche, centré verticalement */
+  /* 👇 IMPORTANT : place fixe du point */
   position: absolute;
   left: 8px;
   top: 50%;
   transform: translateY(-50%);
 }
+
 
 
 
