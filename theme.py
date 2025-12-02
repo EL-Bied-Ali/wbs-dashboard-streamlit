@@ -447,6 +447,19 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   transition: background .2s ease, border-color .2s ease;
 }
 
+/* Empêche le retour à la ligne qui met le texte sous le point */
+.n2g-label {
+    flex-wrap: nowrap;
+}
+
+.n2g-label .title {
+    white-space: nowrap;
+}
+
+
+
+
+
 /* === N2 LABELS & GLOW === */
 .n2g-label:hover {
   border-color: #60a5fa;
