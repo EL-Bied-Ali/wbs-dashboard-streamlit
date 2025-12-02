@@ -428,12 +428,11 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
 
 
 
-
 /* ===== Style titres WBS Niveau 2 ===== */
 .n2g-label {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;     /* texte aligné en haut */
+  gap: 0;                      /* IMPORTANT : plus de gap entre point et texte */
   padding: 6px 12px;
   margin-bottom: 8px;
   background: linear-gradient(90deg, rgba(30,58,138,.25), rgba(15,23,42,.4));
@@ -448,9 +447,8 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
 
   /* réserve de la place à gauche pour le point */
   position: relative;
-  padding-left: 30px;   /* ⬅ AVANT: 22px */
+  padding-left: 36px;          /* pousse le texte plus à droite du point */
 }
-
 
 /* point + glow + position fixe */
 .n2g-label .dot {
@@ -460,8 +458,8 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   background: linear-gradient(180deg,#60a5fa,#22c55e);
   box-shadow: 0 0 5px rgba(59,130,246,.5);
   position: absolute;
-  left: 8px;
-  top: 50%;
+  left: 16px;                  /* distance entre bord et point */
+  top: 50%;                    /* centre verticalement */
   transform: translateY(-50%);
 }
 
