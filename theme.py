@@ -445,16 +445,28 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   letter-spacing: 0.3px;
   text-shadow: 0 0 4px rgba(59,130,246,.3);
   transition: background .2s ease, border-color .2s ease;
+
+  /* nouveau : on réserve une zone à gauche pour le point */
+  position: relative;
+  padding-left: 22px;
 }
 
-/* Empêche le retour à la ligne qui met le texte sous le point */
-.n2g-label {
-    flex-wrap: nowrap;
+/* === N2 LABELS & GLOW === */
+.n2g-label .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(180deg,#60a5fa,#22c55e);
+  box-shadow: 0 0 5px rgba(59,130,246,.5);
+
+  /* nouveau : point fixé à gauche, centré verticalement */
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
-.n2g-label .title {
-    white-space: nowrap;
-}
+
 
 
 
