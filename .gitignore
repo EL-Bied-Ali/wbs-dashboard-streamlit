@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.DS_Store
+.streamlit/
+.vscode/
+.idea/
+env/
+venv/
+.pytest_cache/
+*.log
+*.xlsx
+*.mp4
+New Python File.py
