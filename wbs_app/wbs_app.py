@@ -1,17 +1,20 @@
-# app.py — Sidebar conservée / boutons déplacés à DROITE (compact)
+# app.py - Sidebar conservee / boutons deplaces a droite (compact)
 import streamlit as st
 import plotly.graph_objects as go
 from theme import inject_theme
 from extract_wbs_json import extract_all_wbs
 import tempfile, os, math
 
-st.set_page_config(page_title="WBS – Projet", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="WBS - Projet", layout="wide", initial_sidebar_state="expanded")
 inject_theme()
-st.markdown("""
-<div class="bg-aurora a1"></div>
-<div class="bg-aurora a2"></div>
-<div class="bg-aurora grid"></div>
-""", unsafe_allow_html=True)
+# Inject background glows only once to avoid flash on rerender
+if not st.session_state.get("_wbs_bg_once"):
+    st.markdown("""
+    <div class="bg-aurora a1"></div>
+    <div class="bg-aurora a2"></div>
+    <div class="bg-aurora grid"></div>
+    """, unsafe_allow_html=True)
+    st.session_state["_wbs_bg_once"] = True
 
 def _minify(s:str)->str: return "".join(l.strip() for l in s.splitlines())
 def _sf(x): 
@@ -65,7 +68,7 @@ def render_detail_table(node:dict, anim_variant:int=0):
       <div class="table-wrap">
         <table class="neo">
           <thead><tr>
-            <th></th><th>Planned</th><th>Forecast</th><th>Schedule</th><th>Earned</th><th>Écart</th><th>Impact</th><th>Glissement</th>
+            <th></th><th>Planned</th><th>Forecast</th><th>Schedule</th><th>Earned</th><th>+Ecart</th><th>Impact</th><th>Glissement</th>
           </tr></thead>
           <tbody>{''.join(trs)}</tbody>
         </table>
@@ -109,7 +112,7 @@ def render_barchart(node:dict, chart_key:str|None=None)->bool:
     element_key = chart_key or f"plt_{len(labels)}"
     st.plotly_chart(
         fig,
-        use_container_width=True,
+        width="stretch",
         config={
             "displaylogo": False,
             "displayModeBar": "hover",
@@ -117,7 +120,7 @@ def render_barchart(node:dict, chart_key:str|None=None)->bool:
                 "select2d", "lasso2d", "autoScale2d",
                 "zoomIn2d", "zoomOut2d", "toggleSpikelines"
             ],
-            "responsive": True,
+            "responsive": False,
         },
         key=element_key,
     )
@@ -137,7 +140,7 @@ def _h1(label, m, anim_variant:int=0):
         <div class="n1g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
         <div class="n1g-cell"><span class="small">Schedule</span>{_bar(sched_v,'blue', anim_variant)}</div>
         <div class="n1g-cell"><span class="small">Earned</span>{_bar(earn_v,'green', anim_variant)}</div>
-        <div class="n1g-cell"><span class="small">Écart</span><b class="{ecls}">{_pct(ecart_v,True)}</b></div>
+        <div class="n1g-cell"><span class="small">+Ecart</span><b class="{ecls}">{_pct(ecart_v,True)}</b></div>
         <div class="n1g-cell"><span class="small">Impact</span><b class="{icls}">{_pct(impact_v,True)}</b></div>
         <div class="n1g-cell"><span class="small">Glissement</span><b class="{gcls}">{int(gl)}j</b></div>
       </div>
@@ -155,7 +158,7 @@ def _h2(label, level, m, anim_variant:int=0):
       <div class="n2g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
         <div class="n2g-cell"><span class="small">Schedule</span>{_bar(sched_v,'blue', anim_variant)}</div>
         <div class="n2g-cell"><span class="small">Earned</span>{_bar(earn_v,'green', anim_variant)}</div>
-      <div class="n2g-cell"><span class="small">Écart</span><b class="{ecls}">{_pct(ecart_v,True)}</b></div>
+      <div class="n2g-cell"><span class="small">+Ecart</span><b class="{ecls}">{_pct(ecart_v,True)}</b></div>
       <div class="n2g-cell"><span class="small">Impact</span><b class="{icls}">{_pct(impact_v,True)}</b></div>
       <div class="n2g-cell gliss"><span class="small">Glissement</span><b class="{gcls}">{int(gl)}j</b></div>
     </div>""")
@@ -174,7 +177,7 @@ def render_section_level2(node:dict, anim_seq:int=0, wbs_key:str="wbs", debug:bo
     with l:
         st.markdown(_h2(label,level,metrics, bar_variant), unsafe_allow_html=True)
         if has_children:
-            if st.button(" ", key=f"{base}__rowbtn", use_container_width=True):
+            if st.button(" ", key=f"{base}__rowbtn", width="stretch"):
                 st.session_state[base]=not st.session_state[base]; st.session_state[ver_key]+=1
     if debug:
         st.caption(f"[dbg] base={base} open={st.session_state.get(base)} ver={st.session_state.get(ver_key)} view={view_version} anim_seq={anim_seq}")
@@ -192,10 +195,9 @@ def render_all(root:dict, anim_seq:int=0, wbs_key:str="wbs", debug:bool=False):
     st.divider()
     for n2 in root.get("children",[]) or []: render_section_level2(n2, anim_seq, wbs_key, debug=debug)
 
-# ===== Sidebar: importer (inchangé) =====
+# ===== Sidebar: importer (unchanged) =====
 with st.sidebar:
-    st.header("📁 Import Excel")
-    uploaded = st.file_uploader("Importer un fichier Excel (.xlsx)", type=["xlsx","xlsm"], accept_multiple_files=False)
+    uploaded = st.file_uploader("Upload WBS data (.xlsx)", type=["xlsx","xlsm"], accept_multiple_files=False)
     debug_remount = False
     packs=[]
     if uploaded is not None:
@@ -203,31 +205,31 @@ with st.sidebar:
             tmp.write(uploaded.read()); tmp_path=tmp.name
         try:
             packs=extract_all_wbs(tmp_path); st.session_state["_packs"]=packs
-            if not packs: st.warning("Aucun tableau valide détecté.")
+            if not packs: st.warning("Aucun tableau valide detecte.")
         except Exception as e:
-            st.error(f"Erreur d’extraction: {e}")
+            st.error(f"Erreur d'extraction: {e}")
         finally:
             try: os.unlink(tmp_path)
             except: pass
 
 # ===== Page layout: FULL content + fixed right panel =====
-# (à mettre APRÈS la définition de render_all(...) et APRÈS le bloc with st.sidebar)
+# (a mettre APRES la definition de render_all(...) et APRES le bloc with st.sidebar)
 
 
 
 packs = st.session_state.get("_packs", [])
 if not packs:
-    st.info("Importe un Excel dans la barre de gauche.")
+    st.info("📥 Importe un Excel dans la barre de gauche.")
     st.stop()
 
-# Permet de forcer le remount des blocs animés lorsque l'on change de WBS
+# Permet de forcer le remount des blocs animes lorsque l'on change de WBS
 st.session_state.setdefault("_anim_seq", 0)
 st.session_state.setdefault("_active_ctx", "")
 st.session_state.setdefault("_idx_prev", -1)
 
-labels = [f"{i+1}. {p.get('wbs',{}).get('label','WBS')}" for i,p in enumerate(packs)]
+labels = [f"{i+1}. 🧱 {p.get('wbs',{}).get('label','WBS')}" for i,p in enumerate(packs)]
 idx = st.radio(
-    "WBS à afficher",
+    "WBS a afficher",
     options=range(len(labels)),
     format_func=lambda i: labels[i],
     index=0,

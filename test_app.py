@@ -13,9 +13,10 @@ df = pd.DataFrame({
     "value": [3, 5, 2, 6, 4],
 })
 
-st.dataframe(df, use_container_width=True)
+st.dataframe(df, width=" stretch\)
 
 fig = px.bar(df, x="week", y="value", title="Sample bar chart")
-st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+st.plotly_chart(fig, width=" stretch\, config={"displayModeBar": False})
 
 st.success("Everything loaded fine. If this runs, your install is OK.")
+

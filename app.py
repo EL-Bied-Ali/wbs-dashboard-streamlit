@@ -12,12 +12,16 @@ from services_kpis import compute_kpis, extract_dates_labels
 from ui import inject_theme
 
 
-st.set_page_config(page_title="Project Progress Dashboard", layout="wide")
+st.set_page_config(page_title="Project Progress", layout="wide")
 
 # ---------- Cross-app links ----------
 def _env_or_secret(key: str) -> str | None:
-    if key in st.secrets:
-        return st.secrets[key]
+    try:
+        if key in st.secrets:
+            return st.secrets[key]
+    except FileNotFoundError:
+        # No local secrets file; fall back to env
+        pass
     return os.environ.get(key)
 
 
@@ -83,9 +87,10 @@ def metric_card(label: str, value: str, sub: str = "", tone: str | None = None):
 def base_layout(fig, height=220):
     fig.update_layout(
         height=height,
+        autosize=False,
         paper_bgcolor="#11162d",
         plot_bgcolor="#11162d",
-        font=dict(color="#e8eefc", size=12, family="Inter, 'Segoe UI', sans-serif"),
+        font=dict(color="#e8eefc", size=14, family="Inter, 'Segoe UI', sans-serif"),
         margin=dict(l=12, r=40, t=16, b=12),
         legend=dict(
             orientation="h",
@@ -93,7 +98,7 @@ def base_layout(fig, height=220):
             y=1.02,
             xanchor="left",
             x=0,
-            font=dict(size=11),
+            font=dict(size=13),
         ),
     )
     return fig
@@ -101,18 +106,19 @@ def base_layout(fig, height=220):
 
 def gauge_fig(title: str, value: float, color: str, subtitle: str | None = None):
     v = max(0, min(100, float(value)))
+    subtitle_html = (
+        f"<br><span style='font-size:12px;color:#9da8c6'>{subtitle}</span>"
+        if subtitle
+        else ""
+    )
     fig = go.Figure(
         go.Indicator(
-            mode="gauge+number",
+            mode="gauge",
             value=v,
-            title={
-                "text": f"{title}<br><span style='font-size:12px;color:#9da8c6'>{subtitle or ''}</span>",
-                "font": {"size": 14},
-            },
-            number={"suffix": " %", "font": {"size": 24}, "valueformat": ".1f"},
+            number={"suffix": "", "font": {"size": 1}, "valueformat": ".1f"},
             gauge={
-                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#4b5878", "tickfont": {"size": 11}},
-                "bar": {"color": color, "thickness": 0.3},
+                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#4b5878", "tickfont": {"size": 15}},
+                "bar": {"color": color, "thickness": 0.38},
                 "bgcolor": "rgba(255,255,255,0.04)",
                 "borderwidth": 0,
                 "steps": [
@@ -120,13 +126,50 @@ def gauge_fig(title: str, value: float, color: str, subtitle: str | None = None)
                     {"range": [50, 100], "color": "rgba(255,255,255,0.03)"},
                 ],
             },
-            domain={"x": [0.10, 0.90], "y": [0, 0.98]},
+            domain={"x": [0.10, 0.90], "y": [0.12, 0.98]},
         )
     )
-    fig.update_layout(height=240, autosize=False, margin=dict(l=10, r=10, t=30, b=20))
+    fig.add_annotation(
+        x=0.5,
+        y=0.50,
+        xref="paper",
+        yref="paper",
+        text=(
+            f"<span style='font-size:16px;font-weight:800;color:{color}'>{title}</span>"
+            f"{subtitle_html}"
+        ),
+        showarrow=False,
+        font={"size": 16, "color": color, "family": "Inter, 'Segoe UI', sans-serif", "weight": 800},
+        align="center",
+        bgcolor="rgba(0,0,0,0)",
+        bordercolor="rgba(0,0,0,0)",
+        borderwidth=0,
+        borderpad=2,
+    )
+    fig.add_annotation(
+        x=0.5,
+        y=0.30,
+        xref="paper",
+        yref="paper",
+        text=f"{v:.1f} %",
+        showarrow=False,
+        font={"size": 32, "color": color, "family": "Inter, 'Segoe UI', sans-serif", "weight": 900},
+        align="center",
+        bgcolor="rgba(0,0,0,0)",
+        bordercolor="rgba(0,0,0,0)",
+        borderwidth=0,
+        borderpad=0,
+        opacity=1,
+    )
+    fig.update_layout(
+        height=300,
+        autosize=False,
+        margin=dict(l=6, r=6, t=24, b=24),
+        paper_bgcolor="#0d1330",
+        plot_bgcolor="#0d1330",
+    )
     fig.update_traces(gauge_shape="angular")
     return fig
-
 
 def weekly_progress_fig(data, current_week: str):
     weeks = [d["week"] for d in data]
@@ -145,7 +188,7 @@ def weekly_progress_fig(data, current_week: str):
         opacity=0.9,
         text=[f"{p:.1f}%" for p in planned],
         textposition="outside",
-        textfont=dict(size=11),
+        textfont=dict(size=14),
     )
     fig.add_bar(
         name="Actual",
@@ -155,7 +198,7 @@ def weekly_progress_fig(data, current_week: str):
         opacity=0.9,
         text=[f"{a:.1f}%" for a in actual],
         textposition="outside",
-        textfont=dict(size=11),
+        textfont=dict(size=14),
     )
 
     ymax = max(planned + actual) if (planned + actual) else 5
@@ -165,20 +208,20 @@ def weekly_progress_fig(data, current_week: str):
             y=ymax * 1.03,
             text="This Week",
             showarrow=False,
-            font=dict(color="#e9c75f", size=12, family="Inter, 'Segoe UI', sans-serif"),
+            font=dict(color="#e9c75f", size=14, family="Inter, 'Segoe UI', sans-serif"),
         )
 
     fig.update_layout(
         barmode="group",
         bargap=0.18,
         title_text="",
-        xaxis=dict(showgrid=False, tickfont=dict(size=11)),
+        xaxis=dict(showgrid=False, tickfont=dict(size=13)),
         yaxis=dict(
             title="%",
             range=[0, ymax * 1.15],
             showgrid=True,
             gridcolor="rgba(255,255,255,0.08)",
-            tickfont=dict(size=11),
+            tickfont=dict(size=13),
         ),
         legend=dict(x=1, y=1.08, xanchor="right", orientation="h"),
         margin=dict(t=24),
@@ -200,7 +243,7 @@ def weekly_sv_fig(series):
         opacity=0.7,
         text=[f"{v:+.1f}%" for v in sv_vals],
         textposition="outside",
-        textfont=dict(size=10),
+        textfont=dict(size=12),
     )
     fig.add_trace(
         go.Scatter(
@@ -215,8 +258,8 @@ def weekly_sv_fig(series):
     fig.add_hline(y=0, line_color="rgba(255,255,255,0.25)", line_width=1)
     fig.update_layout(
         title_text="",
-        xaxis=dict(showgrid=False, tickfont=dict(size=10), tickmode="array", tickvals=weeks[::2], ticktext=weeks[::2]),
-        yaxis=dict(title="%", showgrid=True, gridcolor="rgba(255,255,255,0.08)", tickfont=dict(size=11)),
+        xaxis=dict(showgrid=False, tickfont=dict(size=12), tickmode="array", tickvals=weeks[::2], ticktext=weeks[::2]),
+        yaxis=dict(title="%", showgrid=True, gridcolor="rgba(255,255,255,0.08)", tickfont=dict(size=13)),
         legend=dict(x=1, y=1.12, xanchor="right", orientation="h"),
         margin=dict(t=20),
     )
@@ -248,8 +291,12 @@ def activities_status_fig(data: dict):
 
 
 # ---------- Sidebar selection ----------
-page = st.sidebar.radio("Pages", ["Dashboard", "S-Curve"], index=0)
-st.sidebar.markdown(f"[Open WBS app]({build_wbs_url()})", unsafe_allow_html=False)
+page = st.sidebar.radio(
+    "Pages",
+    ["Project Progress", "S-Curve"],
+    index=0,
+    format_func=lambda x: "📊 Project Progress" if x == "Project Progress" else "📈 S-Curve",
+)
 
 # Apply theme for both local pages
 inject_theme()
@@ -258,8 +305,12 @@ inject_theme()
 uploaded_dashboard = None
 excel_data = None
 selected_sheet = None
-if page == "Dashboard":
-    uploaded_dashboard = st.sidebar.file_uploader("Upload Excel data (Dashboard KPIs)", type=["xlsx"], key="excel_upload_dashboard")
+if page == "Project Progress":
+    uploaded_dashboard = st.sidebar.file_uploader(
+        "Upload Excel data (Project Progress KPIs)",
+        type=["xlsx"],
+        key="excel_upload_dashboard",
+    )
     if uploaded_dashboard:
         try:
             excel_data = load_from_excel(uploaded_dashboard)
@@ -300,11 +351,11 @@ def render_dashboard():
     st.markdown(
         f"""
         <div style="margin:12px 0 18px 0; padding:0 8px;">
-          <div class="page-header">
-            <div class="title">Project Progress Overview</div>
-            <div class="muted" style="margin-top:8px;">Demo data – replace later with your own sources</div>
-            <div class="muted" style="font-size:12px; margin-top:8px;">Last updated: {datetime.now().strftime('%d %b %Y, %H:%M')}</div>
-          </div>
+            <div class="page-header">
+              <div class="title">Project Progress Overview 🚀</div>
+              <div class="muted" style="margin-top:8px;">Demo data - replace later with your own sources</div>
+              <div class="muted" style="font-size:12px; margin-top:8px;">Last updated: {datetime.now().strftime('%d %b %Y, %H:%M')}</div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -312,22 +363,19 @@ def render_dashboard():
 
     layout_top = st.columns([2.0, 2.8])
 
-    gap_val = (m["actual_progress"] or 0) - (m["planned_progress"] or 0)
-    gap_text = f"Gap {fmt_pct(gap_val, signed=True, decimals=1)}"
-
     with layout_top[0]:
         gauges_row = st.columns(2)
         with gauges_row[0]:
             st.plotly_chart(
-                gauge_fig("Planned Progress", m["planned_progress"], "#4b6ff4", subtitle=gap_text),
-                use_container_width=True,
-                config={"displayModeBar": False, "responsive": True},
+                gauge_fig("Planned Progress", m["planned_progress"], "#4b6ff4"),
+                width="stretch",
+                config={"displayModeBar": False, "responsive": False},
             )
         with gauges_row[1]:
             st.plotly_chart(
-                gauge_fig("Actual Progress", m["actual_progress"], "#2fc192", subtitle=gap_text),
-                use_container_width=True,
-                config={"displayModeBar": False, "responsive": True},
+                gauge_fig("Actual Progress", m["actual_progress"], "#2fc192"),
+                width="stretch",
+                config={"displayModeBar": False, "responsive": False},
             )
 
     with layout_top[1]:
@@ -338,6 +386,9 @@ def render_dashboard():
             metric_card("Planned Finish", fmt_date(m["planned_finish"]))
         with row_a[2]:
             metric_card("Forecast Finish", fmt_date(m["forecast_finish"]))
+
+        # Add a bit of breathing room before the second row of cards
+        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
         row_b = st.columns(3)
         with row_b[0]:
@@ -352,30 +403,30 @@ def render_dashboard():
             metric_card("SPI", fmt_pct(spi_pct, decimals=1), tone=spi_tone)
 
     with st.container():
-        st.markdown('<div class="chart-heading">Weekly Progress</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-heading">Weekly Progress 📆</div>', unsafe_allow_html=True)
         st.plotly_chart(
             weekly_progress_fig(data["weekly_progress"], data["current_week"]),
-            use_container_width=True,
-            config={"displayModeBar": False},
+            width="stretch",
+            config={"displayModeBar": False, "responsive": False},
         )
 
     bottom = st.columns([1.7, 1.0])
     with bottom[0]:
         with st.container():
-            st.markdown('<div class="chart-heading">Weekly SV %</div>', unsafe_allow_html=True)
+            st.markdown('<div class="chart-heading">Weekly SV % 📉</div>', unsafe_allow_html=True)
             st.plotly_chart(
                 weekly_sv_fig(data["weekly_sv"]),
-                use_container_width=True,
-                config={"displayModeBar": False},
+                width="stretch",
+                config={"displayModeBar": False, "responsive": False},
             )
 
     with bottom[1]:
         with st.container():
-            st.markdown('<div class="chart-heading">Activities Status</div>', unsafe_allow_html=True)
+            st.markdown('<div class="chart-heading">Activities Status ✅</div>', unsafe_allow_html=True)
             st.plotly_chart(
                 activities_status_fig(data["activities_status"]),
-                use_container_width=True,
-                config={"displayModeBar": False},
+                width="stretch",
+                config={"displayModeBar": False, "responsive": False},
             )
 
     st.caption("Placeholder visuals with simulated data. Replace the sample data functions when real inputs are ready.")
@@ -397,11 +448,11 @@ def render_s_curve_page():
     fig = s_curve(x, weekly_actual, actual_curve, planned_curve, forecast_curve)
     fig.update_layout(title_text="")
     st.markdown('<div class="chart-heading">Progress S-Curve</div>', unsafe_allow_html=True)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "responsive": True})
+    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False, "responsive": False})
     st.caption("Simulated data for demo. Hook to your real cumulative series when ready.")
 
 
-if page == "Dashboard":
+if page == "Project Progress":
     render_dashboard()
 elif page == "S-Curve":
     render_s_curve_page()

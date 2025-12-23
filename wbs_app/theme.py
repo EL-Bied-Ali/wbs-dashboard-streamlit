@@ -726,9 +726,9 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
   top: 120px;               /* Distance depuis le haut */
   right: 20px;              /* Distance du bord droit */
   width: 290px;             /* largeur du panneau */
-  max-height: 78vh;         /* Hauteur max avant scroll vertical */
-  overflow-y: auto;         /* Scroll vertical uniquement */
-  overflow-x: hidden !important; /* Bloque le scroll horizontal */
+  max-height: none !important;    /* Laisse tout le contenu visible */
+  height: auto !important;
+  overflow: visible !important;   /* Pas de scroll dans le panneau */
   z-index: 1200;
   padding: 14px 16px;
   background:
@@ -780,19 +780,67 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
   background: linear-gradient(180deg, rgba(96,165,250,.55), rgba(34,197,94,.6));
   border-radius:999px;
 }
+
+/* === Left sidebar: bigger nav + custom labels with emojis === */
+section[data-testid="stSidebar"]{
+  font-size: 20px;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]{
+  font-size: 22px;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"] span{
+  display: none;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:has(span[label="app"])::before{
+  content: "📊 Project Progress";
+  font-weight: 700;
+  color: #e8eefc;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:has(span[label="WBS"])::before{
+  content: "🧱 WBS";
+  font-weight: 700;
+  color: #e8eefc;
+}
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
+  font-size: 22px;
+  font-weight: 700;
+}
+section[data-testid="stSidebar"] .stRadio [data-testid="stMarkdownContainer"] p{
+  font-size: 22px;
+}
 .st-key-wbs_selector_onpage::-webkit-scrollbar-track{
   background:rgba(15,23,42,.6);
   border-radius:999px;
 }
 .st-key-wbs_selector_onpage{
-  transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
+  background: linear-gradient(180deg,#0f1a31,#0b1326);
+  border: 1px solid rgba(96,165,250,.28);
+  transition: none !important;
+  animation: none !important;
+  overflow: visible !important;
 }
 .st-key-wbs_selector_onpage:hover{
-  box-shadow:
-    0 18px 32px rgba(0,0,0,.48),
-    inset 0 0 0 1px rgba(125,211,252,.35);
-  transform: translateY(-1px);
-  border-color: rgba(125,211,252,.45);
+  box-shadow: none !important;
+  transform: none !important;
+  border-color: rgba(96,165,250,.28);
+}
+/* Disable transitions on radios to avoid flicker when Streamlit rerenders */
+.st-key-wbs_selector_onpage label[data-baseweb="radio"]{
+  transition: none !important;
+  animation: none !important;
+}
+.st-key-wbs_selector_onpage label[data-baseweb="radio"]:hover{
+  transform: none !important;
+  box-shadow: none !important;
+}
+.st-key-wbs_selector_onpage label[data-baseweb="radio"]:has(input:checked){
+  transition: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+}
+.st-key-wbs_selector_onpage *{
+  animation: none !important;
+  transition: none !important;
 }
 
 /* === Glass frame on main content (wraps hero + N2/N3) === */

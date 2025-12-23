@@ -1,4 +1,4 @@
-# ui.py — theming + reusable UI kit (auto dark/light)
+# ui.py - theming + reusable UI kit (auto dark/light)
 import streamlit as st
 from textwrap import dedent
 
@@ -33,7 +33,7 @@ def inject_theme():
         border:1px solid var(--border);
         border-radius:var(--radius);
         box-shadow:var(--shadow);
-        padding:12px 14px;
+        padding:10px 12px;
       }
       .chart-card{ padding:8px 10px; overflow:hidden; }
       .chart-heading{ font-size:16px; font-weight:700; color:var(--text); margin:0 0 8px 0; }
@@ -52,14 +52,58 @@ def inject_theme():
         padding:0 12px 12px 12px;
         box-sizing:border-box;
       }
+      /* Allow metric cards to size naturally (no inner scroll) */
+      div[data-testid="stElementContainer"]:has(.card.metric){
+        overflow: visible !important;
+        height: auto !important;
+      }
+      /* Keep Plotly containers managed by Streamlit sizing but no inner scroll */
+      div[data-testid="stElementContainer"]:has(.stPlotlyChart){
+        overflow: visible !important;
+      }
+      /* Lock Plotly chart containers to their assigned heights to prevent growth */
+      div[data-testid="stElementContainer"][height="260px"]:has(.stPlotlyChart){
+        height: 260px !important;
+        max-height: 260px !important;
+      }
+      div[data-testid="stElementContainer"][height="280px"]:has(.stPlotlyChart){
+        height: 280px !important;
+        max-height: 280px !important;
+      }
+      div[data-testid="stElementContainer"][height="300px"]:has(.stPlotlyChart){
+        height: 300px !important;
+        max-height: 300px !important;
+      }
+      div[data-testid="stElementContainer"][height="330px"]:has(.stPlotlyChart){
+        height: 330px !important;
+        max-height: 330px !important;
+      }
+      div[data-testid="stElementContainer"][height="520px"]:has(.stPlotlyChart){
+        height: 520px !important;
+        max-height: 520px !important;
+      }
+      div[data-testid="stElementContainer"][height="260px"]:has(.stPlotlyChart) .stPlotlyChart,
+      div[data-testid="stElementContainer"][height="280px"]:has(.stPlotlyChart) .stPlotlyChart,
+      div[data-testid="stElementContainer"][height="300px"]:has(.stPlotlyChart) .stPlotlyChart,
+      div[data-testid="stElementContainer"][height="330px"]:has(.stPlotlyChart) .stPlotlyChart,
+      div[data-testid="stElementContainer"][height="520px"]:has(.stPlotlyChart) .stPlotlyChart{
+        height: 100% !important;
+      }
+      div[data-testid="stElementContainer"][height="260px"]:has(.stPlotlyChart) .js-plotly-plot,
+      div[data-testid="stElementContainer"][height="280px"]:has(.stPlotlyChart) .js-plotly-plot,
+      div[data-testid="stElementContainer"][height="300px"]:has(.stPlotlyChart) .js-plotly-plot,
+      div[data-testid="stElementContainer"][height="330px"]:has(.stPlotlyChart) .js-plotly-plot,
+      div[data-testid="stElementContainer"][height="520px"]:has(.stPlotlyChart) .js-plotly-plot{
+        height: 100% !important;
+      }
       .metric{
         display:flex;
         flex-direction:column;
         gap:4px;
-        min-height:110px;
+        min-height:96px;
       }
-      .metric .label{ color:var(--muted); font-weight:600; font-size:16px; letter-spacing:0.1px; }
-      .metric .value{ color:var(--text); font-weight:800; font-size:32px; }
+      .metric .label{ color:var(--muted); font-weight:600; font-size:15px; letter-spacing:0.1px; }
+      .metric .value{ color:var(--text); font-weight:800; font-size:28px; }
       .metric .value.positive{ color:var(--accent-2); }
       .metric .value.warn{ color:var(--accent); }
       .metric .value.negative{ color:var(--danger); }
@@ -79,6 +123,55 @@ def inject_theme():
           radial-gradient(900px 600px at 10% -10%, rgba(75,111,244,.18), transparent 40%),
           radial-gradient(900px 600px at 90% 20%, rgba(47,193,146,.14), transparent 45%),
           var(--bg);
+      }
+
+      /* Responsive tweaks: let Streamlit columns wrap/stack on narrow viewports */
+      div[data-testid="stHorizontalBlock"]{
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      /* Prevent inner scrollbars on gauge + metric rows */
+      div[data-testid="stHorizontalBlock"]:has(.stPlotlyChart),
+      div[data-testid="stHorizontalBlock"]:has(.card.metric){
+        overflow: visible !important;
+        height: auto !important;
+      }
+      div[data-testid="stColumn"]{
+        min-width: 320px;
+        flex: 1 1 320px !important;
+      }
+      /* Left sidebar: larger nav + labels, custom names with emojis */
+      section[data-testid="stSidebar"]{
+        font-size: 20px;
+      }
+      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]{
+        font-size: 22px;
+      }
+      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"] span{
+        display: none;
+      }
+      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:has(span[label="app"])::before{
+        content: "📊 Project Progress";
+        font-weight: 700;
+        color: var(--text);
+      }
+      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:has(span[label="WBS"])::before{
+        content: "🧱 WBS";
+        font-weight: 700;
+        color: var(--text);
+      }
+      section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
+        font-size: 22px;
+        font-weight: 700;
+      }
+      section[data-testid="stSidebar"] .stRadio [data-testid="stMarkdownContainer"] p{
+        font-size: 22px;
+      }
+      @media (max-width: 900px){
+        div[data-testid="stColumn"]{
+          min-width: 260px;
+          flex: 1 1 260px !important;
+        }
       }
     </style>
     """
@@ -127,7 +220,7 @@ def grid_end():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def sidebar_rcv_buttons(options, key_prefix:str, title="RCV / Lots / Sous Lots"):
-    # inchangé: garde ton implémentation existante si tu en avais une, sinon simple select
+    # unchanged: keep your existing implementation if you had one, otherwise simple select
     st.markdown(f"<div class='muted' style='font-weight:700;margin-bottom:6px'>{title}</div>", unsafe_allow_html=True)
     return st.selectbox("", ["__ALL__"] + list(options), index=0, key=f"{key_prefix}_rcv")
 
