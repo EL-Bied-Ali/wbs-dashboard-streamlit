@@ -789,13 +789,19 @@ section[data-testid="stSidebar"] [data-testid="stSidebarNav"]{
   display: none !important;
 }
 section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]{
-  font-size: 40px !important;
+  font-size: 34px !important;
   font-weight: 800;
   line-height: 1.1;
 }
 section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] [data-testid="stMarkdownContainer"] p{
-  font-size: 40px !important;
+  font-size: 34px !important;
   font-weight: 800;
+}
+section[data-testid="stSidebar"] .sidebar-nav-title{
+  font-size: 34px !important;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 8px 0;
 }
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
   font-size: 22px;

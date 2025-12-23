@@ -291,7 +291,7 @@ def activities_status_fig(data: dict):
 
 
 # ---------- Sidebar navigation ----------
-st.sidebar.markdown("Navigation")
+st.sidebar.markdown('<div class="sidebar-nav-title">Navigation</div>', unsafe_allow_html=True)
 st.sidebar.page_link("app.py", label="📊 Project Progress")
 st.sidebar.page_link("pages/2_WBS.py", label="🧱 WBS")
 
