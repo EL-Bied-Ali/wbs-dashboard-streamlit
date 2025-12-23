@@ -1,17 +1,28 @@
-## WBS app (from wbs-dashboard-streamlit)
+# WBS Project Dashboard (Streamlit)
 
-This folder is the standalone WBS extractor UI taken from the original project.
+Dashboard Streamlit moderne qui **extrait automatiquement** la structure WBS et les métriques (Planned / Forecast / Schedule / Earned / Écart / Impact / Glissement) depuis un fichier **Excel** puis génère une vue hiérarchique **pro** (Niveau 1 → sections N2 alignées → tableau N3 + bar chart).
 
-Run it separately from the main dashboard:
+https://wbs-dashboard-app-265wfosvya6ebzja5uokf9.streamlit.app/
 
+---
+
+## ✨ Points clés
+- **Upload Excel** → extraction instantanée du WBS (zéro config)
+- **Header N2 aligné** aux colonnes du tableau (grid)
+- **Mode large** sans scroll horizontal
+- **Graphiques** Plotly (Schedule vs Units)
+
+---
+
+## 🚀 Utilisation la plus simple (Windows)
+1. Télécharge le ZIP du repo, dézippe.
+2. Double-clique `start.bat`.
+3. Ton navigateur s’ouvre sur `http://localhost:8501`.
+4. Clique **Upload Excel** et charge ton fichier (ex: `examples/Exemple_WBS.xlsx`).
+
+> Le script crée un environnement virtuel tout seul et installe ce qu’il faut.
+
+### macOS / Linux
 ```bash
-streamlit run wbs_app/wbs_app.py
-```
-
-The main dashboard/S-curve app lives at the repo root and runs with:
-
-```bash
-streamlit run app.py
-```
-
-Keep the two apps independent so each retains its own layout and theme.
+chmod +x start_mac.sh
+./start_mac.sh

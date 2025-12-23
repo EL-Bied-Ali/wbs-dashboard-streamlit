@@ -1,41 +1,12 @@
 # app.py — Sidebar conservée / boutons déplacés à DROITE (compact)
-import os
-import tempfile
-import math
-
-import plotly.graph_objects as go
 import streamlit as st
-
-from extract_wbs_json import extract_all_wbs
+import plotly.graph_objects as go
 from theme import inject_theme
-
-def _env_or_secret(key: str) -> str | None:
-    # Avoid raising if secrets are missing locally
-    try:
-        if key in st.secrets:
-            return st.secrets[key]
-    except FileNotFoundError:
-        pass
-    return os.environ.get(key)
-
-
-def build_dashboard_url():
-    # 1) explicit override
-    url = _env_or_secret("DASHBOARD_URL")
-    if url:
-        return url
-    # 2) assume local dual-port dev: WBS on 8502, dashboard on 8501
-    port = os.environ.get("STREAMLIT_SERVER_PORT", "8502")
-    if port == "8502":
-        return "http://localhost:8501"
-    # 3) fallback localhost
-    return "http://localhost:8501"
-
+from extract_wbs_json import extract_all_wbs
+import tempfile, os, math
 
 st.set_page_config(page_title="WBS – Projet", layout="wide", initial_sidebar_state="expanded")
 inject_theme()
-# quick link back to the dashboard app
-st.sidebar.markdown(f"[Open Dashboard app]({build_dashboard_url()})")
 st.markdown("""
 <div class="bg-aurora a1"></div>
 <div class="bg-aurora a2"></div>
