@@ -197,11 +197,11 @@ def render_all(root:dict, anim_seq:int=0, wbs_key:str="wbs", debug:bool=False):
 
 # ===== Sidebar: importer (unchanged) =====
 st.sidebar.markdown("Navigation")
-st.sidebar.page_link("app.py", label="📊 Project Progress")
+st.sidebar.page_link("app.py", label="📊 Dashboard")
 st.sidebar.page_link("pages/2_WBS.py", label="🧱 WBS")
 
 with st.sidebar:
-    uploaded = st.file_uploader("Upload WBS data (.xlsx)", type=["xlsx","xlsm"], accept_multiple_files=False)
+    uploaded = st.file_uploader("📁 Upload WBS data (.xlsx)", type=["xlsx","xlsm"], accept_multiple_files=False)
     debug_remount = False
     packs=[]
     if uploaded is not None:

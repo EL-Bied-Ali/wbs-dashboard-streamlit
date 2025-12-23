@@ -1,6 +1,6 @@
-[[pages]]
+﻿[[pages]]
 path = "app.py"
-name = "Project Progress"
+name = "Dashboard"
 icon = "📊"
 
 [[pages]]

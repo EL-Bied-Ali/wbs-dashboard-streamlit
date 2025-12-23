@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 
 CSS = """
 <style>
@@ -173,7 +173,7 @@ table.neo tbody tr:hover{ background:rgba(148,163,184,.06); transition:backgroun
 .table-card table.neo, .table-card table.neo *{ border:0 !important; box-shadow:none !important; }
 .table-card table.neo thead{ display:none !important; }
 
-/* ==== Barres horizontales (si tu les réactives) ==== */
+/* ==== Barres horizontales (si tu les rÃ©actives) ==== */
 .mbar-wrap{display:flex; align-items:center; gap:8px;}
 .mbar{
   position:relative; height:10px; background:#1f2a44; border-radius:999px; overflow:hidden; flex-shrink:0;
@@ -219,7 +219,7 @@ hr{
   margin:8px 0 4px!important;
 }
 
-/* === Espace à droite du tableau === */
+/* === Espace Ã  droite du tableau === */
 .block-container{
   margin-left: 0 !important;
   padding-right: 330px !important; /* largeur du panneau + marge */
@@ -241,7 +241,7 @@ hr{
   height: 0; padding: 0; margin: 0;
 }
 
-/* Nettoyage des marges “fantômes” autour des markdown/cols */
+/* Nettoyage des marges â€œfantÃ´mesâ€ autour des markdown/cols */
 div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) [data-testid="stMarkdownContainer"] > p{ margin:0 !important; }
 div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stColumns,
 div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) [data-testid="column"]{ overflow:visible; }
@@ -289,7 +289,7 @@ div[data-testid="stExpander"] > details > summary{
 }
 div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ display:none!important }
 
-/* ================= N3: animations (rejouent grâce au remount) ================= */
+/* ================= N3: animations (rejouent grÃ¢ce au remount) ================= */
 @keyframes n3Open{
   0%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
   100%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
@@ -332,11 +332,11 @@ div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpande
   to{opacity:1;transform:translateY(0)}
 }
 
-/* Légers décalages pour un rendu plus fluide */
+/* LÃ©gers dÃ©calages pour un rendu plus fluide */
 .n2-grid .mbar-wrap.v{--delay:90ms}
 .table-card .mbar-wrap.v{--delay:40ms}
 
-/* Respecte l’accessibilité */
+/* Respecte lâ€™accessibilitÃ© */
 @media (prefers-reduced-motion: reduce){
   .mfill.anim{animation:none;width:var(--to,0%)}
   .mbar-wrap.v .mval{animation:none;opacity:1}
@@ -368,7 +368,7 @@ div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 
 
 
-/* ====== keyframes doublés pour rejouer (A/B) ====== */
+/* ====== keyframes doublÃ©s pour rejouer (A/B) ====== */
 @keyframes n3ChartInA { from{opacity:0;transform:translateY(12px) scale(.985)} to{opacity:1;transform:translateY(0) scale(1)} }
 @keyframes n3ChartInB { from{opacity:0;transform:translateY(12px) scale(.985)} to{opacity:1;transform:translateY(0) scale(1)} }
 
@@ -424,13 +424,13 @@ details[open] [data-testid="stExpanderDetails"]
   will-change: transform, opacity;
 }
 
-/* Accessibilité */
+/* AccessibilitÃ© */
 @media (prefers-reduced-motion: reduce){
   details[open] [data-testid="stExpanderDetails"]
     .stElementContainer:has(.n3load.v0), 
   details[open] [data-testid="stExpanderDetails"]
     .stElementContainer:has(.n3load.v1){
-    /* neutralise toutes les animations ciblées ci-dessus */
+    /* neutralise toutes les animations ciblÃ©es ci-dessus */
   }
   details[open] [data-testid="stExpanderDetails"]
     .stElementContainer:has(.n3load) ~ .stElementContainer
@@ -456,7 +456,7 @@ section[data-testid="stSidebar"] [role="radiogroup"]{
 section[data-testid="stSidebar"] label[data-baseweb="radio"]{
   position:relative;
   display:flex; align-items:center; gap:10px;
-  width:100%;                                 /* 👈 all same width */
+  width:100%;                                 /* ðŸ‘ˆ all same width */
   box-sizing:border-box;                      /* respect padding + border */
   padding:8px 12px;
   border-radius:10px;
@@ -524,9 +524,9 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   text-shadow: 0 0 4px rgba(59,130,246,.3);
   transition: background .2s ease, border-color .2s ease;
 
-  /* réserve de la place à gauche pour le point */
+  /* rÃ©serve de la place Ã  gauche pour le point */
   position: relative;
-  padding-left: 36px !important;  /* ⬅ now overrides l’ancien padding!important */
+  padding-left: 36px !important;  /* â¬… now overrides lâ€™ancien padding!important */
 }
 
 /* point + glow + position fixe */
@@ -608,7 +608,7 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 .table-card .mbar{ display:block; overflow:hidden; border-radius:6px; }
 .table-card .mfill{ display:block; height:8px; width:var(--to,0%); border-radius:6px; }
 
-/* Rejoue l’animation à chaque rendu (compatible avec --to inline) */
+/* Rejoue lâ€™animation Ã  chaque rendu (compatible avec --to inline) */
 .table-card .mfill.anim{ animation:mfillGrowA .8s cubic-bezier(.22,.61,.36,1) forwards; }
 .table-card .mfill.anim.av1{ animation-name:mfillGrowB; }
 @keyframes mfillGrowA{ 0%{ width:0 } 100%{ width:var(--to) } }
@@ -635,12 +635,12 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 
 
 
-/* Radiogroup à l’intérieur du contenu principal (hors sidebar) */
+/* Radiogroup Ã  lâ€™intÃ©rieur du contenu principal (hors sidebar) */
 div[data-testid="stVerticalBlock"] .main-radios [role="radiogroup"]{
   display:flex; flex-direction:column; gap:8px;
 }
 div[data-testid="stVerticalBlock"] .main-radios label[data-baseweb="radio"],
-/* on cible aussi ceux créés simplement sur la page */
+/* on cible aussi ceux crÃ©Ã©s simplement sur la page */
 div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]{
   position:relative; display:flex; align-items:center; gap:10px; width:100%;
   box-sizing:border-box; padding:10px 12px; border-radius:10px;
@@ -669,7 +669,7 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio
 
 
 
-/* === Radios sur la PAGE (colonne de droite) — compact & stylé === */
+/* === Radios sur la PAGE (colonne de droite) â€” compact & stylÃ© === */
 div[data-testid="stVerticalBlock"] [role="radiogroup"]{
   display:flex; flex-direction:column; gap:6px;
 }
@@ -699,7 +699,7 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
 
 
 
-/* === Panneau fixe à droite pour les boutons WBS === */
+/* === Panneau fixe Ã  droite pour les boutons WBS === */
 #onpage-selector-panel{
   position: fixed;
   top: 68px;
@@ -743,7 +743,7 @@ div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownC
   backdrop-filter: blur(12px);
 }
 
-/* === Titre "WBS à afficher" === */
+/* === Titre "WBS Ã  afficher" === */
 .st-key-wbs_selector_onpage [data-testid="stWidgetLabel"]{
   margin: 0 0 10px;
   color:#e5e7eb;
@@ -788,29 +788,9 @@ section[data-testid="stSidebar"]{
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"]{
   display: none !important;
 }
-section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]{
-  font-size: 0 !important;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"] span{
-  display: none !important;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][href$="/"]::before,
-section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][href$="/app"]::before{
-  content: "📊 Project Progress";
-  font-weight: 700;
-  color: #e8eefc !important;
-  font-size: 22px !important;
-  display: inline-flex;
-  align-items: center;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][href$="/WBS"]::before,
-section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][href$="/WBS/"]::before{
-  content: "🧱 WBS";
-  font-weight: 700;
-  color: #e8eefc !important;
-  font-size: 22px !important;
-  display: inline-flex;
-  align-items: center;
+section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]{
+  font-size: 34px !important;
+  font-weight: 800;
 }
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
   font-size: 22px;
@@ -911,3 +891,5 @@ html, body, [data-testid="stAppViewBlockContainer"]{
 
 def inject_theme():
     st.markdown(CSS, unsafe_allow_html=True)
+
+

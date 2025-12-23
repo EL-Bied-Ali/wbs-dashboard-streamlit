@@ -12,7 +12,7 @@ from services_kpis import compute_kpis, extract_dates_labels
 from ui import inject_theme
 
 
-st.set_page_config(page_title="Project Progress", layout="wide")
+st.set_page_config(page_title="Dashboard", layout="wide")
 
 # ---------- Cross-app links ----------
 def _env_or_secret(key: str) -> str | None:
@@ -292,15 +292,15 @@ def activities_status_fig(data: dict):
 
 # ---------- Sidebar navigation ----------
 st.sidebar.markdown("Navigation")
-st.sidebar.page_link("app.py", label="📊 Project Progress")
+st.sidebar.page_link("app.py", label="📊 Dashboard")
 st.sidebar.page_link("pages/2_WBS.py", label="🧱 WBS")
 
 # ---------- Sidebar selection ----------
 page = st.sidebar.radio(
     "Pages",
-    ["Project Progress", "S-Curve"],
+    ["Dashboard", "S-Curve"],
     index=0,
-    format_func=lambda x: "📊 Project Progress" if x == "Project Progress" else "📈 S-Curve",
+    format_func=lambda x: "📊 Dashboard" if x == "Dashboard" else "📈 S-Curve",
 )
 
 # Apply theme for both local pages
@@ -310,9 +310,9 @@ inject_theme()
 uploaded_dashboard = None
 excel_data = None
 selected_sheet = None
-if page == "Project Progress":
+if page == "Dashboard":
     uploaded_dashboard = st.sidebar.file_uploader(
-        "Upload Excel data (Project Progress KPIs)",
+        "📁 Upload Excel data (Dashboard KPIs)",
         type=["xlsx"],
         key="excel_upload_dashboard",
     )
@@ -457,7 +457,7 @@ def render_s_curve_page():
     st.caption("Simulated data for demo. Hook to your real cumulative series when ready.")
 
 
-if page == "Project Progress":
+if page == "Dashboard":
     render_dashboard()
 elif page == "S-Curve":
     render_s_curve_page()
