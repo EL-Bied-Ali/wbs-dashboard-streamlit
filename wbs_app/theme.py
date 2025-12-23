@@ -789,7 +789,12 @@ section[data-testid="stSidebar"] [data-testid="stSidebarNav"]{
   display: none !important;
 }
 section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]{
-  font-size: 34px !important;
+  font-size: 40px !important;
+  font-weight: 800;
+  line-height: 1.1;
+}
+section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] [data-testid="stMarkdownContainer"] p{
+  font-size: 40px !important;
   font-weight: 800;
 }
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{

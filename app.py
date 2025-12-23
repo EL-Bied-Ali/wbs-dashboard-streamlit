@@ -12,7 +12,7 @@ from services_kpis import compute_kpis, extract_dates_labels
 from ui import inject_theme
 
 
-st.set_page_config(page_title="Dashboard", layout="wide")
+st.set_page_config(page_title="Project Progress", layout="wide")
 
 # ---------- Cross-app links ----------
 def _env_or_secret(key: str) -> str | None:
@@ -292,7 +292,7 @@ def activities_status_fig(data: dict):
 
 # ---------- Sidebar navigation ----------
 st.sidebar.markdown("Navigation")
-st.sidebar.page_link("app.py", label="📊 Dashboard")
+st.sidebar.page_link("app.py", label="📊 Project Progress")
 st.sidebar.page_link("pages/2_WBS.py", label="🧱 WBS")
 
 # ---------- Sidebar selection ----------
@@ -312,7 +312,7 @@ excel_data = None
 selected_sheet = None
 if page == "Dashboard":
     uploaded_dashboard = st.sidebar.file_uploader(
-        "📁 Upload Excel data (Dashboard KPIs)",
+        "📁 Upload Excel data (Project Progress KPIs)",
         type=["xlsx"],
         key="excel_upload_dashboard",
     )

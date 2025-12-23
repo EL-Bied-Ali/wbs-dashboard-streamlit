@@ -197,7 +197,7 @@ def render_all(root:dict, anim_seq:int=0, wbs_key:str="wbs", debug:bool=False):
 
 # ===== Sidebar: importer (unchanged) =====
 st.sidebar.markdown("Navigation")
-st.sidebar.page_link("app.py", label="📊 Dashboard")
+st.sidebar.page_link("app.py", label="📊 Project Progress")
 st.sidebar.page_link("pages/2_WBS.py", label="🧱 WBS")
 
 with st.sidebar:
