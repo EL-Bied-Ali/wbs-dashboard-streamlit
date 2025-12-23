@@ -1,0 +1,9 @@
+[[pages]]
+path = "app.py"
+name = "Project Progress"
+icon = "📊"
+
+[[pages]]
+path = "pages/2_WBS.py"
+name = "WBS"
+icon = "🧱"

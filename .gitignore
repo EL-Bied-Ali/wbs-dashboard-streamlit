@@ -4,6 +4,8 @@ __pycache__/
 *.pyo
 *.DS_Store
 .streamlit/
+!.streamlit/
+!.streamlit/pages.toml
 .vscode/
 .idea/
 env/
