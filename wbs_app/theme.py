@@ -789,19 +789,30 @@ section[data-testid="stSidebar"] [data-testid="stSidebarNav"]{
   display: none !important;
 }
 section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]{
-  font-size: 34px !important;
+  font-size: 28px !important;
   font-weight: 800;
   line-height: 1.1;
+  display: block;
+  padding: 4px 0 !important;
 }
 section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] [data-testid="stMarkdownContainer"] p{
-  font-size: 34px !important;
+  font-size: 28px !important;
   font-weight: 800;
+  line-height: 1.1;
+  margin: 0 !important;
 }
 section[data-testid="stSidebar"] .sidebar-nav-title{
   font-size: 34px !important;
   font-weight: 800;
   line-height: 1.1;
   margin: 0 0 8px 0;
+}
+section[data-testid="stSidebar"] [data-testid="stPageLink"]{
+  margin: 2px 0 6px 0 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
+  margin: 0 !important;
+  padding: 0 !important;
 }
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
   font-size: 22px;
