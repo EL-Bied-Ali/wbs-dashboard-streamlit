@@ -144,21 +144,32 @@ def inject_theme():
       section[data-testid="stSidebar"]{
         font-size: 20px;
       }
+      section[data-testid="stSidebar"] [data-testid="stSidebarNav"]{
+        display: none !important;
+      }
       section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]{
-        font-size: 22px;
+        font-size: 0 !important;
       }
       section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"] span{
-        display: none;
+        display: none !important;
       }
-      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:has(span[label="app"])::before{
+      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][href$="/"]::before,
+      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][href$="/app"]::before{
         content: "📊 Project Progress";
         font-weight: 700;
-        color: var(--text);
+        color: var(--text) !important;
+        font-size: 22px !important;
+        display: inline-flex;
+        align-items: center;
       }
-      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:has(span[label="WBS"])::before{
+      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][href$="/WBS"]::before,
+      section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][href$="/WBS/"]::before{
         content: "🧱 WBS";
         font-weight: 700;
-        color: var(--text);
+        color: var(--text) !important;
+        font-size: 22px !important;
+        display: inline-flex;
+        align-items: center;
       }
       section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
         font-size: 22px;

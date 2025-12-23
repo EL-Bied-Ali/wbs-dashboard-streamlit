@@ -290,6 +290,11 @@ def activities_status_fig(data: dict):
     return base_layout(fig, height=260)
 
 
+# ---------- Sidebar navigation ----------
+st.sidebar.markdown("Navigation")
+st.sidebar.page_link("app.py", label="📊 Project Progress")
+st.sidebar.page_link("pages/2_WBS.py", label="🧱 WBS")
+
 # ---------- Sidebar selection ----------
 page = st.sidebar.radio(
     "Pages",
