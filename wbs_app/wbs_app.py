@@ -10,8 +10,12 @@ from extract_wbs_json import extract_all_wbs
 from theme import inject_theme
 
 def _env_or_secret(key: str) -> str | None:
-    if key in st.secrets:
-        return st.secrets[key]
+    # Avoid raising if secrets are missing locally
+    try:
+        if key in st.secrets:
+            return st.secrets[key]
+    except FileNotFoundError:
+        pass
     return os.environ.get(key)
 
 

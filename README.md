@@ -1,0 +1,26 @@
+# WBS Dashboard (Streamlit)
+
+Streamlit dashboards to explore project progress data with S-curves, KPIs, and WBS details. The repo hosts the main dashboard plus a small WBS extractor UI.
+
+## Apps
+- Main dashboard: `streamlit run app.py` (uses bundled demo data; upload your Excel file to drive live charts).
+- WBS extractor UI: `streamlit run wbs_app/wbs_app.py` (kept separate so it can have its own layout/theme).
+- Quick smoke test: `streamlit run test_app.py` to confirm Streamlit/pandas/plotly install.
+
+## Getting started
+1) Use Python 3.12 (see `runtime.txt`).
+2) Create a virtual env and install deps:
+   ```bash
+   python -m venv .venv
+   .venv\\Scripts\\activate
+   pip install -r requirements.txt
+   ```
+3) Run one of the apps above.
+
+## Data and settings
+- Upload an Excel progress file when prompted; column mappings live in `data.py` (`MAPPINGS` dict).
+- If you deploy the dashboard alongside the WBS UI, set `WBS_URL` (env var or Streamlit secret) so the cross-link points to the right host/port. The app defaults to `http://localhost:8502` when running locally.
+
+## Repo notes
+- `.gitignore` excludes virtualenvs, caches, Excel exports, and large videos so the repo stays light.
+- Everything else can be committed normally; keep the two apps independent so each retains its theme.
