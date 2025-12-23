@@ -805,7 +805,7 @@ section[data-testid="stSidebar"] .sidebar-nav-title{
   font-size: 34px !important;
   font-weight: 800;
   line-height: 1.1;
-  margin: 0 0 8px 0;
+  margin: 0 0 14px 0;
 }
 section[data-testid="stSidebar"] [data-testid="stPageLink"]{
   margin: 2px 0 6px 0 !important;
@@ -813,6 +813,14 @@ section[data-testid="stSidebar"] [data-testid="stPageLink"]{
 section[data-testid="stSidebar"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
   margin: 0 !important;
   padding: 0 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploader"]{
+  margin: 12px 0 14px 0 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]{
+  min-height: 140px;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
   font-size: 22px;
