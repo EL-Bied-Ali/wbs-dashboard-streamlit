@@ -296,43 +296,69 @@ if preview_mode:
             f"Mismatch summary: summary={mismatch.get('summary_unique', 0)} "
             f"assignments={mismatch.get('assign_unique', 0)}"
         )
-    if preview_rows:
-        import hashlib
-        import random
-        from datetime import date, timedelta
-        import pandas as pd
-
-        def _rng(key: str) -> random.Random:
-            seed = int.from_bytes(hashlib.md5(key.encode("utf-8")).digest()[:4], "little")
-            return random.Random(seed)
-
-        def _rand_date(r: random.Random) -> str:
-            base = date(2025, 1, 1)
-            return (base + timedelta(days=r.randint(0, 330))).strftime("%d-%b-%y")
-
-        rows = []
-        for r in preview_rows:
-            rng = _rng(r["label"])
-            schedule = round(rng.uniform(0, 100), 2)
-            earned = round(max(0, min(100, schedule + rng.uniform(-15, 15))), 2)
-            rows.append({
-                "Activity ID": r["label"],
-                "Level": r.get("level", 0),
-                "Planned Finish": _rand_date(rng),
-                "Forecast Finish": _rand_date(rng),
-                "Schedule %": schedule,
-                "Earned %": earned,
-                "Ecart %": round(earned - schedule, 2),
-                "Impact %": round(rng.uniform(-10, 10), 2),
-                "Glissement": f"{rng.randint(-7, 7)}j",
-            })
-
-        df = pd.DataFrame(rows)
-        max_rows = 80
-        st.caption(f"Preview rows (random placeholders): showing {min(max_rows, len(df))} of {len(df)}")
-        st.dataframe(df.head(max_rows), use_container_width=True, height=420)
-    else:
+    if not preview_rows:
         st.info("No preview rows yet. Upload a file or enable the test Excel toggle.")
+        st.stop()
+
+    import hashlib
+    import random
+    from datetime import date, timedelta
+
+    def _rng(key: str) -> random.Random:
+        seed = int.from_bytes(hashlib.md5(key.encode("utf-8")).digest()[:4], "little")
+        return random.Random(seed)
+
+    def _rand_date(r: random.Random) -> str:
+        base = date(2025, 1, 1)
+        return (base + timedelta(days=r.randint(0, 330))).strftime("%d-%b-%y")
+
+    def _preview_metrics(label: str) -> dict:
+        rng = _rng(label)
+        schedule = round(rng.uniform(0, 100), 2)
+        earned = round(max(0, min(100, schedule + rng.uniform(-15, 15))), 2)
+        return {
+            "planned_finish": _rand_date(rng),
+            "forecast_finish": _rand_date(rng),
+            "schedule": schedule,
+            "earned": earned,
+            "ecart": round(earned - schedule, 2),
+            "impact": round(rng.uniform(-10, 10), 2),
+            "glissement": f"{rng.randint(-7, 7)}j",
+        }
+
+    def _build_preview_tree(rows: list[dict]) -> dict:
+        min_level = min(r.get("level", 0) for r in rows)
+        root = None
+        stack = []
+        for r in rows:
+            lvl = (r.get("level", 0) - min_level) + 1
+            node = {
+                "label": r["label"],
+                "level": lvl,
+                "metrics": _preview_metrics(r["label"]),
+                "children": [],
+            }
+            if root is None:
+                root = node
+                stack = [node]
+                continue
+            while stack and stack[-1]["level"] >= lvl:
+                stack.pop()
+            if not stack:
+                root.setdefault("children", []).append(node)
+                stack = [root, node]
+            else:
+                stack[-1]["children"].append(node)
+                stack.append(node)
+        return root or {}
+
+    root = _build_preview_tree(preview_rows)
+    if not root:
+        st.info("No preview tree available.")
+        st.stop()
+    st.caption("Preview uses placeholder metrics until we map real values.")
+    st.session_state.setdefault("_preview_anim_seq", 0)
+    render_all(root, st.session_state["_preview_anim_seq"], wbs_key="preview", debug=False)
     st.info("Disable preview in the sidebar to render the WBS.")
     st.stop()
 
