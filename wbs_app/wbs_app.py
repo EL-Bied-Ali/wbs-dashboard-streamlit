@@ -256,8 +256,8 @@ with st.sidebar:
             st.session_state["_detected_tables"] = []
             if not packs:
                 st.session_state["_detected_tables"] = detect_expected_tables(source_path)
-            st.session_state["_table_mismatch"] = compare_activity_ids(source_path)
-            st.session_state["_preview_rows"] = build_preview_rows(source_path)
+            st.session_state["_table_mismatch"] = None
+            st.session_state["_preview_rows"] = build_preview_rows(source_path, table_type="activity_summary")
         except Exception as e:
             st.error(f"Erreur d'extraction: {e}")
         finally:
@@ -284,7 +284,8 @@ if mismatch and (mismatch.get("summary_only") or mismatch.get("assign_only")):
 preview_mode = st.sidebar.toggle("Preview mode (dev)", value=True, key="preview_mode")
 if preview_mode:
     st.markdown("### Preview (mapping checks)")
-    st.markdown("Source for hierarchy: Ressource Assignments (Activity ID indentation).")
+    st.markdown("Source for hierarchy: Activity summary table (Activity ID indentation).")
+    st.info("Second table is ignored for now.")
     preview_rows = st.session_state.get("_preview_rows", [])
     if detected_tables:
         st.markdown("Detected tables:")
