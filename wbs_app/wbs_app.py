@@ -187,9 +187,12 @@ def render_node(node:dict, depth:int, anim_seq:int=0, wbs_key:str="wbs", debug:b
     children = node.get("children") or []
     has_children=bool(children)
     base=_node_base(label, depth, wbs_key, path); ver_key=f"{base}__ver"
+    chart_hide_key = f"{base}__chart_hidden"
     view_version = (anim_seq + st.session_state.get(ver_key, 0)) % 2
     if base not in st.session_state:
         st.session_state[base] = True if depth == 1 else False
+    if chart_hide_key not in st.session_state:
+        st.session_state[chart_hide_key] = False
     if ver_key not in st.session_state: st.session_state[ver_key]=0
     bar_variant = (anim_seq + depth) % 2
     if depth == 1:
@@ -219,11 +222,13 @@ def render_node(node:dict, depth:int, anim_seq:int=0, wbs_key:str="wbs", debug:b
             with st.container(key=f"{base}__chartbar"):
                 col_a, col_b = st.columns([0.85, 0.15])
                 with col_b:
-                    if st.button("Masquer", key=f"{base}__hide_chart"):
-                        st.session_state[base] = False
+                    label_btn = "Afficher" if st.session_state[chart_hide_key] else "Masquer"
+                    if st.button(label_btn, key=f"{base}__hide_chart"):
+                        st.session_state[chart_hide_key] = not st.session_state[chart_hide_key]
                         st.session_state[ver_key] += 1
-            with st.container(key=f"{base}__chartwrap_v{view_version}"):
-                render_barchart(node, chart_key=f"{base}__chart")
+            if not st.session_state[chart_hide_key]:
+                with st.container(key=f"{base}__chartwrap_v{view_version}"):
+                    render_barchart(node, chart_key=f"{base}__chart")
 
 
 def render_all(root:dict, anim_seq:int=0, wbs_key:str="wbs", debug:bool=False):
