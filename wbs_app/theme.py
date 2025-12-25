@@ -14,6 +14,9 @@ header[data-testid="stHeader"]{
 }
 *{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
 html, body { font-size:17px; line-height:1.4; }
+html, body, [data-testid="stAppViewContainer"]{
+  zoom:var(--ui-zoom);
+}
 body{
   background:var(--bg);
   position:relative;
@@ -24,6 +27,7 @@ body{
 :root{
   --bg:#0b1220; --glass:#0f172a; --glass2:#0b1224; --line:#1f2a44;
   --text:#e5e7eb; --muted:#94a3b8; --ok:#22c55e; --bad:#ef4444; --accent:#60a5fa;
+  --ui-zoom:0.96;
 
   --col1:26%; --col2:10%; --col3:10%; --col4:15%;
   --col5:15%; --col6:8%;  --col7:8%;  --col8:8%;
@@ -62,6 +66,14 @@ body{
     repeating-linear-gradient(0deg, rgba(148,163,184,.05) 0, rgba(148,163,184,.05) 1px, transparent 1px, transparent 120px);
   mask-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,.5), transparent 55%),
               radial-gradient(circle at 70% 60%, rgba(255,255,255,.5), transparent 60%);
+}
+.bg-vignette{
+  position:fixed; inset:-10%;
+  pointer-events:none; z-index:-3;
+  background:
+    radial-gradient(1200px 700px at 50% -10%, rgba(0,0,0,.35), transparent 60%),
+    radial-gradient(900px 600px at 50% 120%, rgba(0,0,0,.45), transparent 60%);
+  opacity:.55;
 }
 @keyframes driftA{
   from{ transform: translate(-6%, -4%) scale(1.02); }
@@ -120,6 +132,13 @@ body{
 .hero .n1g-cell b{font-size:var(--fs-n1-kpi); font-weight:700; color:var(--text);}
 .hero .n1g-cell b.ok{color:var(--ok)!important;} .hero .n1g-cell b.bad{color:var(--bad)!important;}
 
+/* Root hero toggle: full-card click without visible button */
+div[class*="hero_wrap__"]{ position:relative; }
+div[class*="hero_wrap__"] div[class*="__hero_toggle"]{ position:absolute; inset:0; margin:0; z-index:6; }
+div[class*="hero_wrap__"] div[class*="__hero_toggle"] button{
+  width:100%; height:100%; opacity:0; border:0; padding:0; margin:0;
+}
+
 /* ============ Section / Carte N2 ============ */
 .section-card{
   background:linear-gradient(180deg,#0f1a31,#0b1326);
@@ -133,6 +152,10 @@ body{
 .n2g-label,.n2g-cell{padding:6px 8px!important; box-sizing:border-box;}
 .n2g-label{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
 .n2g-label .title{font-size:var(--fs-n2-title); font-weight:750; color:#f1f5f9; text-shadow:0 0 6px rgba(59,130,246,.25);}
+.n2-grid.depth-3 .n2g-label .title{font-size:1.18rem; opacity:.92;}
+.n2-grid.depth-4 .n2g-label .title{font-size:1.08rem; opacity:.88;}
+.n2-grid.depth-5 .n2g-label .title{font-size:1.02rem; opacity:.84;}
+.n2-grid.depth-6 .n2g-label .title{font-size:0.98rem; opacity:.8;}
 .n2g-label .badge{
   padding:3px 10px; font-size:.88rem; font-weight:700; color:#cffafe;
   background:linear-gradient(180deg,rgba(14,165,233,.18),rgba(14,165,233,.10));
@@ -160,6 +183,51 @@ table.neo thead th{
 }
 table.neo td{ padding:12px; font-size:var(--fs-n3-cell)!important; color:var(--text); }
 table.neo tbody tr:hover{ background:rgba(148,163,184,.06); transition:background .12s ease; }
+.table-card td.lvl{ padding-left:12px; }
+.table-card td.lvl .indent{
+  display:inline-flex; align-items:center; gap:8px;
+  margin-left: calc(var(--indent, 0) * 14px);
+}
+.table-card tr.depth-1 td.lvl{
+  background: linear-gradient(90deg, rgba(59,130,246,.12), rgba(59,130,246,.04) 60%, transparent);
+  border-left: 3px solid rgba(59,130,246,.45);
+}
+.table-card tr.depth-2 td.lvl{
+  background: linear-gradient(90deg, rgba(59,130,246,.08), rgba(59,130,246,.03) 60%, transparent);
+  border-left: 2px solid rgba(59,130,246,.35);
+}
+.table-card tr.depth-3 td.lvl{
+  background: linear-gradient(90deg, rgba(59,130,246,.06), rgba(59,130,246,.02) 60%, transparent);
+  border-left: 2px solid rgba(59,130,246,.28);
+}
+.table-card tr.depth-4 td.lvl{
+  background: linear-gradient(90deg, rgba(59,130,246,.05), rgba(59,130,246,.015) 60%, transparent);
+  border-left: 1px solid rgba(59,130,246,.22);
+}
+.table-card tr.depth-5 td.lvl{
+  background: linear-gradient(90deg, rgba(59,130,246,.045), rgba(59,130,246,.012) 60%, transparent);
+  border-left: 1px solid rgba(59,130,246,.18);
+}
+.table-card tr.depth-6 td.lvl{
+  background: linear-gradient(90deg, rgba(59,130,246,.04), rgba(59,130,246,.01) 60%, transparent);
+  border-left: 1px solid rgba(59,130,246,.15);
+}
+.table-card td.lvl .label{ font-weight:700; }
+.table-card td.lvl.depth-1 .label{ font-weight:650; opacity:.95; }
+.table-card td.lvl.depth-2 .label{ font-weight:600; opacity:.9; font-size:0.94rem; }
+.table-card td.lvl.depth-3 .label{ font-weight:600; opacity:.85; font-size:0.92rem; }
+.table-card td.lvl.depth-4 .label{ font-weight:600; opacity:.8; font-size:0.9rem; }
+.table-card td.lvl.depth-5 .label{ font-weight:600; opacity:.75; font-size:0.88rem; }
+.table-card td.lvl.depth-6 .label{ font-weight:600; opacity:.72; font-size:0.86rem; }
+.table-card td.lvl .dot{
+  width:6px; height:6px; border-radius:999px;
+  background:var(--accent); display:inline-block; opacity:.9;
+}
+.table-card td.lvl.depth-2 .dot{ width:5px; height:5px; opacity:.8; }
+.table-card td.lvl.depth-3 .dot{ width:5px; height:5px; opacity:.7; }
+.table-card td.lvl.depth-4 .dot{ width:4px; height:4px; opacity:.6; }
+.table-card td.lvl.depth-5 .dot{ width:4px; height:4px; opacity:.55; }
+.table-card td.lvl.depth-6 .dot{ width:3px; height:3px; opacity:.5; }
 .table-card .neo th:nth-child(1),.table-card .neo td:nth-child(1){width:var(--col1);}
 .table-card .neo th:nth-child(2),.table-card .neo td:nth-child(2){width:var(--col2);}
 .table-card .neo th:nth-child(3),.table-card .neo td:nth-child(3){width:var(--col3);}
@@ -219,11 +287,6 @@ hr{
   margin:8px 0 4px!important;
 }
 
-/* === Espace Ã  droite du tableau === */
-.block-container{
-  margin-left: 0 !important;
-  padding-right: 330px !important; /* largeur du panneau + marge */
-}
 
 /* ====== Animations ====== */
 @keyframes fadeSlideUp { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
@@ -375,6 +438,36 @@ div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 @keyframes n3GrowA { from{transform:scaleY(0.001);opacity:0} to{transform:scaleY(1);opacity:1} }
 @keyframes n3GrowB { from{transform:scaleY(0.001);opacity:0} to{transform:scaleY(1);opacity:1} }
 
+/* ========== CHART WRAP ANIM (sans expander) ========== */
+div[class*="__chartwrap_v0"] [data-testid="stFullScreenFrame"],
+div[class*="__chartwrap_v0"] [data-testid="stPlotlyChart"]{
+  opacity:0;
+  animation: n3ChartInA .6s cubic-bezier(.22,.61,.36,1) .15s forwards;
+  will-change: opacity, transform;
+}
+div[class*="__chartwrap_v1"] [data-testid="stFullScreenFrame"],
+div[class*="__chartwrap_v1"] [data-testid="stPlotlyChart"]{
+  opacity:0;
+  animation: n3ChartInB .6s cubic-bezier(.22,.61,.36,1) .15s forwards;
+  will-change: opacity, transform;
+}
+div[class*="__chartwrap_v0"] .main-svg .barlayer{
+  transform-origin: bottom;
+  transform-box: view-box;
+  transform: scaleY(0.001);
+  opacity: 0;
+  animation: n3GrowA .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
+  will-change: transform, opacity;
+}
+div[class*="__chartwrap_v1"] .main-svg .barlayer{
+  transform-origin: bottom;
+  transform-box: view-box;
+  transform: scaleY(0.001);
+  opacity: 0;
+  animation: n3GrowB .7s cubic-bezier(.22,.61,.36,1) .2s forwards;
+  will-change: transform, opacity;
+}
+
 /* ========== ENTREE DU FRAME PLOTLY ========== */
 /* v0 -> utilise animation *A* */
 details[open] [data-testid="stExpanderDetails"]
@@ -441,6 +534,14 @@ details[open] [data-testid="stExpanderDetails"]
   details[open] [data-testid="stExpanderDetails"]
     .stElementContainer:has(.n3load) ~ .stElementContainer
     .main-svg .barlayer{
+    animation:none !important; opacity:1 !important; transform:none !important;
+  }
+  div[class*="__chartwrap_v0"] [data-testid="stFullScreenFrame"],
+  div[class*="__chartwrap_v0"] [data-testid="stPlotlyChart"],
+  div[class*="__chartwrap_v1"] [data-testid="stFullScreenFrame"],
+  div[class*="__chartwrap_v1"] [data-testid="stPlotlyChart"],
+  div[class*="__chartwrap_v0"] .main-svg .barlayer,
+  div[class*="__chartwrap_v1"] .main-svg .barlayer{
     animation:none !important; opacity:1 !important; transform:none !important;
   }
 }
@@ -578,17 +679,17 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
 }
 
 /* === Overlay clic pleine largeur (N2) === */
-div[class*="st-key-n2_"][class*="__rowbtn"]{
-  position: relative; z-index: 10;
-  margin-top: -70px; height: 57px;
-  margin-left: 2mm; width: calc(100% - 1mm);
+div[class*="__rowwrap"]{ position: relative; }
+div[class*="__rowwrap"] div[class*="__rowbtn"]{
+  position: absolute; inset: 0; z-index: 10;
+  margin: 0; padding: 0;
 }
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button{
+div[class*="__rowwrap"] div[class*="__rowbtn"] .stButton{ position:absolute; inset:0; }
+div[class*="__rowwrap"] div[class*="__rowbtn"] .stButton button{
   width:100%; height:100%; background:transparent; border:0; padding:0; margin:0;
   cursor:pointer; border-radius:12px;
 }
-div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
+div[class*="__rowwrap"] div[class*="__rowbtn"] .stButton button:hover{
   background:linear-gradient(90deg,rgba(37,99,235,.05),rgba(37,99,235,.18),rgba(37,99,235,.05));
   background-size:200% 100%; animation:n2RowGlow .9s ease forwards;
   box-shadow:0 0 0 1px rgba(88,113,179,.35) inset;
@@ -634,152 +735,6 @@ div[class*="st-key-n2_"][class*="__rowbtn"] .stButton button:hover{
 
 
 
-
-/* Radiogroup Ã  lâ€™intÃ©rieur du contenu principal (hors sidebar) */
-div[data-testid="stVerticalBlock"] .main-radios [role="radiogroup"]{
-  display:flex; flex-direction:column; gap:8px;
-}
-div[data-testid="stVerticalBlock"] .main-radios label[data-baseweb="radio"],
-/* on cible aussi ceux crÃ©Ã©s simplement sur la page */
-div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]{
-  position:relative; display:flex; align-items:center; gap:10px; width:100%;
-  box-sizing:border-box; padding:10px 12px; border-radius:10px;
-  background:linear-gradient(180deg,#0f1a31,#0b1326); border:1px solid rgba(96,165,250,.28);
-  transition:border-color .15s ease, background .15s ease, transform .10s ease; cursor:pointer;
-}
-div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]:hover{
-  border-color:rgba(125,211,252,.8); transform:translateY(-1px);
-}
-div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked){
-  border-color:rgba(125,211,252,.95); background:linear-gradient(180deg,#0f1b34,#0b1326);
-  box-shadow:inset 0 0 0 1px rgba(96,165,250,.45);
-}
-div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before{
-  content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
-  background:linear-gradient(180deg,#60a5fa,#22c55e);
-  border-top-left-radius:10px; border-bottom-left-radius:10px;
-}
-
-
-
-
-
-
-
-
-
-
-/* === Radios sur la PAGE (colonne de droite) â€” compact & stylÃ© === */
-div[data-testid="stVerticalBlock"] [role="radiogroup"]{
-  display:flex; flex-direction:column; gap:6px;
-}
-div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]{
-  position:relative; display:flex; align-items:center; gap:8px; width:100%;
-  box-sizing:border-box; padding:8px 10px; border-radius:10px;
-  background:linear-gradient(180deg,#0f1a31,#0b1326);
-  border:1px solid rgba(96,165,250,.28);
-  transition:border-color .15s ease, background .15s ease, transform .10s ease; cursor:pointer;
-}
-div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]:hover{
-  border-color:rgba(125,211,252,.8); transform:translateY(-1px);
-}
-div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked){
-  border-color:rgba(125,211,252,.95); background:linear-gradient(180deg,#0f1b34,#0b1326);
-  box-shadow:inset 0 0 0 1px rgba(96,165,250,.45);
-}
-div[data-testid="stVerticalBlock"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before{
-  content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
-  background:linear-gradient(180deg,#60a5fa,#22c55e);
-  border-top-left-radius:10px; border-bottom-left-radius:10px;
-}
-/* Texte sur une ligne, coupe propre */
-div[data-testid="stVerticalBlock"] [role="radiogroup"] [data-testid="stMarkdownContainer"]{
-  margin:0; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-
-
-
-/* === Panneau fixe Ã  droite pour les boutons WBS === */
-#onpage-selector-panel{
-  position: fixed;
-  top: 68px;
-  right: 16px;
-  width: 260px;
-  z-index: 120;
-  padding: 10px 12px;
-  background: linear-gradient(180deg,#0f1a31,#0b1326);
-  border: 1px solid rgba(96,165,250,.28);
-  border-radius: 10px;
-  box-shadow: 0 8px 18px rgba(0,0,0,.35);
-}
-
-
-
-
-
-
-
-
-/* === Panneau WBS (compact, sans scroll horizontal) === */
-.st-key-wbs_selector_onpage[data-testid="stElementContainer"]{
-  position: fixed;
-  top: 120px;               /* Distance depuis le haut */
-  right: 20px;              /* Distance du bord droit */
-  width: 290px;             /* largeur du panneau */
-  max-height: none !important;    /* Laisse tout le contenu visible */
-  height: auto !important;
-  overflow: visible !important;   /* Pas de scroll dans le panneau */
-  z-index: 1200;
-  padding: 14px 16px;
-  background:
-    linear-gradient(145deg, rgba(17,24,39,.92), rgba(9,12,20,.90)),
-    radial-gradient(220% 120% at 20% -10%, rgba(59,130,246,.16), transparent 50%);
-  border: 1px solid rgba(125,211,252,.45);
-  border-radius: 12px;
-  box-shadow:
-    0 14px 28px rgba(0,0,0,.42),
-    inset 0 0 0 1px rgba(59,130,246,.20),
-    inset 0 -1px 0 rgba(34,197,94,.12);
-  backdrop-filter: blur(12px);
-}
-
-/* === Titre "WBS Ã  afficher" === */
-.st-key-wbs_selector_onpage [data-testid="stWidgetLabel"]{
-  margin: 0 0 10px;
-  color:#e5e7eb;
-  font-weight:800;
-  text-align:center;
-  font-size:1.2rem;
-  text-shadow:0 0 10px rgba(96,165,250,.4);
-}
-
-/* === Boutons radio === */
-.st-key-wbs_selector_onpage [role="radiogroup"]{
-  display:flex; flex-direction:column; gap:7px;
-}
-.st-key-wbs_selector_onpage label[data-baseweb="radio"]{
-  background: linear-gradient(180deg,#0f1a31,#0b1326);
-  border:1px solid rgba(96,165,250,.25);
-  border-radius:10px;
-  padding:9px 10px;
-  font-size:1.05rem;
-  transition:all .15s ease;
-  color:#e2e8f0;
-  cursor:pointer;
-}
-.st-key-wbs_selector_onpage label[data-baseweb="radio"]:hover{
-  border-color:rgba(125,211,252,.7);
-  transform:translateY(-1px);
-}
-.st-key-wbs_selector_onpage label[data-baseweb="radio"]:has(input:checked){
-  border-color:rgba(125,211,252,.95);
-  box-shadow:inset 0 0 0 1px rgba(96,165,250,.45);
-}
-.st-key-wbs_selector_onpage::-webkit-scrollbar{ width:8px; }
-.st-key-wbs_selector_onpage::-webkit-scrollbar-thumb{
-  background: linear-gradient(180deg, rgba(96,165,250,.55), rgba(34,197,94,.6));
-  border-radius:999px;
-}
 
 /* === Left sidebar: bigger nav + custom labels with emojis === */
 section[data-testid="stSidebar"]{
@@ -829,40 +784,7 @@ section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
 section[data-testid="stSidebar"] .stRadio [data-testid="stMarkdownContainer"] p{
   font-size: 22px;
 }
-.st-key-wbs_selector_onpage::-webkit-scrollbar-track{
-  background:rgba(15,23,42,.6);
-  border-radius:999px;
-}
-.st-key-wbs_selector_onpage{
-  background: linear-gradient(180deg,#0f1a31,#0b1326);
-  border: 1px solid rgba(96,165,250,.28);
-  transition: none !important;
-  animation: none !important;
-  overflow: visible !important;
-}
-.st-key-wbs_selector_onpage:hover{
-  box-shadow: none !important;
-  transform: none !important;
-  border-color: rgba(96,165,250,.28);
-}
 /* Disable transitions on radios to avoid flicker when Streamlit rerenders */
-.st-key-wbs_selector_onpage label[data-baseweb="radio"]{
-  transition: none !important;
-  animation: none !important;
-}
-.st-key-wbs_selector_onpage label[data-baseweb="radio"]:hover{
-  transform: none !important;
-  box-shadow: none !important;
-}
-.st-key-wbs_selector_onpage label[data-baseweb="radio"]:has(input:checked){
-  transition: none !important;
-  animation: none !important;
-  box-shadow: none !important;
-}
-.st-key-wbs_selector_onpage *{
-  animation: none !important;
-  transition: none !important;
-}
 
 /* === Glass frame on main content (wraps hero + N2/N3) === */
 .st-key-glass_wrap[data-testid="stVerticalBlock"],

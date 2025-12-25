@@ -2,7 +2,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 from theme import inject_theme
-from extract_wbs_json import extract_all_wbs
+from extract_wbs_json import extract_all_wbs, detect_expected_tables, compare_activity_ids
 import tempfile, os, math
 
 st.set_page_config(page_title="WBS - Projet", layout="wide", initial_sidebar_state="expanded")
@@ -10,6 +10,7 @@ inject_theme()
 # Inject background glows only once to avoid flash on rerender
 if not st.session_state.get("_wbs_bg_once"):
     st.markdown("""
+    <div class="bg-vignette"></div>
     <div class="bg-aurora a1"></div>
     <div class="bg-aurora a2"></div>
     <div class="bg-aurora grid"></div>
@@ -35,26 +36,36 @@ def _bar(v,color, variant:int|None=None):
 
 def render_detail_table(node:dict, anim_variant:int=0):
     rows=[]
-    for ch in (node.get("children") or []):
-        m=ch.get("metrics") or {}
-        rows.append(dict(
-            label=ch.get("label",""),
-            planned=m.get("planned_finish",""),
-            forecast=m.get("forecast_finish",""),
-            schedule=_sf(m.get("schedule",0)),
-            earned=_sf(m.get("earned",m.get("units",0))),
-            ecart=_sf(m.get("ecart",0)),
-            impact=_sf(m.get("impact",0)),
-            gliss=_to_j(m.get("glissement","0")),
-        ))
+    base_level=int(node.get("level", 2))
+
+    def _collect_rows(parent:dict):
+        for ch in (parent.get("children") or []):
+            m=ch.get("metrics") or {}
+            lvl=int(ch.get("level", base_level + 1))
+            depth=max(0, lvl - base_level)
+            depth_display = min(depth, 6)
+            rows.append(dict(
+                label=ch.get("label",""),
+                planned=m.get("planned_finish",""),
+                forecast=m.get("forecast_finish",""),
+                schedule=_sf(m.get("schedule",0)),
+                earned=_sf(m.get("earned",m.get("units",0))),
+                ecart=_sf(m.get("ecart",0)),
+                impact=_sf(m.get("impact",0)),
+                gliss=_to_j(m.get("glissement","0")),
+                depth=depth_display,
+            ))
+            _collect_rows(ch)
+
+    _collect_rows(node)
     def sgn(v): 
         cls="ok" if v>=0 else "bad"
         return f'<span class="{cls}">{("+" if v>0 else "")}{v:.2f}%</span>'
     trs=[]
     for r in rows:
         trs.append(_minify(f"""
-        <tr>
-          <td class="lvl"><span class="dot"></span><b>{r['label']}</b></td>
+        <tr class="depth-{r['depth']}">
+          <td class="lvl depth-{r['depth']}" style="--indent:{r['depth']};"><span class="indent"><span class="dot"></span><span class="label">{r['label']}</span></span></td>
           <td class="col-date">{r['planned']}</td>
           <td class="col-date">{r['forecast']}</td>
           <td class="col-bar">{_bar(r['schedule'],'blue', anim_variant)}</td>
@@ -151,8 +162,9 @@ def _h2(label, level, m, anim_variant:int=0):
     sched_v  = _sf(m.get("schedule",0)); earn_v = _sf(m.get("earned",m.get("units",0)))
     ecart_v  = _sf(m.get("ecart",0)); impact_v=_sf(m.get("impact",0))
     gl=_to_j(m.get("glissement","0")); ecls="ok" if ecart_v>=0 else "bad"; icls="ok" if impact_v>=0 else "bad"; gcls="ok" if gl>=0 else "bad"
+    indent = max(0, int(level) - 2) * 16
     return _minify(f"""
-    <div class="n2-grid compact">
+    <div class="n2-grid compact depth-{level}" style="margin-left:{indent}px;">
       <div class="n2g-label"><span class="dot"></span><span class="title">{label}</span></div>
       <div class="n2g-cell"><span class="small">Planned</span><b>{planned}</b></div>
       <div class="n2g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
@@ -164,36 +176,50 @@ def _h2(label, level, m, anim_variant:int=0):
     </div>""")
 
 def _slug(s:str)->str: return "".join(ch if ch.isalnum() else "_" for ch in s)
+def _node_base(label:str, depth:int, wbs_key:str, path:list[str])->str:
+    full = "__".join(_slug(p) for p in (path + [label]) if p)
+    return f"n2_open--{full}_{depth}__{wbs_key}"
 
-def render_section_level2(node:dict, anim_seq:int=0, wbs_key:str="wbs", debug:bool=False):
-    label=node.get("label",""); level=node.get("level",2); metrics=node.get("metrics") or {}
-    has_children=bool(node.get("children"))
-    base=f"n2_open--{_slug(label)}_{level}__{wbs_key}"; ver_key=f"{base}__ver"
+def render_node(node:dict, depth:int, anim_seq:int=0, wbs_key:str="wbs", debug:bool=False, path:list[str]|None=None):
+    path = path or []
+    label=node.get("label",""); level=int(node.get("level", depth)); metrics=node.get("metrics") or {}
+    children = node.get("children") or []
+    has_children=bool(children)
+    base=_node_base(label, depth, wbs_key, path); ver_key=f"{base}__ver"
     view_version = (anim_seq + st.session_state.get(ver_key, 0)) % 2
-    if base not in st.session_state: st.session_state[base]=False
+    if base not in st.session_state:
+        st.session_state[base] = True if depth == 1 else False
     if ver_key not in st.session_state: st.session_state[ver_key]=0
-    bar_variant = anim_seq % 2
-    l, r = st.columns([0.985, 0.015], gap="small")
-    with l:
-        st.markdown(_h2(label,level,metrics, bar_variant), unsafe_allow_html=True)
-        if has_children:
-            if st.button(" ", key=f"{base}__rowbtn", width="stretch"):
-                st.session_state[base]=not st.session_state[base]; st.session_state[ver_key]+=1
+    bar_variant = (anim_seq + depth) % 2
+    if depth == 1:
+        st.markdown(_h1(label, metrics, bar_variant), unsafe_allow_html=True)
+    else:
+        with st.container(key=f"{base}__rowwrap"):
+            st.markdown(_h2(label,level,metrics, bar_variant), unsafe_allow_html=True)
+            if has_children:
+                if st.button(" ", key=f"{base}__rowbtn", width="stretch"):
+                    st.session_state[base]=not st.session_state[base]; st.session_state[ver_key]+=1
     if debug:
         st.caption(f"[dbg] base={base} open={st.session_state.get(base)} ver={st.session_state.get(ver_key)} view={view_version} anim_seq={anim_seq}")
-    if has_children and st.session_state[base]:
-        with st.container(key=f"{base}__mount_{anim_seq%2}_{st.session_state[ver_key]%2}"):
-            with st.expander("", expanded=True):
-                st.markdown(f'<div class="n3load v{view_version}"></div>', unsafe_allow_html=True)
-                render_detail_table(node, anim_variant=view_version)
-                render_barchart(node, chart_key=f"{base}__chart_v{view_version}")
+    open_self = True if depth == 1 else bool(st.session_state.get(base, False))
+    next_path = path + [label]
+    if has_children and open_self:
+        for child in children:
+            render_node(child, depth+1, anim_seq, wbs_key, debug=debug, path=next_path)
+        child_open = any(
+            st.session_state.get(_node_base(ch.get("label",""), depth + 1, wbs_key, next_path), False)
+            for ch in children
+        )
+        show_summary_chart = len(children) > 1 and not child_open
+        if show_summary_chart and depth >= 1:
+            with st.container(key=f"{base}__chartwrap_v{view_version}"):
+                render_barchart(node, chart_key=f"{base}__chart")
 
 
 def render_all(root:dict, anim_seq:int=0, wbs_key:str="wbs", debug:bool=False):
     with st.container(key=f"hero_wrap__{anim_seq%2}"):
-        st.markdown(_h1(root.get("label","GLOBAL"), root.get("metrics",{}) or {}, anim_seq%2), unsafe_allow_html=True)
+        render_node(root, 1, anim_seq, wbs_key, debug=debug)
     st.divider()
-    for n2 in root.get("children",[]) or []: render_section_level2(n2, anim_seq, wbs_key, debug=debug)
 
 # ===== Sidebar: importer (unchanged) =====
 st.sidebar.markdown('<div class="sidebar-nav-title">Navigation</div>', unsafe_allow_html=True)
@@ -208,22 +234,59 @@ with st.sidebar:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
             tmp.write(uploaded.read()); tmp_path=tmp.name
         try:
-            packs=extract_all_wbs(tmp_path); st.session_state["_packs"]=packs
-            if not packs: st.warning("Aucun tableau valide detecte.")
+            packs = extract_all_wbs(tmp_path)
+            st.session_state["_packs"] = packs
+            st.session_state["_detected_tables"] = []
+            if not packs:
+                st.session_state["_detected_tables"] = detect_expected_tables(tmp_path)
+            st.session_state["_table_mismatch"] = compare_activity_ids(tmp_path)
         except Exception as e:
             st.error(f"Erreur d'extraction: {e}")
         finally:
             try: os.unlink(tmp_path)
             except: pass
 
-# ===== Page layout: FULL content + fixed right panel =====
-# (a mettre APRES la definition de render_all(...) et APRES le bloc with st.sidebar)
-
-
-
 packs = st.session_state.get("_packs", [])
+detected_tables = st.session_state.get("_detected_tables", [])
+mismatch = st.session_state.get("_table_mismatch")
+if mismatch and (mismatch.get("summary_only") or mismatch.get("assign_only")):
+    st.warning(
+        "Activity ID mismatch between the two tables. "
+        f"Summary unique: {mismatch.get('summary_unique', 0)} | "
+        f"Assignments unique: {mismatch.get('assign_unique', 0)}. "
+        "They should contain the same unique IDs."
+    )
+    if mismatch.get("summary_only"):
+        sample = ", ".join(mismatch["summary_only"][:10])
+        st.markdown(f"- Only in summary: {sample}")
+    if mismatch.get("assign_only"):
+        sample = ", ".join(mismatch["assign_only"][:10])
+        st.markdown(f"- Only in assignments: {sample}")
 if not packs:
-    st.info("📥 Importe un Excel dans la barre de gauche.")
+    if detected_tables:
+        st.info("Tables detectees, mais format incomplet pour la generation WBS.")
+        for t in detected_tables:
+            missing = ", ".join(t.get("missing", [])) or "none"
+            st.markdown(f"- {t['type']} | sheet {t['sheet']} | {t['range']} | missing: {missing}")
+    else:
+        st.info("📥 Importe un Excel dans la barre de gauche.")
+    st.stop()
+
+preview_mode = st.sidebar.toggle("Preview mode (dev)", value=True, key="preview_mode")
+if preview_mode:
+    st.markdown("### Preview (mapping checks)")
+    st.markdown("Source for hierarchy: Ressource Assignments (Activity ID indentation).")
+    if detected_tables:
+        st.markdown("Detected tables:")
+        for t in detected_tables:
+            missing = ", ".join(t.get("missing", [])) or "none"
+            st.markdown(f"- {t['type']} | sheet {t['sheet']} | {t['range']} | missing: {missing}")
+    if mismatch and (mismatch.get("summary_only") or mismatch.get("assign_only")):
+        st.markdown(
+            f"Mismatch summary: summary={mismatch.get('summary_unique', 0)} "
+            f"assignments={mismatch.get('assign_unique', 0)}"
+        )
+    st.info("Disable preview in the sidebar to render the WBS.")
     st.stop()
 
 # Permet de forcer le remount des blocs animes lorsque l'on change de WBS
@@ -232,14 +295,17 @@ st.session_state.setdefault("_active_ctx", "")
 st.session_state.setdefault("_idx_prev", -1)
 
 labels = [f"{i+1}. 🧱 {p.get('wbs',{}).get('label','WBS')}" for i,p in enumerate(packs)]
-idx = st.radio(
-    "WBS a afficher",
-    options=range(len(labels)),
-    format_func=lambda i: labels[i],
-    index=0,
-    label_visibility="collapsed",
-    key="wbs_selector_onpage"
-)
+with st.sidebar:
+    if len(labels) > 1:
+        idx = st.radio(
+            "WBS a afficher",
+            options=range(len(labels)),
+            format_func=lambda i: labels[i],
+            index=0,
+            key="wbs_selector_sidebar"
+        )
+    else:
+        idx = 0
 wbs_idx = idx
 sel = packs[wbs_idx]
 root = sel["wbs"]

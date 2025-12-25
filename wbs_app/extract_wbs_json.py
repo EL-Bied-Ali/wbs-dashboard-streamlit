@@ -14,6 +14,31 @@ REQUIRED_COLS = [
     "ecart", "impact", "Glissement"
 ]
 
+SUMMARY_HEADER_GROUPS = {
+    "activity id": ["Activity ID", "ActivityID"],
+    "bl project finish": [
+        "BL Project Finish", "Baseline Project Finish",
+        "BL Project Finish Date", "Baseline Project Finish Date"
+    ],
+    "finish": ["Finish", "Project Finish", "Finish Date"],
+    "units % complete": ["Units % Complete", "Units Percent Complete", "% Complete", "Percent Complete"],
+    "variance - bl project finish date": [
+        "Variance - BL Project Finish Date", "Variance BL Project Finish Date",
+        "Variance - BL Project Finish", "Variance BL Project Finish"
+    ],
+}
+
+ASSIGN_HEADER_GROUPS = {
+    "activity id": ["Activity ID", "ActivityID"],
+    "activity name": ["Activity Name", "ActivityName"],
+    "start": ["Start", "Start Date"],
+    "finish": ["Finish", "Finish Date"],
+    "rcv / phases": ["RCV / Phases", "RCV/Phases", "RCV Phases"],
+    "budgeted units": ["Budgeted Units", "Budget Units"],
+    "actual units": ["Actual Units", "Actuals Units"],
+    "spreadsheet field": ["Spreadsheet Field", "SpreadsheetField"],
+}
+
 # ---------- Helpers (format identique à ton exemple) ----------
 def as_text(v: Any) -> str:
     """Dates -> 'dd-Mon-yy', sinon str, None -> '' """
@@ -105,6 +130,14 @@ def clean_label(s: Any) -> str:
 def _norm(x: Any) -> str:
     return re.sub(r"\s+", " ", str(x or "")).strip().lower()
 
+def _norm_header(x: Any) -> str:
+    s = str(x or "").strip().lower()
+    if not s:
+        return ""
+    s = s.replace("%", " percent ")
+    s = re.sub(r"[^a-z0-9]+", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
 def has_all_required(headers: List[Any]) -> bool:
     H = [_norm(h) for h in headers]
     R = [_norm(rc) for rc in REQUIRED_COLS]
@@ -119,6 +152,32 @@ def _is_date_like(x: str) -> bool:
         datetime.strptime(x, "%d-%b-%y"); return True
     except Exception:
         return False
+
+def _is_week_header(v: Any) -> bool:
+    if isinstance(v, (datetime, date)):
+        return True
+    s = str(v or "").strip()
+    if not s:
+        return False
+    if re.match(r"\d{4}-\d{2}-\d{2}", s):
+        return True
+    if re.match(r"\d{1,2}-[A-Za-z]{3}-\d{2}", s):
+        return True
+    if re.match(r"\d{1,2}[/-]\d{1,2}[/-]\d{2,4}", s):
+        return True
+    return False
+
+def _match_header_groups(headers: List[Any], groups: dict) -> Tuple[List[str], List[str]]:
+    header_set = { _norm_header(h) for h in headers if _norm_header(h) }
+    matched = []
+    missing = []
+    for key, opts in groups.items():
+        norm_opts = [_norm_header(o) for o in opts]
+        if any(opt in header_set for opt in norm_opts):
+            matched.append(key)
+        else:
+            missing.append(key)
+    return matched, missing
 
 # ---------- Détection de tous les blocs (avec extension gauche pour colonne label) ----------
 def detect_all_blocks_with_left_extension(ws, max_added_left: int = 5) -> List[Tuple[int,int,int,int]]:
@@ -158,6 +217,103 @@ def detect_all_blocks_with_left_extension(ws, max_added_left: int = 5) -> List[T
         r = r2 + 1
     return blocks
 
+# ---------- Detection: summary + assignments tables ----------
+def detect_expected_tables(input_xlsx: str) -> List[Dict[str, Any]]:
+    wb = load_workbook(input_xlsx, data_only=True)
+    results: List[Dict[str, Any]] = []
+    for ws in wb.worksheets:
+        max_r, max_c = ws.max_row, ws.max_column
+        r = 1
+        while r <= max_r:
+            headers = [ws.cell(r, c).value for c in range(1, max_c + 1)]
+            if not any(headers):
+                r += 1
+                continue
+
+            matched_summary, missing_summary = _match_header_groups(headers, SUMMARY_HEADER_GROUPS)
+            matched_assign, missing_assign = _match_header_groups(headers, ASSIGN_HEADER_GROUPS)
+            date_cols = sum(1 for h in headers if _is_week_header(h))
+
+            summary_ok = (
+                "activity id" in matched_summary and
+                ("finish" in matched_summary or "bl project finish" in matched_summary) and
+                len(matched_summary) >= 3
+            )
+            assign_ok = (
+                {"activity id", "activity name", "start", "finish"}.issubset(set(matched_assign)) and
+                len(matched_assign) >= 5 and
+                date_cols >= 5
+            )
+
+            if not summary_ok and not assign_ok:
+                r += 1
+                continue
+
+            nz = [i + 1 for i, v in enumerate(headers) if v not in (None, "", " ")]
+            if not nz:
+                r += 1
+                continue
+            c1, c2 = min(nz), max(nz)
+
+            r2 = r + 1
+            while r2 <= max_r:
+                row_vals = [ws.cell(r2, c).value for c in range(c1, c2 + 1)]
+                if all(v in (None, "", " ") for v in row_vals):
+                    break
+                r2 += 1
+
+            results.append({
+                "sheet": ws.title,
+                "range": f"R{r}C{c1}:R{r2-1}C{c2}",
+                "header_row": r,
+                "type": "activity_summary" if summary_ok else "resource_assignments",
+                "missing": missing_summary if summary_ok else missing_assign,
+                "date_columns": date_cols,
+            })
+            r = r2 + 1
+    return results
+
+def _parse_range(range_str: str) -> Tuple[int, int, int, int]:
+    m = re.match(r"R(\d+)C(\d+):R(\d+)C(\d+)", range_str)
+    if not m:
+        raise ValueError(f"Invalid range: {range_str}")
+    return tuple(int(x) for x in m.groups())
+
+def compare_activity_ids(input_xlsx: str) -> Dict[str, Any]:
+    wb = load_workbook(input_xlsx, data_only=True)
+    tables = detect_expected_tables(input_xlsx)
+    summary_ids: List[str] = []
+    assign_ids: List[str] = []
+
+    for t in tables:
+        ws = wb[t["sheet"]]
+        r1, c1, r2, c2 = _parse_range(t["range"])
+        header = [ws.cell(r1, c).value for c in range(c1, c2 + 1)]
+        id_idx = None
+        for idx, v in enumerate(header):
+            if str(v).strip() == "Activity ID":
+                id_idx = idx
+                break
+        if id_idx is None:
+            continue
+        for r in range(r1 + 1, r2 + 1):
+            val = ws.cell(r, c1 + id_idx).value
+            if val is None or str(val).strip() == "":
+                continue
+            if t["type"] == "activity_summary":
+                summary_ids.append(str(val))
+            elif t["type"] == "resource_assignments":
+                assign_ids.append(str(val))
+
+    summary_set = {s.strip() for s in summary_ids}
+    assign_set = {s.strip() for s in assign_ids}
+    return {
+        "summary_unique": len(summary_set),
+        "assign_unique": len(assign_set),
+        "summary_only": sorted(summary_set - assign_set),
+        "assign_only": sorted(assign_set - summary_set),
+    }
+
 # ---------- Choix de la colonne Label ----------
 def pick_label_col(df: pd.DataFrame) -> str:
     """
@@ -196,7 +352,6 @@ def to_wbs_tree(df: pd.DataFrame, label_col: str) -> Dict:
     df["_indent"] = df[label_col].apply(leading_spaces)
 
     uniq = sorted(df["_indent"].unique().tolist()) or [0]
-    uniq = uniq[:3]  # max 3 niveaux
     space2lvl = {sp: i+1 for i, sp in enumerate(uniq)}
 
     def row_metrics(r: pd.Series) -> dict:

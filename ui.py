@@ -17,6 +17,10 @@ def inject_theme():
         --danger:#f97070;
         --radius:14px;
         --shadow:0 16px 40px rgba(0,0,0,0.45);
+        --ui-zoom:0.96;
+      }
+      html, body, [data-testid="stAppViewContainer"]{
+        zoom:var(--ui-zoom);
       }
       body, [data-testid="stAppViewContainer"], .main{
         background:var(--bg);
@@ -123,6 +127,16 @@ def inject_theme():
           radial-gradient(900px 600px at 10% -10%, rgba(75,111,244,.18), transparent 40%),
           radial-gradient(900px 600px at 90% 20%, rgba(47,193,146,.14), transparent 45%),
           var(--bg);
+      }
+      .app-bg::after{
+        content:"";
+        position:absolute;
+        inset:-10%;
+        background:
+          radial-gradient(1200px 700px at 50% -10%, rgba(0,0,0,.35), transparent 60%),
+          radial-gradient(900px 600px at 50% 120%, rgba(0,0,0,.45), transparent 60%);
+        opacity:.55;
+        pointer-events:none;
       }
 
       /* Responsive tweaks: let Streamlit columns wrap/stack on narrow viewports */
