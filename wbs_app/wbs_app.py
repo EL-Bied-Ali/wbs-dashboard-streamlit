@@ -216,6 +216,12 @@ def render_node(node:dict, depth:int, anim_seq:int=0, wbs_key:str="wbs", debug:b
         )
         show_summary_chart = len(children) > 1 and not child_open
         if show_summary_chart and depth >= 1:
+            with st.container(key=f"{base}__chartbar"):
+                col_a, col_b = st.columns([0.85, 0.15])
+                with col_b:
+                    if st.button("Masquer", key=f"{base}__hide_chart"):
+                        st.session_state[base] = False
+                        st.session_state[ver_key] += 1
             with st.container(key=f"{base}__chartwrap_v{view_version}"):
                 render_barchart(node, chart_key=f"{base}__chart")
 

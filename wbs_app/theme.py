@@ -266,6 +266,22 @@ div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 .table-card .mbar{width:110px!important; height:10px;}
 .hero .mval{font-size:1.10rem; font-weight:750;} .section-card .mval{font-size:1.02rem; font-weight:700;}
 .table-card .mval{font-size:0.95rem; font-weight:650;}
+.stButton button{
+  border-radius:10px;
+}
+div[class*="__chartbar"] .stButton button{
+  background:rgba(15,23,42,.88)!important;
+  border:1px solid rgba(96,165,250,.45)!important;
+  color:#e5e7eb!important;
+  font-weight:700;
+  font-size:0.9rem;
+  padding:4px 10px;
+  min-height:28px;
+}
+div[class*="__chartbar"] .stButton button:hover{
+  background:rgba(30,41,59,.96)!important;
+  border-color:rgba(125,211,252,.9)!important;
+}
 @keyframes growBar { from { width:0 } to { width:var(--to, 0%) } }
 .mfill.anim{ animation: growBar .7s ease-out both; }
 @keyframes sheen { 0%{transform:translateX(-100%);opacity:0} 15%{opacity:.22} 85%{opacity:.22} 100%{transform:translateX(100%);opacity:0} }
