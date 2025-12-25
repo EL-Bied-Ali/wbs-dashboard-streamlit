@@ -225,7 +225,9 @@ def render_node(node:dict, depth:int, anim_seq:int=0, wbs_key:str="wbs", debug:b
                     label_btn = "Afficher" if st.session_state[chart_hide_key] else "Masquer"
                     if st.button(label_btn, key=f"{base}__hide_chart"):
                         st.session_state[chart_hide_key] = not st.session_state[chart_hide_key]
-                        st.session_state[ver_key] += 1
+                        if not st.session_state[chart_hide_key]:
+                            st.session_state[ver_key] += 1
+                        st.rerun()
             if not st.session_state[chart_hide_key]:
                 with st.container(key=f"{base}__chartwrap_v{view_version}"):
                     render_barchart(node, chart_key=f"{base}__chart")
