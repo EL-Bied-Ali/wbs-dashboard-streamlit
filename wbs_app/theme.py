@@ -152,6 +152,16 @@ div[class*="hero_wrap__"] div[class*="__hero_toggle"] button{
 .n2g-label,.n2g-cell{padding:6px 8px!important; box-sizing:border-box;}
 .n2g-label{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
 .n2g-label .title{font-size:var(--fs-n2-title); font-weight:750; color:#f1f5f9; text-shadow:0 0 6px rgba(59,130,246,.25);}
+.n2g-label .leaf-badge{
+  margin-left:8px;
+  font-size:0.95rem;
+  color:#94a3b8;
+  background:rgba(15,23,42,.6);
+  border:1px solid rgba(148,163,184,.25);
+  padding:2px 6px;
+  border-radius:999px;
+  line-height:1;
+}
 .n2-grid.depth-3 .n2g-label .title{font-size:1.18rem; opacity:.92;}
 .n2-grid.depth-4 .n2g-label .title{font-size:1.08rem; opacity:.88;}
 .n2-grid.depth-5 .n2g-label .title{font-size:1.02rem; opacity:.84;}

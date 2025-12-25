@@ -158,15 +158,16 @@ def _h1(label, m, anim_variant:int=0):
       </div>
     </div>""")
 
-def _h2(label, level, m, anim_variant:int=0):
+def _h2(label, level, m, anim_variant:int=0, has_children: bool = True):
     planned  = m.get("planned_finish",""); forecast = m.get("forecast_finish","")
     sched_v  = _sf(m.get("schedule",0)); earn_v = _sf(m.get("earned",m.get("units",0)))
     ecart_v  = _sf(m.get("ecart",0)); impact_v=_sf(m.get("impact",0))
     gl=_to_j(m.get("glissement","0")); ecls="ok" if ecart_v>=0 else "bad"; icls="ok" if impact_v>=0 else "bad"; gcls="ok" if gl>=0 else "bad"
     indent = max(0, int(level) - 2) * 16
+    leaf = "" if has_children else '<span class="leaf-badge" title="No children">🍃</span>'
     return _minify(f"""
     <div class="n2-grid compact depth-{level}" style="margin-left:{indent}px;">
-      <div class="n2g-label"><span class="dot"></span><span class="title">{label}</span></div>
+      <div class="n2g-label"><span class="dot"></span><span class="title">{label}</span>{leaf}</div>
       <div class="n2g-cell"><span class="small">Planned</span><b>{planned}</b></div>
       <div class="n2g-cell"><span class="small">Forecast</span><b>{forecast}</b></div>
         <div class="n2g-cell"><span class="small">Schedule</span>{_bar(sched_v,'blue', anim_variant)}</div>
@@ -196,7 +197,7 @@ def render_node(node:dict, depth:int, anim_seq:int=0, wbs_key:str="wbs", debug:b
         st.markdown(_h1(label, metrics, bar_variant), unsafe_allow_html=True)
     else:
         with st.container(key=f"{base}__rowwrap"):
-            st.markdown(_h2(label,level,metrics, bar_variant), unsafe_allow_html=True)
+            st.markdown(_h2(label,level,metrics, bar_variant, has_children=has_children), unsafe_allow_html=True)
             if has_children:
                 if st.button(" ", key=f"{base}__rowbtn", width="stretch"):
                     st.session_state[base]=not st.session_state[base]; st.session_state[ver_key]+=1
