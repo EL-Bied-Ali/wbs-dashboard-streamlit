@@ -2,8 +2,9 @@
 import streamlit as st
 import plotly.graph_objects as go
 from theme import inject_theme
-from extract_wbs_json import extract_all_wbs, detect_expected_tables, compare_activity_ids
+from extract_wbs_json import extract_all_wbs, detect_expected_tables, compare_activity_ids, build_preview_rows
 import tempfile, os, math
+from pathlib import Path
 
 st.set_page_config(page_title="WBS - Projet", layout="wide", initial_sidebar_state="expanded")
 inject_theme()
@@ -227,24 +228,42 @@ st.sidebar.page_link("app.py", label="📊 Project Progress")
 st.sidebar.page_link("pages/2_WBS.py", label="🧱 WBS")
 
 with st.sidebar:
+    use_test = st.toggle(
+        "Use test Excel (artifacts/W_example.xlsx)",
+        value=True,
+        key="use_test_excel",
+    )
     uploaded = st.file_uploader("📁 Upload WBS data (.xlsx)", type=["xlsx","xlsm"], accept_multiple_files=False)
     debug_remount = False
-    packs=[]
-    if uploaded is not None:
+    packs = []
+    source_path = None
+    tmp_path = None
+    test_path = Path("artifacts/W_example.xlsx")
+    if use_test:
+        if test_path.exists():
+            source_path = str(test_path)
+        else:
+            st.info("Test file not found at artifacts/W_example.xlsx.")
+    elif uploaded is not None:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-            tmp.write(uploaded.read()); tmp_path=tmp.name
+            tmp.write(uploaded.read()); tmp_path = tmp.name
+        source_path = tmp_path
+
+    if source_path:
         try:
-            packs = extract_all_wbs(tmp_path)
+            packs = extract_all_wbs(source_path)
             st.session_state["_packs"] = packs
             st.session_state["_detected_tables"] = []
             if not packs:
-                st.session_state["_detected_tables"] = detect_expected_tables(tmp_path)
-            st.session_state["_table_mismatch"] = compare_activity_ids(tmp_path)
+                st.session_state["_detected_tables"] = detect_expected_tables(source_path)
+            st.session_state["_table_mismatch"] = compare_activity_ids(source_path)
+            st.session_state["_preview_rows"] = build_preview_rows(source_path)
         except Exception as e:
             st.error(f"Erreur d'extraction: {e}")
         finally:
-            try: os.unlink(tmp_path)
-            except: pass
+            if tmp_path:
+                try: os.unlink(tmp_path)
+                except: pass
 
 packs = st.session_state.get("_packs", [])
 detected_tables = st.session_state.get("_detected_tables", [])
@@ -262,20 +281,11 @@ if mismatch and (mismatch.get("summary_only") or mismatch.get("assign_only")):
     if mismatch.get("assign_only"):
         sample = ", ".join(mismatch["assign_only"][:10])
         st.markdown(f"- Only in assignments: {sample}")
-if not packs:
-    if detected_tables:
-        st.info("Tables detectees, mais format incomplet pour la generation WBS.")
-        for t in detected_tables:
-            missing = ", ".join(t.get("missing", [])) or "none"
-            st.markdown(f"- {t['type']} | sheet {t['sheet']} | {t['range']} | missing: {missing}")
-    else:
-        st.info("📥 Importe un Excel dans la barre de gauche.")
-    st.stop()
-
 preview_mode = st.sidebar.toggle("Preview mode (dev)", value=True, key="preview_mode")
 if preview_mode:
     st.markdown("### Preview (mapping checks)")
     st.markdown("Source for hierarchy: Ressource Assignments (Activity ID indentation).")
+    preview_rows = st.session_state.get("_preview_rows", [])
     if detected_tables:
         st.markdown("Detected tables:")
         for t in detected_tables:
@@ -286,7 +296,54 @@ if preview_mode:
             f"Mismatch summary: summary={mismatch.get('summary_unique', 0)} "
             f"assignments={mismatch.get('assign_unique', 0)}"
         )
+    if preview_rows:
+        import hashlib
+        import random
+        from datetime import date, timedelta
+        import pandas as pd
+
+        def _rng(key: str) -> random.Random:
+            seed = int.from_bytes(hashlib.md5(key.encode("utf-8")).digest()[:4], "little")
+            return random.Random(seed)
+
+        def _rand_date(r: random.Random) -> str:
+            base = date(2025, 1, 1)
+            return (base + timedelta(days=r.randint(0, 330))).strftime("%d-%b-%y")
+
+        rows = []
+        for r in preview_rows:
+            rng = _rng(r["label"])
+            schedule = round(rng.uniform(0, 100), 2)
+            earned = round(max(0, min(100, schedule + rng.uniform(-15, 15))), 2)
+            rows.append({
+                "Activity ID": r["label"],
+                "Level": r.get("level", 0),
+                "Planned Finish": _rand_date(rng),
+                "Forecast Finish": _rand_date(rng),
+                "Schedule %": schedule,
+                "Earned %": earned,
+                "Ecart %": round(earned - schedule, 2),
+                "Impact %": round(rng.uniform(-10, 10), 2),
+                "Glissement": f"{rng.randint(-7, 7)}j",
+            })
+
+        df = pd.DataFrame(rows)
+        max_rows = 80
+        st.caption(f"Preview rows (random placeholders): showing {min(max_rows, len(df))} of {len(df)}")
+        st.dataframe(df.head(max_rows), use_container_width=True, height=420)
+    else:
+        st.info("No preview rows yet. Upload a file or enable the test Excel toggle.")
     st.info("Disable preview in the sidebar to render the WBS.")
+    st.stop()
+
+if not packs:
+    if detected_tables:
+        st.info("Tables detectees, mais format incomplet pour la generation WBS.")
+        for t in detected_tables:
+            missing = ", ".join(t.get("missing", [])) or "none"
+            st.markdown(f"- {t['type']} | sheet {t['sheet']} | {t['range']} | missing: {missing}")
+    else:
+        st.info("📥 Importe un Excel dans la barre de gauche.")
     st.stop()
 
 # Permet de forcer le remount des blocs animes lorsque l'on change de WBS

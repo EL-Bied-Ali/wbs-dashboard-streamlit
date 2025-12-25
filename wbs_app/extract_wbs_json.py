@@ -314,6 +314,50 @@ def compare_activity_ids(input_xlsx: str) -> Dict[str, Any]:
         "assign_only": sorted(assign_set - summary_set),
     }
 
+def build_preview_rows(input_xlsx: str) -> List[Dict[str, Any]]:
+    wb = load_workbook(input_xlsx, data_only=True)
+    tables = detect_expected_tables(input_xlsx)
+    rows: List[Dict[str, Any]] = []
+
+    def _lead_spaces(s: str) -> int:
+        return len(re.match(r"^\s*", s).group(0))
+
+    for t in tables:
+        if t["type"] != "resource_assignments":
+            continue
+        ws = wb[t["sheet"]]
+        r1, c1, r2, c2 = _parse_range(t["range"])
+        header = [ws.cell(r1, c).value for c in range(c1, c2 + 1)]
+        id_idx = None
+        for idx, v in enumerate(header):
+            if str(v).strip() == "Activity ID":
+                id_idx = idx
+                break
+        if id_idx is None:
+            continue
+
+        for r in range(r1 + 1, r2 + 1):
+            val = ws.cell(r, c1 + id_idx).value
+            if val is None or str(val).strip() == "":
+                continue
+            raw = str(val)
+            rows.append({
+                "sheet": t["sheet"],
+                "range": t["range"],
+                "raw": raw,
+                "label": raw.strip(),
+                "indent": _lead_spaces(raw),
+            })
+
+    if not rows:
+        return []
+
+    indents = sorted({r["indent"] for r in rows})
+    indent_to_level = {sp: i for i, sp in enumerate(indents)}
+    for r in rows:
+        r["level"] = indent_to_level.get(r["indent"], 0)
+    return rows
+
 # ---------- Choix de la colonne Label ----------
 def pick_label_col(df: pd.DataFrame) -> str:
     """
