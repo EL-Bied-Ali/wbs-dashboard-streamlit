@@ -1463,7 +1463,7 @@ def render_dashboard():
                 <div class="page-header">
                   <div class="page-header-main">
                     <div class="title-row">
-                      <div class="title">Project Progress Overview</div>
+                      <div class="title">▸ Progress Pulse</div>
                     </div>
                   </div>
                 </div>
@@ -1581,7 +1581,7 @@ def render_dashboard():
 
     with st.container():
         st.markdown(
-            '<div class="chart-heading">Weekly Progress <span class="info-badge" title="Planned vs actual weekly % for the selected activity (actual appears when available).">ℹ</span></div>',
+            '<div class="chart-heading">▸ Weekly Momentum <span class="info-badge" title="Planned vs actual weekly % for the selected activity (actual appears when available).">ℹ</span></div>',
             unsafe_allow_html=True,
         )
         st.plotly_chart(
@@ -1595,7 +1595,7 @@ def render_dashboard():
     with bottom[0]:
         with st.container():
             st.markdown(
-                '<div class="chart-heading">Weekly SV % <span class="info-badge" title="Weekly Schedule Variance (Earned % minus Schedule %).">ℹ</span></div>',
+                '<div class="chart-heading">▸ Schedule Gap <span class="info-badge" title="Weekly Schedule Variance (Earned % minus Schedule %).">ℹ</span></div>',
                 unsafe_allow_html=True,
             )
             st.plotly_chart(
@@ -1607,7 +1607,7 @@ def render_dashboard():
     with bottom[1]:
         with st.container():
             st.markdown(
-                '<div class="chart-heading">Activities Status <span class="info-badge" title="Share of activities by status (placeholder until real mapping).">ℹ</span></div>',
+                '<div class="chart-heading">▸ Activity Mix <span class="info-badge" title="Share of activities by status (placeholder until real mapping).">ℹ</span></div>',
                 unsafe_allow_html=True,
             )
             st.plotly_chart(
@@ -1631,7 +1631,7 @@ def render_s_curve_page():
         with head_cols[0]:
             st.markdown(
                 """
-                <div class="scurve-hero-title">S-Curve</div>
+                <div class="scurve-hero-title">▸ Cumulative Progress</div>
                 <div class="scurve-hero-sub">Cumulative planned vs actual vs forecast</div>
                 """,
                 unsafe_allow_html=True,
@@ -1899,7 +1899,7 @@ def render_s_curve_page():
         )
         fig.update_layout(title_text="")
 
-        st.markdown('<div class="scurve-hero-chart-title">Progress S-Curve</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scurve-hero-chart-title">▸ Progress Curve</div>', unsafe_allow_html=True)
         st.plotly_chart(fig, width="stretch", config={"displayModeBar": False, "responsive": False})
         st.markdown(
             '<div class="scurve-hero-note">Planned, actual, and forecast are all % of Budgeted Units. Actual uses Cum Actual Units; forecast uses Cum Remaining Early Units when available.</div>',
