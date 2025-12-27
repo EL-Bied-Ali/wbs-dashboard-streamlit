@@ -125,6 +125,24 @@ def inject_theme():
         transform-box: fill-box;
         animation: pieGrow__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
       }
+      .stPlotlyChart .main-svg .pielayer .slice path.surface,
+      .stPlotlyChart .main-svg .pielayer .slice path{
+        transform-origin: center;
+        transform-box: fill-box;
+        animation: pieGrow__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
+      }
+      .stPlotlyChart .main-svg .pielayer .slicetext{
+        animation: valuePop__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
+      }
+      .stPlotlyChart .main-svg .indicatorlayer .value-arc path{
+        transform-origin: center;
+        transform-box: fill-box;
+        animation: gaugeSweep__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
+      }
+      .stPlotlyChart .main-svg .indicatorlayer .value-arc{
+        transform-origin: center;
+        transform-box: fill-box;
+      }
       .stPlotlyChart .main-svg .trace.indicator path,
       .stPlotlyChart .main-svg .indicator path{
         transform-origin: center;
@@ -132,7 +150,8 @@ def inject_theme():
         animation: gaugeSweep__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
       }
       .stPlotlyChart .main-svg .trace.indicator text,
-      .stPlotlyChart .main-svg .indicator text{
+      .stPlotlyChart .main-svg .indicator text,
+      .stPlotlyChart .main-svg .infolayer .annotation-text{
         animation: valuePop__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
       }
       @keyframes chartFadeUp__ANIM_SEQ__{
@@ -169,10 +188,16 @@ def inject_theme():
         .stPlotlyChart .main-svg .trace .points path,
         .stPlotlyChart .main-svg .trace.pie path,
         .stPlotlyChart .main-svg .pie .slice path,
+        .stPlotlyChart .main-svg .pielayer .slice path.surface,
+        .stPlotlyChart .main-svg .pielayer .slice path,
+        .stPlotlyChart .main-svg .pielayer .slicetext,
+        .stPlotlyChart .main-svg .indicatorlayer .value-arc path,
+        .stPlotlyChart .main-svg .indicatorlayer .value-arc,
         .stPlotlyChart .main-svg .trace.indicator path,
         .stPlotlyChart .main-svg .indicator path,
         .stPlotlyChart .main-svg .trace.indicator text,
-        .stPlotlyChart .main-svg .indicator text{
+        .stPlotlyChart .main-svg .indicator text,
+        .stPlotlyChart .main-svg .infolayer .annotation-text{
           animation: none !important;
         }
       }
@@ -282,7 +307,7 @@ def inject_theme():
       .brand-pill--header{
         height:288px;
         min-width:288px;
-        padding:8px 12px;
+        padding:18px 18px 12px 18px;
         border-radius:36px;
       }
 
@@ -297,27 +322,39 @@ def inject_theme():
       }
       div[class*="st-key-brand_logo_item_"]{
         position: relative;
-        display: inline-flex;
+        width: 288px;
+        height: 288px;
+        display: grid;
+        grid-template-areas: "stack";
         align-items: center;
-        justify-content: center;
+        justify-items: center;
+      }
+      div[class*="st-key-brand_logo_item_"] > div{
+        grid-area: stack;
       }
       div[class*="st-key-brand_logo_item_"] .stButton{
-        position: absolute;
-        top: 6px;
-        right: 6px;
+        align-self: start;
+        justify-self: end;
         z-index: 5;
         pointer-events: auto;
-        margin: 0 !important;
+        margin: 10px !important;
       }
       div[class*="st-key-brand_logo_item_"] .stButton button{
-        width: 36px;
-        height: 36px;
+        width: 44px;
+        height: 44px;
         border-radius: 999px;
-        border: 1px solid rgba(148,163,184,.35);
-        background: rgba(15,23,42,.75);
+        border: 1px solid rgba(148,163,184,.45);
+        background: rgba(10,14,26,.85);
         color: var(--text);
-        font-weight: 800;
+        font-weight: 900;
+        font-size: 22px;
+        line-height: 1;
         box-shadow: 0 6px 14px rgba(0,0,0,.25);
+      }
+      div[class*="st-key-brand_logo_item_"] .stButton button:hover{
+        border-color: rgba(96,165,250,.7);
+        background: rgba(23,35,60,.9);
+        box-shadow: 0 10px 18px rgba(0,0,0,.35);
       }
       div[class*="st-key-brand_logo_item_"] .brand-pill{
         position: relative;
