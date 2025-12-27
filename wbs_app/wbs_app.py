@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from auth_google import require_login, render_auth_sidebar, brand_strip_html
+from auth_google import require_login, render_auth_sidebar
 from extract_wbs_json import (
     extract_all_wbs,
     detect_expected_tables,
@@ -32,7 +32,13 @@ from extract_wbs_json import (
 )
 from theme import inject_theme
 
-st.set_page_config(page_title="WBS - Project", layout="wide", initial_sidebar_state="expanded")
+_icon_path = ROOT / "Wibis_logo.png"
+st.set_page_config(
+    page_title="Wibis",
+    page_icon=str(_icon_path) if _icon_path.exists() else "🧭",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 st.markdown(
     "<style>[data-testid='stSidebarNav']{display:none !important;}</style>",
     unsafe_allow_html=True,
@@ -41,9 +47,6 @@ user = require_login()
 render_auth_sidebar(user)
 inject_theme()
 PREVIEW_ENABLED = os.getenv("PREVIEW_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
-brand_strip = brand_strip_html("page")
-if brand_strip:
-    st.markdown(f"<div class='brand-row'>{brand_strip}</div>", unsafe_allow_html=True)
 
 def _store_shared_upload(uploaded):
     if uploaded is None:

@@ -43,8 +43,10 @@ if page_override and page_source != "S-Curve":
     st.session_state.pop("_page_source", None)
     page_override = None
 
+_icon_path = Path(__file__).resolve().parent / "Wibis_logo.png"
 st.set_page_config(
-    page_title="S-Curve" if page_override == "S-Curve" else "Project Progress",
+    page_title="Wibis",
+    page_icon=str(_icon_path) if _icon_path.exists() else "🧭",
     layout="wide",
 )
 st.markdown(
@@ -1123,11 +1125,8 @@ if shared_path is None:
 file_cache_key = _file_cache_key(shared_path)
 today_cache_key = date.today().isoformat()
 
-_maybe_open_mapping_dialog(shared_path)
-
 # Apply theme for both local pages
 inject_theme()
-show_perf = st.sidebar.toggle("Show perf timings", value=False, key="show_perf")
 perf_stats: dict[str, float] = {}
 
 # ---------- Data (dashboard) ----------
@@ -1466,8 +1465,6 @@ def render_dashboard():
                     <div class="title-row">
                       <div class="title">Project Progress Overview</div>
                     </div>
-                    <div class="muted" style="margin-top:8px;">Demo data - replace later with your own sources</div>
-                    <div class="muted" style="font-size:12px; margin-top:8px;">Last updated: {datetime.now().strftime('%d %b %Y, %H:%M')}</div>
                   </div>
                 </div>
             </div>
@@ -1486,7 +1483,7 @@ def render_dashboard():
                                 f'<img src="{src}" alt="{html.escape(label)} logo" /></div>',
                                 unsafe_allow_html=True,
                             )
-                            if st.button("✕", key=f"brand_remove_{role}", help=f"Remove {label} logo"):
+                            if st.button("×", key=f"brand_remove_{role}", help=f"Remove {label} logo"):
                                 _remove_custom_logo(role)
                                 st.session_state.pop(f"_logo_upload_{role}_key", None)
                                 st.rerun()
@@ -1628,9 +1625,7 @@ def render_dashboard():
 
 
 def render_s_curve_page():
-    brand_strip = brand_strip_html("page")
-    if brand_strip:
-        st.markdown(f"<div class='brand-row'>{brand_strip}</div>", unsafe_allow_html=True)
+
     with st.container():
         head_cols = st.columns([2.2, 1.2])
         with head_cols[0]:
@@ -1919,6 +1914,3 @@ if page == "Dashboard":
     render_dashboard()
 elif page == "S-Curve":
     render_s_curve_page()
-
-if show_perf:
-    _render_perf_stats(perf_stats)
