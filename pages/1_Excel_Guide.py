@@ -69,7 +69,10 @@ st.markdown(
     "- Required columns: Activity ID, Budgeted Units, Spreadsheet Field"
 )
 st.markdown(
-    "- Optional columns: Activity Name, Start, Finish, RCV / Phases"
+    "- Optional columns: Activity Name (leaf rows only), Start, Finish"
+)
+st.markdown(
+    "- Activity ID values should match the Activity Summary table (same IDs/indentation)"
 )
 st.markdown(
     "- Weekly date columns: one column per week (week start), used for curves"
@@ -77,11 +80,13 @@ st.markdown(
 st.markdown("Example:")
 st.markdown(
     """
-| Activity ID | Activity Name | Start      | Finish     | RCV / Phases | Budgeted Units | Spreadsheet Field       | 2025-01-06 | 2025-01-13 |
-|------------|---------------|------------|------------|--------------|----------------|-------------------------|------------|------------|
-| A-100      | Mobilization  | 2025-01-02 | 2025-01-12 | Phase 1      | 120            | Cum Budgeted Units      | 10         | 25         |
-| A-100      | Mobilization  | 2025-01-02 | 2025-01-12 | Phase 1      | 120            | Cum Actual Units        | 8          | 20         |
-| A-100      | Mobilization  | 2025-01-02 | 2025-01-12 | Phase 1      | 120            | Cum Remaining Early Units | 0        | 5          |
+| Activity ID | Activity Name | Start      | Finish     | Budgeted Units | Spreadsheet Field         | 2025-01-06 | 2025-01-13 |
+|------------|---------------|------------|------------|----------------|---------------------------|------------|------------|
+| &nbsp;&nbsp;&nbsp;&nbsp;A-111 | Mobilize crew  | 2025-01-06 | 2025-01-07 | 120            | Cum Budgeted Units        | 10         | 25         |
+| &nbsp;&nbsp;&nbsp;&nbsp;A-111 |               | 2025-01-06 | 2025-01-07 | 120            | Cum Actual Units          | 8          | 20         |
+| &nbsp;&nbsp;&nbsp;&nbsp;A-111 |               | 2025-01-06 | 2025-01-07 | 120            | Cum Remaining Early Units | 0          | 5          |
+| &nbsp;&nbsp;A-120 | Temporary works | 2025-01-08 | 2025-01-12 | 90             | Cum Budgeted Units        | 4          | 10         |
+| A-200      | Foundation    | 2025-02-05 | 2025-02-11 | 72             | Cum Budgeted Units        | 3          | 9          |
 """,
     unsafe_allow_html=False,
 )

@@ -13,7 +13,6 @@ MAPPINGS = {
     "cum_planned":   None,
     "cum_actual":    None,
     "cum_forecast":  None,
-    "rcv": "RCV / Lots / Sub-lots",
 
     # NEW: baseline start/finish column names from your file
     "bl_start":  "BL Project Start",
@@ -150,15 +149,6 @@ def load_from_excel(uploaded_file, sheet: str | None = None):
     chosen = sheet or MAPPINGS["sheet"] or sheet_names[0]
     df = xl.parse(chosen)
 
-    # RCV -> key + unique list (with 'null' for blanks)
-    rcv_col = MAPPINGS.get("rcv")
-    if rcv_col and rcv_col in df.columns:
-        key = df[rcv_col].astype("string").fillna("null").replace({"": "null"})
-    else:
-        key = pd.Series(["null"] * len(df), dtype="string")
-    df["RCV_KEY"] = key
-    rcv_values = sorted(df["RCV_KEY"].unique().tolist()) or ["null"]
-
     # Optional project dates: parse to datetime if present
     bls, blf = MAPPINGS["bl_start"], MAPPINGS["bl_finish"]
     if bls in df.columns:
@@ -175,7 +165,6 @@ def load_from_excel(uploaded_file, sheet: str | None = None):
 
     return {
         "df": df,
-        "rcv_values": rcv_values,
         "sheet_names": sheet_names,
         "chosen_sheet": chosen,
         "has_date": has_date,

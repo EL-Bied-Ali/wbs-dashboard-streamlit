@@ -34,7 +34,6 @@ ASSIGN_HEADER_GROUPS = {
     "activity name": ["Activity Name", "ActivityName"],
     "start": ["Start", "Start Date"],
     "finish": ["Finish", "Finish Date"],
-    "rcv / phases": ["RCV / Phases", "RCV/Phases", "RCV Phases"],
     "budgeted units": ["Budgeted Units", "Budget Units"],
     "spreadsheet field": ["Spreadsheet Field", "SpreadsheetField"],
 }
@@ -60,7 +59,6 @@ ASSIGN_OPTIONAL_FIELDS = [
     "Activity Name",
     "Start",
     "Finish",
-    "RCV / Phases",
 ]
 
 SUMMARY_FIELD_VARIANTS = {
@@ -80,7 +78,6 @@ ASSIGN_FIELD_VARIANTS = {
     "Activity Name": ASSIGN_HEADER_GROUPS["activity name"] + ["Activity Name"],
     "Start": ASSIGN_HEADER_GROUPS["start"] + ["Start"],
     "Finish": ASSIGN_HEADER_GROUPS["finish"] + ["Finish"],
-    "RCV / Phases": ASSIGN_HEADER_GROUPS["rcv / phases"] + ["RCV / Phases"],
     "Budgeted Units": ASSIGN_HEADER_GROUPS["budgeted units"] + ["Budgeted Units"],
     "Spreadsheet Field": ASSIGN_HEADER_GROUPS["spreadsheet field"] + ["Spreadsheet Field"],
 }
