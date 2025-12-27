@@ -18,6 +18,7 @@ def inject_theme():
         --accent-3:#4b6ff4;
         --danger:#f97070;
         --radius:14px;
+        --header-logo-size:140px;
         --shadow:0 16px 40px rgba(0,0,0,0.45);
         --ui-zoom:1;
       }
@@ -308,10 +309,10 @@ def inject_theme():
         border-radius:36px;
       }
       .brand-pill--header{
-        height:288px;
-        min-width:288px;
-        padding:18px 18px 12px 18px;
-        border-radius:36px;
+        height:var(--header-logo-size);
+        min-width:var(--header-logo-size);
+        padding:10px 12px;
+        border-radius:20px;
       }
 
       div.st-key-brand_logo_row > div[data-testid="stHorizontalBlock"]{
@@ -331,8 +332,8 @@ def inject_theme():
       }
       div[class*="st-key-brand_logo_item_"]{
         position: relative;
-        width: 288px;
-        height: 288px;
+        width: var(--header-logo-size);
+        height: var(--header-logo-size);
         display: grid;
         grid-template-areas: "stack";
         align-items: center;
