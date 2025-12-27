@@ -97,6 +97,17 @@ def inject_theme():
       div[data-testid="stElementContainer"]:has(.stPlotlyChart){
         overflow: visible !important;
       }
+      .stPlotlyChart{
+        animation: chartFadeUp 900ms cubic-bezier(.22,.7,.2,1) both;
+        will-change: transform, opacity;
+      }
+      @keyframes chartFadeUp{
+        from{ opacity:0; transform: translateY(10px) scale(0.995); }
+        to{ opacity:1; transform: translateY(0) scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce){
+        .stPlotlyChart{ animation: none; }
+      }
       /* Lock Plotly chart containers to their assigned heights to prevent growth */
       div[data-testid="stElementContainer"][height="260px"]:has(.stPlotlyChart){
         height: 260px !important;
@@ -146,10 +157,20 @@ def inject_theme():
       .metric .sub{ color:var(--muted); font-size:12px; }
 
       .page-header{ display:flex; flex-direction:column; gap:2px; margin:12px 8px 18px 8px; padding:0 4px; }
-      .page-header .title{ font-size:22px; font-weight:800; color:var(--text); }
+      .page-header .title{ font-size:66px; font-weight:800; color:var(--text); }
       .muted{ color:var(--muted); font-size:14px; }
-      .page-header--brand{ flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 16px; }
+      .page-header--brand{ flex-direction: column; gap: 6px; }
       .page-header--brand .page-header-main{ display:flex; flex-direction:column; gap:2px; }
+      .page-header--brand .title-row{
+        display:flex;
+        align-items:center;
+        justify-content:flex-start;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .page-header--brand .title-row .brand-strip{
+        margin-left: 12px;
+      }
 
       .brand-row{
         display:flex;
@@ -162,10 +183,10 @@ def inject_theme():
         gap:8px;
       }
       .brand-pill{
-        height:56px;
-        min-width:56px;
-        padding:8px 16px;
-        border-radius:12px;
+        height:216px;
+        min-width:216px;
+        padding:6px 8px;
+        border-radius:28px;
         border:1px solid rgba(148,163,184,.18);
         background: rgba(15,23,42,.55);
         box-shadow: 0 12px 26px rgba(0,0,0,.25);
@@ -179,8 +200,65 @@ def inject_theme():
         object-fit:contain;
       }
       .brand-strip--hero .brand-pill{
-        height:68px;
-        padding:10px 20px;
+        height:252px;
+        min-width:252px;
+        padding:8px 12px;
+        border-radius:32px;
+      }
+      .brand-strip--page .brand-pill{
+        height:288px;
+        min-width:288px;
+        padding:8px 12px;
+        border-radius:36px;
+      }
+      .brand-pill--header{
+        height:288px;
+        min-width:288px;
+        padding:8px 12px;
+        border-radius:36px;
+      }
+
+      div.st-key-brand_logo_row > div[data-testid="stHorizontalBlock"]{
+        justify-content:flex-end;
+        gap:12px;
+        flex-wrap: nowrap;
+      }
+      div.st-key-brand_logo_row div[data-testid="stColumn"]{
+        flex: 0 0 auto !important;
+        min-width: 0 !important;
+      }
+      div[class*="st-key-brand_logo_item_"]{
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      div[class*="st-key-brand_logo_item_"] .stButton{
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        z-index: 5;
+        pointer-events: auto;
+      }
+      div[class*="st-key-brand_logo_item_"] .stButton button{
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,.35);
+        background: rgba(15,23,42,.75);
+        color: var(--text);
+        font-weight: 800;
+        box-shadow: 0 6px 14px rgba(0,0,0,.25);
+      }
+      div[class*="st-key-brand_logo_item_"] .brand-pill{
+        position: relative;
+        z-index: 1;
+      }
+      .brand-label{
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+        margin: 4px 0 8px 0;
       }
 
       /* Prevent plotly overflow */
@@ -367,6 +445,9 @@ def inject_theme():
         background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
         border: 1px solid rgba(148,163,184,.18);
         box-shadow: 0 12px 26px rgba(0,0,0,.28);
+        position: sticky;
+        bottom: 16px;
+        z-index: 1;
       }
       section[data-testid="stSidebar"] .brand-title{
         font-size: 12px;
@@ -375,6 +456,15 @@ def inject_theme():
         letter-spacing: 0.14em;
         color: rgba(157,168,198,.85);
         margin-bottom: 10px;
+      }
+      section[data-testid="stSidebar"] .brand-label{
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        margin: 2px 0 6px 0;
+      }
+      section[data-testid="stSidebarContent"]{
+        padding-bottom: 140px;
       }
       section[data-testid="stSidebar"] .brand-preview{
         width: 100%;
