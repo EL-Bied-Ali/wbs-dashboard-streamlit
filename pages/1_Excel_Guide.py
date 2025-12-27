@@ -56,9 +56,9 @@ st.markdown(
 | Activity ID | Activity Name    | BL Project Finish | Finish      | Units % Complete | Variance - BL Project Finish Date |
 |------------|------------------|------------------|-------------|------------------|-----------------------------------|
 | A-100      | Mobilization     | 2025-01-10       | 2025-01-12  | 100%             | 2                                 |
-|   A-110    | Site setup       | 2025-01-05       | 2025-01-07  | 100%             | 2                                 |
-|     A-111  | Mobilize crew    | 2025-01-06       | 2025-01-07  | 100%             | 1                                 |
-|   A-120    | Temporary works  | 2025-01-08       | 2025-01-12  | 90%              | 4                                 |
+| &nbsp;&nbsp;A-110 | Site setup       | 2025-01-05       | 2025-01-07  | 100%             | 2                                 |
+| &nbsp;&nbsp;&nbsp;&nbsp;A-111 | Mobilize crew    | 2025-01-06       | 2025-01-07  | 100%             | 1                                 |
+| &nbsp;&nbsp;A-120 | Temporary works  | 2025-01-08       | 2025-01-12  | 90%              | 4                                 |
 | A-200      | Foundation       | 2025-02-05       | 2025-02-11  | 72%              | 6                                 |
 """,
     unsafe_allow_html=False,
