@@ -104,12 +104,43 @@ def inject_theme():
         animation-delay: 150ms;
         will-change: transform, opacity;
       }
+      .stPlotlyChart .main-svg .trace .bars path{
+        transform-origin: bottom;
+        transform-box: fill-box;
+        animation: barGrow__ANIM_SEQ__ 900ms cubic-bezier(.22,.7,.2,1) both;
+      }
+      .stPlotlyChart .main-svg .trace .lines path{
+        stroke-dasharray: 1200;
+        stroke-dashoffset: 1200;
+        animation: lineDraw__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
+      }
+      .stPlotlyChart .main-svg .trace .points path{
+        transform-origin: center;
+        transform-box: fill-box;
+        animation: pointPop__ANIM_SEQ__ 700ms cubic-bezier(.22,.7,.2,1) both;
+      }
       @keyframes chartFadeUp__ANIM_SEQ__{
         from{ opacity:0; transform: translateY(10px) scale(0.995); }
         to{ opacity:1; transform: translateY(0) scale(1); }
       }
+      @keyframes barGrow__ANIM_SEQ__{
+        from{ transform: scaleY(0); }
+        to{ transform: scaleY(1); }
+      }
+      @keyframes lineDraw__ANIM_SEQ__{
+        to{ stroke-dashoffset: 0; }
+      }
+      @keyframes pointPop__ANIM_SEQ__{
+        from{ opacity:0; transform: scale(0.3); }
+        to{ opacity:1; transform: scale(1); }
+      }
       @media (prefers-reduced-motion: reduce){
         .stPlotlyChart{ animation: none !important; }
+        .stPlotlyChart .main-svg .trace .bars path,
+        .stPlotlyChart .main-svg .trace .lines path,
+        .stPlotlyChart .main-svg .trace .points path{
+          animation: none !important;
+        }
       }
       /* Lock Plotly chart containers to their assigned heights to prevent growth */
       div[data-testid="stElementContainer"][height="260px"]:has(.stPlotlyChart){
