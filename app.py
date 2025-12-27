@@ -103,6 +103,63 @@ def _excel_template_bytes():
             return path.read_bytes(), path.name
     return None, None
 
+def _file_cache_key(path: str | None) -> tuple[float, int] | None:
+    if not path:
+        return None
+    try:
+        stat = os.stat(path)
+    except OSError:
+        return None
+    return (stat.st_mtime, stat.st_size)
+
+@st.cache_data(show_spinner=False)
+def _cached_load_from_excel(path: str, file_key: tuple[float, int] | None):
+    _ = file_key
+    return load_from_excel(path)
+
+@st.cache_data(show_spinner=False)
+def _cached_schedule_lookup(
+    path: str,
+    file_key: tuple[float, int] | None,
+    column_mapping: dict | None,
+    today_key: str,
+):
+    _ = file_key
+    today = date.fromisoformat(today_key)
+    return build_schedule_lookup(path, today=today, column_mapping=column_mapping)
+
+@st.cache_data(show_spinner=False)
+def _cached_preview_rows(
+    path: str,
+    file_key: tuple[float, int] | None,
+    prefer_first_table: bool,
+    column_mapping: dict | None,
+):
+    _ = file_key
+    return build_preview_rows(
+        path,
+        table_type="activity_summary",
+        prefer_first_table=prefer_first_table,
+        column_mapping=column_mapping,
+    )
+
+@st.cache_data(show_spinner=False)
+def _cached_weekly_progress(
+    path: str,
+    file_key: tuple[float, int] | None,
+    activity_id: str,
+    column_mapping: dict | None,
+    today_key: str,
+):
+    _ = file_key
+    today = date.fromisoformat(today_key)
+    return build_weekly_progress(
+        path,
+        activity_id,
+        today=today,
+        column_mapping=column_mapping,
+    )
+
 def _render_excel_format_help():
     with st.sidebar.expander("Excel format guide", expanded=False):
         st.page_link("pages/1_Excel_Guide.py", label="Open full guide")
@@ -1041,6 +1098,8 @@ shared_upload = st.sidebar.file_uploader(
 shared_path = _store_shared_upload(shared_upload)
 if shared_path is None:
     shared_path = _set_default_excel_path()
+file_cache_key = _file_cache_key(shared_path)
+today_cache_key = date.today().isoformat()
 
 _maybe_open_mapping_dialog(shared_path)
 
@@ -1052,7 +1111,7 @@ excel_data = None
 selected_sheet = None
 if page == "Dashboard" and shared_path:
     try:
-        excel_data = load_from_excel(shared_path)
+        excel_data = _cached_load_from_excel(shared_path, file_cache_key)
     except Exception as e:
         st.sidebar.warning(f"Excel read error: {e}")
 
@@ -1067,14 +1126,16 @@ activity_filter = None
 
 if shared_path:
     try:
-        schedule_lookup, schedule_info_dash = build_schedule_lookup(
+        schedule_lookup, schedule_info_dash = _cached_schedule_lookup(
             shared_path,
+            file_cache_key,
             column_mapping=st.session_state.get("column_mapping"),
+            today_key=today_cache_key,
         )
-        activity_rows = build_preview_rows(
+        activity_rows = _cached_preview_rows(
             shared_path,
-            table_type="activity_summary",
-            prefer_first_table=True,
+            file_cache_key,
+            True,
             column_mapping=st.session_state.get("column_mapping"),
         )
     except Exception as e:
@@ -1328,10 +1389,12 @@ def render_dashboard():
             )
         if shared_path and selected_row:
             activity_key = selected_row.get("activity_id") or selected_row.get("label", "")
-            weekly_series, weekly_info = build_weekly_progress(
+            weekly_series, weekly_info = _cached_weekly_progress(
                 shared_path,
+                file_cache_key,
                 activity_key,
                 column_mapping=st.session_state.get("column_mapping"),
+                today_key=today_cache_key,
             )
             if weekly_series:
                 local_weekly_progress = weekly_series
@@ -1357,11 +1420,13 @@ def render_dashboard():
         <div style="margin:12px 0 18px 0; padding:0 8px;">
             <div class="{header_class}">
               <div class="page-header-main">
-                <div class="title">Project Progress Overview</div>
+                <div class="title-row">
+                  <div class="title">Project Progress Overview</div>
+                  {brand_strip}
+                </div>
                 <div class="muted" style="margin-top:8px;">Demo data - replace later with your own sources</div>
                 <div class="muted" style="font-size:12px; margin-top:8px;">Last updated: {datetime.now().strftime('%d %b %Y, %H:%M')}</div>
               </div>
-              {brand_strip}
             </div>
         </div>
         """,
@@ -1541,10 +1606,12 @@ def render_s_curve_page():
             selected_row = activity_filter["activity_rows_map"].get(selected_key)
         if shared_path and selected_row:
             activity_key = selected_row.get("activity_id") or selected_row.get("label", "")
-            weekly_series, weekly_info = build_weekly_progress(
+            weekly_series, weekly_info = _cached_weekly_progress(
                 shared_path,
+                file_cache_key,
                 activity_key,
                 column_mapping=st.session_state.get("column_mapping"),
+                today_key=today_cache_key,
             )
 
         if weekly_series:
