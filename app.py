@@ -23,7 +23,13 @@ from wbs_app.extract_wbs_json import (
 import plotly.graph_objects as go
 import streamlit as st
 
-from auth_google import require_login, render_auth_sidebar, brand_strip_html
+from auth_google import (
+    require_login,
+    render_auth_sidebar,
+    brand_strip_html,
+    _custom_logo_data_uri,
+    _remove_custom_logo,
+)
 from charts import s_curve
 from data import demo_series, load_from_excel, sample_dashboard_data
 from services_kpis import compute_kpis, extract_dates_labels
@@ -467,7 +473,7 @@ def base_layout(fig, height=220):
             x=0,
             font=dict(size=13),
         ),
-        transition=dict(duration=500, easing="cubic-in-out"),
+        transition=dict(duration=850, easing="cubic-in-out"),
     )
     return fig
 
@@ -535,7 +541,7 @@ def gauge_fig(title: str, value: float, color: str, subtitle: str | None = None,
         margin=dict(l=18, r=18, t=20, b=36),
         paper_bgcolor="#0d1330",
         plot_bgcolor="#0d1330",
-        transition=dict(duration=500, easing="cubic-in-out"),
+        transition=dict(duration=850, easing="cubic-in-out"),
     )
     fig.update_traces(gauge_shape="angular")
     return fig
@@ -1442,25 +1448,48 @@ def render_dashboard():
             local_status_warnings = status_warnings
             local_status_error = status_error
 
-    brand_strip = brand_strip_html("page")
-    header_class = "page-header page-header--brand" if brand_strip else "page-header"
-    st.markdown(
-        f"""
-        <div style="margin:12px 0 18px 0; padding:0 8px;">
-            <div class="{header_class}">
-              <div class="page-header-main">
-                <div class="title-row">
-                  <div class="title">Project Progress Overview</div>
-                  {brand_strip}
+    company_logo = _custom_logo_data_uri("company")
+    client_logo = _custom_logo_data_uri("client")
+    header_logos: list[tuple[str, str, str]] = []
+    if company_logo:
+        header_logos.append(("company", "Company", company_logo))
+    if client_logo:
+        header_logos.append(("client", "Client", client_logo))
+
+    header_cols = st.columns([2.6, 2.4], gap="small", vertical_alignment="top")
+    with header_cols[0]:
+        st.markdown(
+            f"""
+            <div style="margin:12px 0 18px 0; padding:0 8px;">
+                <div class="page-header">
+                  <div class="page-header-main">
+                    <div class="title-row">
+                      <div class="title">Project Progress Overview</div>
+                    </div>
+                    <div class="muted" style="margin-top:8px;">Demo data - replace later with your own sources</div>
+                    <div class="muted" style="font-size:12px; margin-top:8px;">Last updated: {datetime.now().strftime('%d %b %Y, %H:%M')}</div>
+                  </div>
                 </div>
-                <div class="muted" style="margin-top:8px;">Demo data - replace later with your own sources</div>
-                <div class="muted" style="font-size:12px; margin-top:8px;">Last updated: {datetime.now().strftime('%d %b %Y, %H:%M')}</div>
-              </div>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
+    with header_cols[1]:
+        if header_logos:
+            with st.container(key="brand_logo_row"):
+                logo_cols = st.columns(len(header_logos), gap="small")
+                for col, (role, label, src) in zip(logo_cols, header_logos):
+                    with col:
+                        with st.container(key=f"brand_logo_item_{role}"):
+                            st.markdown(
+                                f'<div class="brand-pill brand-pill--header" title="{html.escape(label)} logo">'
+                                f'<img src="{src}" alt="{html.escape(label)} logo" /></div>',
+                                unsafe_allow_html=True,
+                            )
+                            if st.button("✕", key=f"brand_remove_{role}", help=f"Remove {label} logo"):
+                                _remove_custom_logo(role)
+                                st.session_state.pop(f"_logo_upload_{role}_key", None)
+                                st.rerun()
 
     layout_top = st.columns([2.0, 2.8])
 
