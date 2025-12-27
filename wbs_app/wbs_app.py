@@ -494,7 +494,8 @@ def render_barchart(node:dict, chart_key:str|None=None, truncate_labels: bool = 
                     font=dict(size=11, color="#cbd5e1")),
         yaxis=dict(title="", range=[0, ymax*1.08], ticksuffix="%", dtick=25 if ymax==100 else None,
                    showgrid=True, gridcolor=c_grid, zeroline=False),
-        hovermode="closest", hoverlabel=dict(bgcolor="#0f172a", font=dict(color=c_text, size=11)), shapes=shapes)
+        hovermode="closest", hoverlabel=dict(bgcolor="#0f172a", font=dict(color=c_text, size=11)), shapes=shapes,
+        transition=dict(duration=500, easing="cubic-in-out"))
     element_key = chart_key or f"plt_{len(labels_full)}"
     st.plotly_chart(
         fig,

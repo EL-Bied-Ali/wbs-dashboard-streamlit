@@ -467,6 +467,7 @@ def base_layout(fig, height=220):
             x=0,
             font=dict(size=13),
         ),
+        transition=dict(duration=500, easing="cubic-in-out"),
     )
     return fig
 
@@ -534,6 +535,7 @@ def gauge_fig(title: str, value: float, color: str, subtitle: str | None = None,
         margin=dict(l=18, r=18, t=20, b=36),
         paper_bgcolor="#0d1330",
         plot_bgcolor="#0d1330",
+        transition=dict(duration=500, easing="cubic-in-out"),
     )
     fig.update_traces(gauge_shape="angular")
     return fig

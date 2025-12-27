@@ -75,6 +75,7 @@ def s_curve(
         plot_bgcolor="#11162d",
         font=dict(color="#e8eefc", size=13, family="Inter, 'Segoe UI', sans-serif"),
         legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="left", x=0),
+        transition=dict(duration=500, easing="cubic-in-out"),
     )
     fig.update_yaxes(
         title="%",
