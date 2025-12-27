@@ -5,7 +5,7 @@ from textwrap import dedent
 def inject_theme():
     anim_seq = st.session_state.get("_plotly_anim_seq", 0) + 1
     st.session_state["_plotly_anim_seq"] = anim_seq
-    css = f"""
+    css = """
     <style>
       :root{
         --bg:#0d1330;
@@ -99,12 +99,12 @@ def inject_theme():
       div[data-testid="stElementContainer"]:has(.stPlotlyChart){
         overflow: visible !important;
       }
-      .stPlotlyChart{{
-        animation: chartFadeUp{anim_seq} 900ms cubic-bezier(.22,.7,.2,1) both;
+      .stPlotlyChart{
+        animation: chartFadeUp__ANIM_SEQ__ 900ms cubic-bezier(.22,.7,.2,1) both;
         animation-delay: 150ms;
         will-change: transform, opacity;
       }
-      @keyframes chartFadeUp{anim_seq}{{
+      @keyframes chartFadeUp__ANIM_SEQ__{
         from{ opacity:0; transform: translateY(10px) scale(0.995); }
         to{ opacity:1; transform: translateY(0) scale(1); }
       }
@@ -799,6 +799,7 @@ def inject_theme():
 
     </style>
     """
+    css = css.replace("__ANIM_SEQ__", str(anim_seq))
     st.markdown(css, unsafe_allow_html=True)
     st.markdown('<div class="app-bg"></div>', unsafe_allow_html=True)
 
