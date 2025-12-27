@@ -911,7 +911,7 @@ def inject_theme():
         border-radius: calc(var(--radius) + 6px);
         box-shadow: var(--shadow);
         padding: 18px 18px 12px;
-        margin: 12px 8px 18px 8px;
+        margin: 26px 8px 18px 8px;
         overflow: hidden;
       }
       .pulse-hero::before{
