@@ -1460,10 +1460,12 @@ def render_dashboard():
         st.markdown(
             f"""
             <div style="margin:12px 0 18px 0; padding:0 8px;">
-                <div class="page-header">
-                  <div class="page-header-main">
-                    <div class="title-row">
-                      <div class="title">▸ Progress Pulse</div>
+                <div class="page-header-card card">
+                  <div class="page-header">
+                    <div class="page-header-main">
+                      <div class="title-row">
+                        <div class="title">▸ Progress Pulse</div>
+                      </div>
                     </div>
                   </div>
                 </div>
