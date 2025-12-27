@@ -119,16 +119,19 @@ def inject_theme():
         transform-box: fill-box;
         animation: pointPop__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
       }
+      .stPlotlyChart .main-svg .trace.pie path,
       .stPlotlyChart .main-svg .pie .slice path{
         transform-origin: center;
         transform-box: fill-box;
         animation: pieGrow__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
       }
+      .stPlotlyChart .main-svg .trace.indicator path,
       .stPlotlyChart .main-svg .indicator path{
         transform-origin: center;
         transform-box: fill-box;
         animation: gaugeSweep__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
       }
+      .stPlotlyChart .main-svg .trace.indicator text,
       .stPlotlyChart .main-svg .indicator text{
         animation: valuePop__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
       }
@@ -164,8 +167,11 @@ def inject_theme():
         .stPlotlyChart .main-svg .trace .bars path,
         .stPlotlyChart .main-svg .trace .lines path,
         .stPlotlyChart .main-svg .trace .points path,
+        .stPlotlyChart .main-svg .trace.pie path,
         .stPlotlyChart .main-svg .pie .slice path,
+        .stPlotlyChart .main-svg .trace.indicator path,
         .stPlotlyChart .main-svg .indicator path,
+        .stPlotlyChart .main-svg .trace.indicator text,
         .stPlotlyChart .main-svg .indicator text{
           animation: none !important;
         }
