@@ -100,37 +100,37 @@ def inject_theme():
         overflow: visible !important;
       }
       .stPlotlyChart{
-        animation: chartFadeUp__ANIM_SEQ__ 900ms cubic-bezier(.22,.7,.2,1) both;
-        animation-delay: 150ms;
+        animation: chartFadeUp__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
+        animation-delay: 250ms;
         will-change: transform, opacity;
       }
       .stPlotlyChart .main-svg .trace .bars path{
         transform-origin: bottom;
         transform-box: fill-box;
-        animation: barGrow__ANIM_SEQ__ 900ms cubic-bezier(.22,.7,.2,1) both;
+        animation: barGrow__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
       }
       .stPlotlyChart .main-svg .trace .lines path{
         stroke-dasharray: 1200;
         stroke-dashoffset: 1200;
-        animation: lineDraw__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
+        animation: lineDraw__ANIM_SEQ__ 1800ms cubic-bezier(.22,.7,.2,1) both;
       }
       .stPlotlyChart .main-svg .trace .points path{
         transform-origin: center;
         transform-box: fill-box;
-        animation: pointPop__ANIM_SEQ__ 700ms cubic-bezier(.22,.7,.2,1) both;
+        animation: pointPop__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
       }
       .stPlotlyChart .main-svg .pie .slice path{
         transform-origin: center;
         transform-box: fill-box;
-        animation: pieGrow__ANIM_SEQ__ 900ms cubic-bezier(.22,.7,.2,1) both;
+        animation: pieGrow__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
       }
       .stPlotlyChart .main-svg .indicator path{
         transform-origin: center;
         transform-box: fill-box;
-        animation: gaugeSweep__ANIM_SEQ__ 900ms cubic-bezier(.22,.7,.2,1) both;
+        animation: gaugeSweep__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
       }
       .stPlotlyChart .main-svg .indicator text{
-        animation: valuePop__ANIM_SEQ__ 700ms cubic-bezier(.22,.7,.2,1) both;
+        animation: valuePop__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
       }
       @keyframes chartFadeUp__ANIM_SEQ__{
         from{ opacity:0; transform: translateY(10px) scale(0.995); }
