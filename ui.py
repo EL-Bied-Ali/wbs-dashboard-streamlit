@@ -3,10 +3,9 @@ import streamlit as st
 from textwrap import dedent
 
 def inject_theme():
-    anim_flag = st.session_state.get("_plotly_anim_flag", "a")
-    anim_flag = "b" if anim_flag == "a" else "a"
-    st.session_state["_plotly_anim_flag"] = anim_flag
-    css = """
+    anim_seq = st.session_state.get("_plotly_anim_seq", 0) + 1
+    st.session_state["_plotly_anim_seq"] = anim_seq
+    css = f"""
     <style>
       :root{
         --bg:#0d1330;
@@ -100,19 +99,12 @@ def inject_theme():
       div[data-testid="stElementContainer"]:has(.stPlotlyChart){
         overflow: visible !important;
       }
-      html[data-plotly-anim="a"] .stPlotlyChart{
-        animation: chartFadeUpA 900ms cubic-bezier(.22,.7,.2,1) both;
+      .stPlotlyChart{{
+        animation: chartFadeUp{anim_seq} 900ms cubic-bezier(.22,.7,.2,1) both;
+        animation-delay: 150ms;
         will-change: transform, opacity;
       }
-      html[data-plotly-anim="b"] .stPlotlyChart{
-        animation: chartFadeUpB 900ms cubic-bezier(.22,.7,.2,1) both;
-        will-change: transform, opacity;
-      }
-      @keyframes chartFadeUpA{
-        from{ opacity:0; transform: translateY(10px) scale(0.995); }
-        to{ opacity:1; transform: translateY(0) scale(1); }
-      }
-      @keyframes chartFadeUpB{
+      @keyframes chartFadeUp{anim_seq}{{
         from{ opacity:0; transform: translateY(10px) scale(0.995); }
         to{ opacity:1; transform: translateY(0) scale(1); }
       }
@@ -250,6 +242,7 @@ def inject_theme():
         right: 6px;
         z-index: 5;
         pointer-events: auto;
+        margin: 0 !important;
       }
       div[class*="st-key-brand_logo_item_"] .stButton button{
         width: 36px;
@@ -264,6 +257,7 @@ def inject_theme():
       div[class*="st-key-brand_logo_item_"] .brand-pill{
         position: relative;
         z-index: 1;
+        pointer-events: none;
       }
       .brand-label{
         font-size: 13px;
@@ -450,15 +444,13 @@ def inject_theme():
       }
       /* Sidebar branding card */
       section[data-testid="stSidebar"] div.st-key-brand_card{
-        margin: 6px 0 18px 0;
+        margin: 18px 0 0 0;
         padding: 12px;
         border-radius: 14px;
         background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
         border: 1px solid rgba(148,163,184,.18);
         box-shadow: 0 12px 26px rgba(0,0,0,.28);
-        position: sticky;
-        bottom: 16px;
-        z-index: 1;
+        margin-top: auto;
       }
       section[data-testid="stSidebar"] .brand-title{
         font-size: 12px;
@@ -475,7 +467,28 @@ def inject_theme():
         margin: 2px 0 6px 0;
       }
       section[data-testid="stSidebarContent"]{
-        padding-bottom: 140px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      section[data-testid="stSidebarUserContent"]{
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      section[data-testid="stSidebarUserContent"] > div{
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      section[data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"]{
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      section[data-testid="stSidebar"] .sidebar-spacer{
+        flex: 1 1 auto;
+        min-height: 24px;
       }
       section[data-testid="stSidebar"] .brand-preview{
         width: 100%;
@@ -787,10 +800,6 @@ def inject_theme():
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
-    st.markdown(
-        f"<script>document.documentElement.setAttribute('data-plotly-anim','{anim_flag}');</script>",
-        unsafe_allow_html=True,
-    )
     st.markdown('<div class="app-bg"></div>', unsafe_allow_html=True)
 
 
