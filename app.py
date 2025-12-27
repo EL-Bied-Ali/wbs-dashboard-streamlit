@@ -1,4 +1,5 @@
 from datetime import datetime, date
+from time import perf_counter
 from pathlib import Path
 from typing import Any
 import html
@@ -102,6 +103,19 @@ def _excel_template_bytes():
         if path.exists():
             return path.read_bytes(), path.name
     return None, None
+
+def _time_call(func, *args, **kwargs):
+    start = perf_counter()
+    result = func(*args, **kwargs)
+    return result, (perf_counter() - start) * 1000.0
+
+def _render_perf_stats(stats: dict[str, float]) -> None:
+    if not stats:
+        st.sidebar.caption("No timings captured yet.")
+        return
+    st.sidebar.markdown("**Perf timings (ms)**")
+    for label, value in stats.items():
+        st.sidebar.markdown(f"- {label}: {value:.1f}")
 
 def _file_cache_key(path: str | None) -> tuple[float, int] | None:
     if not path:
@@ -1105,13 +1119,20 @@ _maybe_open_mapping_dialog(shared_path)
 
 # Apply theme for both local pages
 inject_theme()
+show_perf = st.sidebar.toggle("Show perf timings", value=False, key="show_perf")
+perf_stats: dict[str, float] = {}
 
 # ---------- Data (dashboard) ----------
 excel_data = None
 selected_sheet = None
 if page == "Dashboard" and shared_path:
     try:
-        excel_data = _cached_load_from_excel(shared_path, file_cache_key)
+        (excel_data, ms) = _time_call(
+            _cached_load_from_excel,
+            shared_path,
+            file_cache_key,
+        )
+        perf_stats["excel_load"] = ms
     except Exception as e:
         st.sidebar.warning(f"Excel read error: {e}")
 
@@ -1126,18 +1147,22 @@ activity_filter = None
 
 if shared_path:
     try:
-        schedule_lookup, schedule_info_dash = _cached_schedule_lookup(
+        (schedule_lookup, schedule_info_dash), ms = _time_call(
+            _cached_schedule_lookup,
             shared_path,
             file_cache_key,
             column_mapping=st.session_state.get("column_mapping"),
             today_key=today_cache_key,
         )
-        activity_rows = _cached_preview_rows(
+        perf_stats["schedule_lookup"] = ms
+        (activity_rows, ms) = _time_call(
+            _cached_preview_rows,
             shared_path,
             file_cache_key,
             True,
             column_mapping=st.session_state.get("column_mapping"),
         )
+        perf_stats["preview_rows"] = ms
     except Exception as e:
         st.sidebar.warning(f"Excel read error: {e}")
 
@@ -1389,13 +1414,15 @@ def render_dashboard():
             )
         if shared_path and selected_row:
             activity_key = selected_row.get("activity_id") or selected_row.get("label", "")
-            weekly_series, weekly_info = _cached_weekly_progress(
+            (weekly_series, weekly_info), ms = _time_call(
+                _cached_weekly_progress,
                 shared_path,
                 file_cache_key,
                 activity_key,
                 column_mapping=st.session_state.get("column_mapping"),
                 today_key=today_cache_key,
             )
+            perf_stats["weekly_progress_dashboard"] = ms
             if weekly_series:
                 local_weekly_progress = weekly_series
                 local_current_week = (
@@ -1606,13 +1633,15 @@ def render_s_curve_page():
             selected_row = activity_filter["activity_rows_map"].get(selected_key)
         if shared_path and selected_row:
             activity_key = selected_row.get("activity_id") or selected_row.get("label", "")
-            weekly_series, weekly_info = _cached_weekly_progress(
+            (weekly_series, weekly_info), ms = _time_call(
+                _cached_weekly_progress,
                 shared_path,
                 file_cache_key,
                 activity_key,
                 column_mapping=st.session_state.get("column_mapping"),
                 today_key=today_cache_key,
             )
+            perf_stats["weekly_progress_scurve"] = ms
 
         if weekly_series:
             x = [row.get("week_date") for row in weekly_series]
@@ -1859,3 +1888,6 @@ if page == "Dashboard":
     render_dashboard()
 elif page == "S-Curve":
     render_s_curve_page()
+
+if show_perf:
+    _render_perf_stats(perf_stats)
