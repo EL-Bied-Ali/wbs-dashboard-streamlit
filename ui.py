@@ -19,7 +19,9 @@ def inject_theme():
         --danger:#f97070;
         --radius:14px;
         --header-logo-size:200px;
-        --pulse-hero-offset:40px;
+        --header-logo-right:0px;
+        --header-logo-shift:0px;
+        --pulse-hero-offset:80px;
         --shadow:0 16px 40px rgba(0,0,0,0.45);
         --ui-zoom:1;
       }
@@ -343,11 +345,16 @@ def inject_theme():
       div.st-key-brand_logo_row{
         position: absolute;
         top: var(--pulse-hero-offset);
-        right: -12px;
+        right: var(--header-logo-right);
         left: auto !important;
-        width: auto !important;
+        width: fit-content !important;
         margin: 0 !important;
         z-index: 4;
+        transform: translateX(var(--header-logo-shift));
+      }
+      div.st-key-brand_logo_row > div[data-testid="stHorizontalBlock"]{
+        width: fit-content !important;
+        display: inline-flex !important;
       }
       div[class*="st-key-brand_logo_item_"]{
         position: relative;
