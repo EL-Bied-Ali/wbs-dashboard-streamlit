@@ -119,6 +119,19 @@ def inject_theme():
         transform-box: fill-box;
         animation: pointPop__ANIM_SEQ__ 700ms cubic-bezier(.22,.7,.2,1) both;
       }
+      .stPlotlyChart .main-svg .pie .slice path{
+        transform-origin: center;
+        transform-box: fill-box;
+        animation: pieGrow__ANIM_SEQ__ 900ms cubic-bezier(.22,.7,.2,1) both;
+      }
+      .stPlotlyChart .main-svg .indicator path{
+        transform-origin: center;
+        transform-box: fill-box;
+        animation: gaugeSweep__ANIM_SEQ__ 900ms cubic-bezier(.22,.7,.2,1) both;
+      }
+      .stPlotlyChart .main-svg .indicator text{
+        animation: valuePop__ANIM_SEQ__ 700ms cubic-bezier(.22,.7,.2,1) both;
+      }
       @keyframes chartFadeUp__ANIM_SEQ__{
         from{ opacity:0; transform: translateY(10px) scale(0.995); }
         to{ opacity:1; transform: translateY(0) scale(1); }
@@ -134,11 +147,26 @@ def inject_theme():
         from{ opacity:0; transform: scale(0.3); }
         to{ opacity:1; transform: scale(1); }
       }
+      @keyframes pieGrow__ANIM_SEQ__{
+        from{ opacity:0; transform: scale(0.6); }
+        to{ opacity:1; transform: scale(1); }
+      }
+      @keyframes gaugeSweep__ANIM_SEQ__{
+        from{ opacity:0; transform: scaleX(0.2); }
+        to{ opacity:1; transform: scaleX(1); }
+      }
+      @keyframes valuePop__ANIM_SEQ__{
+        from{ opacity:0; transform: translateY(6px) scale(0.98); }
+        to{ opacity:1; transform: translateY(0) scale(1); }
+      }
       @media (prefers-reduced-motion: reduce){
         .stPlotlyChart{ animation: none !important; }
         .stPlotlyChart .main-svg .trace .bars path,
         .stPlotlyChart .main-svg .trace .lines path,
-        .stPlotlyChart .main-svg .trace .points path{
+        .stPlotlyChart .main-svg .trace .points path,
+        .stPlotlyChart .main-svg .pie .slice path,
+        .stPlotlyChart .main-svg .indicator path,
+        .stPlotlyChart .main-svg .indicator text{
           animation: none !important;
         }
       }
@@ -516,10 +544,17 @@ def inject_theme():
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
+        height: 100%;
       }
       section[data-testid="stSidebar"] .sidebar-spacer{
         flex: 1 1 auto;
         min-height: 24px;
+      }
+      section[data-testid="stSidebar"] div[data-testid="stLayoutWrapper"]:has(.st-key-brand_card),
+      section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-brand_card),
+      section[data-testid="stSidebar"] .st-key-brand_card{
+        order: 999;
+        margin-top: auto !important;
       }
       section[data-testid="stSidebar"] .brand-preview{
         width: 100%;
