@@ -903,6 +903,41 @@ def inject_theme():
         color: var(--muted);
         margin: 0 0 8px 0;
       }
+      .pulse-hero{
+        position: relative;
+        --glow-height: 120%;
+        background: linear-gradient(180deg, rgba(22,29,58,.96), rgba(13,19,48,.92));
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) + 6px);
+        box-shadow: var(--shadow);
+        padding: 18px 18px 12px;
+        margin: 12px 8px 18px 8px;
+        overflow: hidden;
+      }
+      .pulse-hero::before{
+        content: "";
+        position: absolute;
+        inset: -15% -10% -15% -10%;
+        height: var(--glow-height);
+        background:
+          radial-gradient(520px 240px at 12% 0%, rgba(75,111,244,.20), transparent 60%),
+          radial-gradient(520px 240px at 88% 10%, rgba(47,193,146,.16), transparent 62%),
+          radial-gradient(640px 280px at 50% 90%, rgba(75,111,244,.14), transparent 70%);
+        pointer-events: none;
+      }
+      .pulse-hero > *{
+        position: relative;
+        z-index: 1;
+      }
+      div[data-testid="stVerticalBlock"]:has(.pulse-hero){
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+      }
+      div[data-testid="stVerticalBlock"]:has(.pulse-hero)::before{
+        content: none;
+      }
       .scurve-hero-chart-title{
         font-size: 17px;
         font-weight: 700;

@@ -1459,8 +1459,10 @@ def render_dashboard():
     with header_cols[0]:
         st.markdown(
             """
-            <div class="scurve-hero-title">▸ Progress Pulse</div>
-            <div class="scurve-hero-sub">Planned vs actual status and schedule health</div>
+            <div class="pulse-hero">
+              <div class="scurve-hero-title">▸ Progress Pulse</div>
+              <div class="scurve-hero-sub">Planned vs actual status and schedule health</div>
+            </div>
             """,
             unsafe_allow_html=True,
         )
