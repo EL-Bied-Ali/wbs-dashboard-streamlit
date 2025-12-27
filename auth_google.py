@@ -117,6 +117,7 @@ def brand_strip_html(variant: str = "page") -> str:
     return f'<div class="brand-strip brand-strip--{safe_variant}">{"".join(items)}</div>'
 
 
+
 def _save_custom_logo(role: str, uploaded) -> None:
     if uploaded is None:
         return
@@ -128,6 +129,12 @@ def _save_custom_logo(role: str, uploaded) -> None:
             existing.unlink()
     target = _get_custom_logo_dir() / f"{role}_logo{ext}"
     target.write_bytes(uploaded.getvalue())
+
+
+def _remove_custom_logo(role: str) -> None:
+    for path in _custom_logo_candidates(role):
+        if path.exists():
+            path.unlink()
 
 
 def _get_setting(key: str, default: str | None = None) -> str | None:
@@ -172,6 +179,16 @@ def _query_value(params: dict[str, Any], key: str) -> str | None:
     if isinstance(val, list):
         return val[0] if val else None
     return val
+
+
+def _bypass_user_from_env() -> dict[str, Any] | None:
+    raw = (_get_setting("AUTH_BYPASS") or "").strip().lower()
+    if raw not in {"1", "true", "yes"}:
+        return None
+    email = _get_setting("AUTH_BYPASS_EMAIL", "local@dev") or "local@dev"
+    name = _get_setting("AUTH_BYPASS_NAME", "Local Dev") or "Local Dev"
+    picture = _get_setting("AUTH_BYPASS_PICTURE", "") or ""
+    return {"email": email, "name": name, "picture": picture, "bypass": True}
 
 
 def _clear_query_params() -> None:
@@ -479,16 +496,17 @@ def _render_home_screen(
         }
 
         .brand-strip--hero .brand-pill {
-            height: 68px;
-            min-width: 68px;
-            padding: 0.6rem 1.1rem;
+            height: 252px;
+            min-width: 252px;
+            padding: 0.5rem 0.8rem;
+            border-radius: 32px;
         }
 
         .brand-pill {
-            height: 56px;
-            min-width: 56px;
-            padding: 0.45rem 0.9rem;
-            border-radius: 12px;
+            height: 216px;
+            min-width: 216px;
+            padding: 0.5rem 0.8rem;
+            border-radius: 28px;
             border: 1px solid var(--line);
             background: rgba(15, 23, 42, 0.6);
             box-shadow: 0 12px 24px rgba(8, 12, 32, 0.35);
@@ -767,6 +785,11 @@ def _render_login_screen(auth_url: str) -> None:
 
 
 def require_login() -> dict[str, Any]:
+    bypass_user = _bypass_user_from_env()
+    if bypass_user:
+        st.session_state[SESSION_KEY] = bypass_user
+        return bypass_user
+
     if st.session_state.pop("_force_home", False):
         try:
             st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
@@ -882,39 +905,41 @@ def render_auth_sidebar(
                 logout()
                 _rerun()
         if show_branding:
-            with st.container(key="brand_card"):
-                st.markdown(
-                    '<div class="brand-title">Branding</div>',
-                    unsafe_allow_html=True,
-                )
-                cols = st.columns(2, gap="small")
-                for col, role, label in (
-                    (cols[0], "company", "Company"),
-                    (cols[1], "client", "Client"),
-                ):
-                    with col:
-                        preview_slot = st.empty()
-                        uploaded = st.file_uploader(
-                            f"Upload {label} logo",
-                            type=["png", "jpg", "jpeg", "svg"],
-                            key=f"logo_upload_{role}",
-                            label_visibility="collapsed",
-                        )
-                        if uploaded is not None:
-                            file_key = f"{uploaded.name}:{uploaded.size}"
-                            state_key = f"_logo_upload_{role}_key"
-                            if st.session_state.get(state_key) != file_key:
-                                _save_custom_logo(role, uploaded)
-                                st.session_state[state_key] = file_key
-                        logo = _custom_logo_data_uri(role)
-                        if logo:
-                            preview_slot.markdown(
-                                f'<div class="brand-preview"><img src="{logo}" '
-                                f'alt="{label} logo" /></div>',
+            company_logo = _custom_logo_data_uri("company")
+            client_logo = _custom_logo_data_uri("client")
+            missing_roles: list[tuple[str, str]] = []
+            if not company_logo:
+                missing_roles.append(("company", "Company"))
+            if not client_logo:
+                missing_roles.append(("client", "Client"))
+            if missing_roles:
+                st.markdown('<div class="sidebar-spacer"></div>', unsafe_allow_html=True)
+                with st.container(key="brand_card"):
+                    st.markdown(
+                        '<div class="brand-title">Branding</div>',
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        '<div class="brand-note">To remove an existing logo, click the center of its logo tile.</div>',
+                        unsafe_allow_html=True,
+                    )
+                    cols = st.columns(len(missing_roles), gap="small")
+                    for col, (role, label) in zip(cols, missing_roles):
+                        with col:
+                            st.markdown(
+                                f'<div class="brand-label">{html.escape(label)} logo</div>',
                                 unsafe_allow_html=True,
                             )
-                        else:
-                            preview_slot.markdown(
-                                f'<div class="brand-preview placeholder">{label}</div>',
-                                unsafe_allow_html=True,
+                            uploaded = st.file_uploader(
+                                f"Upload {label} logo",
+                                type=["png", "jpg", "jpeg", "svg"],
+                                key=f"logo_upload_{role}",
+                                label_visibility="collapsed",
                             )
+                            if uploaded is not None:
+                                file_key = f"{uploaded.name}:{uploaded.size}"
+                                state_key = f"_logo_upload_{role}_key"
+                                if st.session_state.get(state_key) != file_key:
+                                    _save_custom_logo(role, uploaded)
+                                    st.session_state[state_key] = file_key
+                                    _rerun()
