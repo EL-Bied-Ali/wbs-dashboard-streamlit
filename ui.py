@@ -252,7 +252,7 @@ def inject_theme():
       .metric .sub{ color:var(--muted); font-size:12px; }
 
       .page-header{ display:flex; flex-direction:column; gap:2px; margin:12px 8px 18px 8px; padding:0 4px; }
-      .page-header .title{ font-size:66px; font-weight:800; color:var(--text); font-family:'Space Grotesk','DM Sans',sans-serif; letter-spacing:0.3px; }
+      .page-header .title{ font-size:66px; font-weight:800; color:var(--text); font-family:'Space Grotesk','DM Sans',sans-serif; letter-spacing:0.3px; margin-top:8px; }
       .muted{ color:var(--muted); font-size:14px; }
       .page-header--brand{ flex-direction: column; gap: 6px; }
       .page-header--brand .page-header-main{ display:flex; flex-direction:column; gap:2px; }
