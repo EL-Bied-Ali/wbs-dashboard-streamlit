@@ -18,7 +18,8 @@ def inject_theme():
         --accent-3:#4b6ff4;
         --danger:#f97070;
         --radius:14px;
-        --header-logo-size:140px;
+        --header-logo-size:200px;
+        --pulse-hero-offset:26px;
         --shadow:0 16px 40px rgba(0,0,0,0.45);
         --ui-zoom:1;
       }
@@ -311,8 +312,11 @@ def inject_theme():
       .brand-pill--header{
         height:var(--header-logo-size);
         min-width:var(--header-logo-size);
-        padding:10px 12px;
-        border-radius:20px;
+        padding:0;
+        border-radius:18px;
+        border:none;
+        background: transparent;
+        box-shadow: none;
       }
 
       div.st-key-brand_logo_row > div[data-testid="stHorizontalBlock"]{
@@ -329,6 +333,19 @@ def inject_theme():
       div.st-key-brand_logo_row div[data-testid="stColumn"]{
         flex: 0 0 auto !important;
         min-width: 0 !important;
+      }
+      div[data-testid="stHorizontalBlock"]:has(.pulse-hero){
+        position: relative;
+      }
+      div[data-testid="stHorizontalBlock"]:has(.brand-pill--header){
+        min-height: calc(var(--header-logo-size) + var(--pulse-hero-offset) + 18px);
+      }
+      div.st-key-brand_logo_row{
+        position: absolute;
+        top: var(--pulse-hero-offset);
+        right: 8px;
+        margin: 0 !important;
+        z-index: 4;
       }
       div[class*="st-key-brand_logo_item_"]{
         position: relative;
@@ -912,7 +929,7 @@ def inject_theme():
         border-radius: calc(var(--radius) + 6px);
         box-shadow: var(--shadow);
         padding: 18px 18px 12px;
-        margin: 26px 8px 18px 8px;
+        margin: var(--pulse-hero-offset) 8px 18px 8px;
         overflow: hidden;
       }
       .pulse-hero::before{
