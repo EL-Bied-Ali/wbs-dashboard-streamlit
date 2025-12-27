@@ -14,7 +14,7 @@ sys.path = [str(ROOT), str(WBS_DIR)] + [p for p in sys.path if p not in (str(ROO
 
 try:
     # Execute the standalone WBS app script; it sets page config and renders its UI.
-    runpy.run_path(WBS_DIR / "wbs_app.py", run_name="__main__")
+    runpy.run_path(str(WBS_DIR / "wbs_app.py"), run_name="__main__")
 finally:
     # Restore path and drop any accidental module shadowing.
     sys.path = _orig_sys_path

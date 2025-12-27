@@ -1,7 +1,16 @@
 # charts.py – figures Plotly
 import plotly.graph_objects as go
 
-def s_curve(x, weekly_actual, actual_curve, planned_curve, forecast_curve):
+def s_curve(
+    x,
+    weekly_actual,
+    actual_curve,
+    planned_curve,
+    forecast_curve,
+    planned_hover=None,
+    actual_hover=None,
+    forecast_hover=None,
+):
     fig = go.Figure()
     fig.add_bar(
         x=x,
@@ -19,7 +28,12 @@ def s_curve(x, weekly_actual, actual_curve, planned_curve, forecast_curve):
             mode="lines+markers",
             line=dict(width=3, color="#2fc192"),
             marker=dict(size=6),
-            hovertemplate="%{x|%d %b %Y}<br>Actual: %{y:.1f}%<extra></extra>",
+            customdata=actual_hover,
+            hovertemplate=(
+                "%{x|%d %b %Y}<br>Actual: %{customdata}<extra></extra>"
+                if actual_hover is not None
+                else "%{x|%d %b %Y}<br>Actual: %{y:.1f}%<extra></extra>"
+            ),
         )
     )
     fig.add_trace(
@@ -29,7 +43,12 @@ def s_curve(x, weekly_actual, actual_curve, planned_curve, forecast_curve):
             name="Planned Progress %",
             mode="lines",
             line=dict(width=3, color="#4b6ff4"),
-            hovertemplate="%{x|%d %b %Y}<br>Planned: %{y:.1f}%<extra></extra>",
+            customdata=planned_hover,
+            hovertemplate=(
+                "%{x|%d %b %Y}<br>Planned: %{customdata}<extra></extra>"
+                if planned_hover is not None
+                else "%{x|%d %b %Y}<br>Planned: %{y:.1f}%<extra></extra>"
+            ),
         )
     )
     fig.add_trace(
@@ -39,7 +58,12 @@ def s_curve(x, weekly_actual, actual_curve, planned_curve, forecast_curve):
             name="Forecast Progress %",
             mode="lines",
             line=dict(width=3, dash="dot", color="#e9c75f"),
-            hovertemplate="%{x|%d %b %Y}<br>Forecast: %{y:.1f}%<extra></extra>",
+            customdata=forecast_hover,
+            hovertemplate=(
+                "%{x|%d %b %Y}<br>Forecast: %{customdata}<extra></extra>"
+                if forecast_hover is not None
+                else "%{x|%d %b %Y}<br>Forecast: %{y:.1f}%<extra></extra>"
+            ),
         )
     )
     fig.update_layout(

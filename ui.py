@@ -17,37 +17,69 @@ def inject_theme():
         --danger:#f97070;
         --radius:14px;
         --shadow:0 16px 40px rgba(0,0,0,0.45);
-        --ui-zoom:0.96;
-      }
-      html, body, [data-testid="stAppViewContainer"]{
-        zoom:var(--ui-zoom);
+        --ui-zoom:1;
       }
       body, [data-testid="stAppViewContainer"], .main{
         background:var(--bg);
         color:var(--text);
         font-family: 'Inter','Segoe UI',sans-serif;
-        font-size:16px;
+        font-size:15px;
       }
       .block-container{ padding:18px 24px 40px 24px; }
       header,[data-testid="stToolbar"]{ background:transparent !important; }
       [data-testid="stSidebar"]{ background:var(--bg) !important; }
 
       .card{
-        background:var(--card);
+        position: relative;
+        --glow-height: min(55%, calc(2.8em + 32px));
+        background: linear-gradient(180deg, rgba(22,29,58,.96), rgba(13,19,48,.92));
         border:1px solid var(--border);
         border-radius:var(--radius);
         box-shadow:var(--shadow);
         padding:10px 12px;
+        overflow: hidden;
+      }
+      .card::before{
+        content:"";
+        position:absolute;
+        inset:-12% -10% auto -10%;
+        height:var(--glow-height);
+        background:
+          radial-gradient(520px 240px at 12% 0%, rgba(75,111,244,.20), transparent 60%),
+          radial-gradient(520px 240px at 88% 10%, rgba(47,193,146,.16), transparent 62%);
+        opacity:.9;
+        pointer-events:none;
+      }
+      .card > *{
+        position: relative;
+        z-index: 1;
       }
       .chart-card{ padding:8px 10px; overflow:hidden; }
       .chart-heading{ font-size:16px; font-weight:700; color:var(--text); margin:0 0 8px 0; }
       div[data-testid="stVerticalBlock"]:has(.chart-heading){
-        background:var(--card);
+        position: relative;
+        --glow-height: min(55%, calc(2.8em + 32px));
+        background: linear-gradient(180deg, rgba(22,29,58,.96), rgba(13,19,48,.92));
         border:1px solid var(--border);
         border-radius:var(--radius);
         box-shadow:var(--shadow);
         padding:0;
         overflow:hidden;
+      }
+      div[data-testid="stVerticalBlock"]:has(.chart-heading)::before{
+        content:"";
+        position:absolute;
+        inset:-12% -10% auto -10%;
+        height:var(--glow-height);
+        background:
+          radial-gradient(520px 240px at 12% 0%, rgba(75,111,244,.20), transparent 60%),
+          radial-gradient(520px 240px at 88% 10%, rgba(47,193,146,.16), transparent 62%);
+        opacity:.9;
+        pointer-events:none;
+      }
+      div[data-testid="stVerticalBlock"]:has(.chart-heading) > *{
+        position: relative;
+        z-index: 1;
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading) .chart-heading{
         padding:12px 14px 4px 14px;
@@ -116,6 +148,40 @@ def inject_theme():
       .page-header{ display:flex; flex-direction:column; gap:2px; margin:12px 8px 18px 8px; padding:0 4px; }
       .page-header .title{ font-size:22px; font-weight:800; color:var(--text); }
       .muted{ color:var(--muted); font-size:14px; }
+      .page-header--brand{ flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 16px; }
+      .page-header--brand .page-header-main{ display:flex; flex-direction:column; gap:2px; }
+
+      .brand-row{
+        display:flex;
+        justify-content:flex-end;
+        margin: 6px 0 14px 0;
+      }
+      .brand-strip{
+        display:flex;
+        align-items:center;
+        gap:8px;
+      }
+      .brand-pill{
+        height:56px;
+        min-width:56px;
+        padding:8px 16px;
+        border-radius:12px;
+        border:1px solid rgba(148,163,184,.18);
+        background: rgba(15,23,42,.55);
+        box-shadow: 0 12px 26px rgba(0,0,0,.25);
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+      }
+      .brand-pill img{
+        height:100%;
+        width:auto;
+        object-fit:contain;
+      }
+      .brand-strip--hero .brand-pill{
+        height:68px;
+        padding:10px 20px;
+      }
 
       /* Prevent plotly overflow */
       .stPlotlyChart, .js-plotly-plot, .plot-container{ width:100% !important; max-width:100% !important; }
@@ -154,53 +220,261 @@ def inject_theme():
         min-width: 320px;
         flex: 1 1 320px !important;
       }
-      /* Left sidebar: larger nav + labels, custom names with emojis */
+      /* Left sidebar: modern nav + pages */
       section[data-testid="stSidebar"]{
-        font-size: 20px;
+        font-size: 16px;
       }
       section[data-testid="stSidebar"] [data-testid="stSidebarNav"]{
         display: none !important;
       }
-      section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]{
-        font-size: 28px !important;
-        font-weight: 800;
-        line-height: 1.1;
-        display: block;
-        padding: 4px 0 !important;
-      }
-      section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] [data-testid="stMarkdownContainer"] p{
-        font-size: 28px !important;
-        font-weight: 800;
-        line-height: 1.1;
-        margin: 0 !important;
-      }
       section[data-testid="stSidebar"] .sidebar-nav-title{
-        font-size: 34px !important;
-        font-weight: 800;
-        line-height: 1.1;
-        margin: 0 0 14px 0;
+        font-size: 12px !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(157,168,198,.85);
+        margin: 6px 0 10px 0;
       }
       section[data-testid="stSidebar"] [data-testid="stPageLink"]{
-        margin: 2px 0 6px 0 !important;
+        margin: 6px 0 !important;
+      }
+      section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px !important;
+        border-radius: 12px;
+        border: 1px solid rgba(148,163,184,.18);
+        background: rgba(15,23,42,.55);
+        box-shadow: 0 10px 24px rgba(0,0,0,.25);
+        font-size: 20px !important;
+        font-weight: 700;
+        line-height: 1.1;
+        transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+      }
+      section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"][aria-current="page"]{
+        border-color: rgba(75,111,244,.65);
+        background: rgba(75,111,244,.18);
+        box-shadow: 0 10px 26px rgba(18, 40, 110, .35);
+      }
+      section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]:hover{
+        border-color: rgba(96,165,250,.5);
+        background: rgba(30,41,59,.7);
+      }
+      section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] [data-testid="stMarkdownContainer"] p{
+        font-size: 20px !important;
+        font-weight: 700;
+        line-height: 1.1;
+        margin: 0 !important;
       }
       section[data-testid="stSidebar"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
         margin: 0 !important;
         padding: 0 !important;
       }
-      section[data-testid="stSidebar"] [data-testid="stFileUploader"]{
-        margin: 12px 0 14px 0 !important;
+      /* Sidebar auth card */
+      section[data-testid="stSidebar"] div.st-key-auth_card{
+        margin: 6px 0 18px 0;
+        padding: 12px 54px 18px 12px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
+        border: 1px solid rgba(148,163,184,.18);
+        box-shadow: 0 12px 26px rgba(0,0,0,.28);
+        position: relative;
       }
-      section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]{
-        min-height: 140px;
-        padding-top: 16px;
-        padding-bottom: 16px;
+      section[data-testid="stSidebar"] div.st-key-auth_card [data-testid="column"]{
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+      section[data-testid="stSidebar"] .auth-title{
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(157,168,198,.85);
+        margin-bottom: 8px;
+      }
+      section[data-testid="stSidebar"] .auth-row{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      section[data-testid="stSidebar"] .auth-avatar{
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 1px solid rgba(148,163,184,.3);
+        box-shadow: 0 6px 14px rgba(0,0,0,.25);
+      }
+      section[data-testid="stSidebar"] .auth-avatar.placeholder{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(75,111,244,.18);
+        color: var(--text);
+        font-weight: 800;
+      }
+      section[data-testid="stSidebar"] .auth-meta{
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      section[data-testid="stSidebar"] .auth-name{
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--text);
+      }
+      section[data-testid="stSidebar"] .auth-email{
+        font-size: 12px;
+        color: var(--muted);
+        word-break: break-word;
+      }
+      section[data-testid="stSidebar"] div.st-key-auth_card div.st-key-auth_logout_btn{
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      section[data-testid="stSidebar"] div.st-key-auth_card div.st-key-auth_logout_btn .stButton{
+        display: flex;
+        justify-content: flex-end;
+      }
+      section[data-testid="stSidebar"] div.st-key-auth_card div.st-key-auth_logout_btn .stButton button{
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        border: 1px solid rgba(148,163,184,.3) !important;
+        background: rgba(15,23,42,.7) !important;
+        color: var(--text) !important;
+        font-weight: 700 !important;
+        font-size: 16px !important;
+        line-height: 1 !important;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+      }
+      section[data-testid="stSidebar"] div.st-key-auth_card div.st-key-auth_logout_btn .stButton button:hover{
+        border-color: rgba(96,165,250,.6) !important;
+        background: rgba(30,41,59,.9) !important;
+      }
+      /* Sidebar branding card */
+      section[data-testid="stSidebar"] div.st-key-brand_card{
+        margin: 6px 0 18px 0;
+        padding: 12px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
+        border: 1px solid rgba(148,163,184,.18);
+        box-shadow: 0 12px 26px rgba(0,0,0,.28);
+      }
+      section[data-testid="stSidebar"] .brand-title{
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(157,168,198,.85);
+        margin-bottom: 10px;
+      }
+      section[data-testid="stSidebar"] .brand-preview{
+        width: 100%;
+        height: 64px;
+        border-radius: 10px;
+        border: 1px dashed rgba(148,163,184,.28);
+        background: rgba(15,23,42,.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      section[data-testid="stSidebar"] .brand-preview img{
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+      section[data-testid="stSidebar"] .brand-preview.placeholder{
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+      section[data-testid="stSidebar"] div.st-key-brand_card [data-testid="stFileUploader"]{
+        margin-top: 8px;
+      }
+      section[data-testid="stSidebar"] div.st-key-brand_card [data-testid="stFileUploaderDropzone"]{
+        padding: 6px 8px;
+        min-height: 40px;
+        border-radius: 10px;
+      }
+      section[data-testid="stSidebar"] div.st-key-brand_card [data-testid="stFileUploaderDropzoneInstructions"]{
+        display: none;
+      }
+      section[data-testid="stSidebar"] div.st-key-brand_card [data-testid="stBaseButton-secondary"]{
+        width: 100%;
+      }
+      section[data-testid="stSidebar"] .stRadio [data-testid="stWidgetLabel"] p{
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(157,168,198,.85);
+        margin: 12px 0 8px 0;
+      }
+      section[data-testid="stSidebar"] .stRadio [role="radiogroup"][aria-label="Pages"]{
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      section[data-testid="stSidebar"] .stRadio [role="radiogroup"][aria-label="Pages"] label[data-baseweb="radio"]{
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,.16);
+        background: rgba(15,23,42,.45);
+        transition: border-color .2s ease, background .2s ease;
+      }
+      section[data-testid="stSidebar"] .stRadio [role="radiogroup"][aria-label="Pages"] label[data-baseweb="radio"] > div:first-child{
+        display: none;
+      }
+      section[data-testid="stSidebar"] .stRadio [role="radiogroup"][aria-label="Pages"] label[data-baseweb="radio"]:has(input:checked){
+        border-color: rgba(75,111,244,.55);
+        background: rgba(75,111,244,.16);
+      }
+      section[data-testid="stSidebar"] .stRadio [role="radiogroup"][aria-label="Pages"] label[data-baseweb="radio"]:hover{
+        border-color: rgba(96,165,250,.45);
+        background: rgba(30,41,59,.6);
+      }
+      section[data-testid="stSidebar"] .stRadio [role="radiogroup"][aria-label="Pages"] [data-testid="stMarkdownContainer"] p{
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
       }
       section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
-        font-size: 22px;
+        font-size: 16px;
         font-weight: 700;
       }
-      section[data-testid="stSidebar"] .stRadio [data-testid="stMarkdownContainer"] p{
-        font-size: 22px;
+      section[data-testid="stSidebar"] [data-testid="stSelectbox"]{
+        background: rgba(15,23,42,.45);
+        border: 1px solid rgba(148,163,184,.16);
+        border-radius: 12px;
+        padding: 8px 10px;
+        box-shadow: 0 10px 22px rgba(0,0,0,.25);
+      }
+      section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-testid="stWidgetLabel"] p{
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(157,168,198,.85);
+        margin: 0 0 6px 0;
+      }
+      section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"]{
+        background: transparent;
+      }
+      section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] [value]{
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
       }
       @media (max-width: 900px){
         div[data-testid="stColumn"]{
@@ -208,6 +482,207 @@ def inject_theme():
           flex: 1 1 260px !important;
         }
       }
+    
+      
+      /* Activity tree in sidebar */
+      section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .tree-title{
+        font-size: 18px; font-weight: 700; color: var(--muted);
+        margin: 8px 0 6px 0;
+      }
+      section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stElementContainer{
+        width: 100% !important;
+      }
+      section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton{
+        margin: 4px 0;
+        width: 100%;
+      }
+      section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton button{
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        text-align: left;
+        white-space: pre;
+        padding: 6px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,.18);
+        background: rgba(15,23,42,.45);
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton button > div{
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+      }
+      section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] [data-testid="stMarkdownContainer"]{
+        width: 100%;
+        text-align: left;
+      }
+      section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton button:hover{
+        border-color: rgba(125,211,252,.6);
+        background: rgba(30,41,59,.6);
+      }
+      section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton button:focus{
+        outline: none;
+        box-shadow: inset 0 0 0 1px rgba(96,165,250,.35);
+        border-color: rgba(96,165,250,.8);
+      }
+      .gauge-help{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,.35);
+        background: rgba(15,23,42,.6);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: none;
+        margin: 0 4px 2px 0;
+        cursor: help;
+        transition: border-color .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+      }
+      .gauge-help:hover{
+        color: var(--text);
+        border-color: rgba(96,165,250,.6);
+        background: rgba(75,111,244,.22);
+        box-shadow: 0 6px 16px rgba(0,0,0,.25);
+      }
+      .info-badge{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,.45);
+        background: linear-gradient(180deg, rgba(75,111,244,.25), rgba(15,23,42,.75));
+        color: #c9d6ff;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: none;
+        margin-left: 6px;
+        vertical-align: middle;
+        box-shadow: 0 2px 6px rgba(0,0,0,.25);
+        cursor: help;
+        transition: border-color .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+      }
+      .info-badge:hover{
+        color: #f8fbff;
+        border-color: rgba(96,165,250,.7);
+        background: linear-gradient(180deg, rgba(96,165,250,.35), rgba(15,23,42,.7));
+        box-shadow: 0 6px 16px rgba(0,0,0,.3);
+      }
+      .filter-title{
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      div[data-testid="stVerticalBlock"]:has(.filter-title){
+        background: rgba(15,23,42,.55);
+        border: 1px solid rgba(148,163,184,.16);
+        border-radius: 14px;
+        padding: 10px 12px 6px;
+        margin: 8px 0 10px;
+      }
+      div[data-testid="stVerticalBlock"]:has(.filter-title) [data-testid="stSelectbox"]{
+        width: 100%;
+      }
+      div[data-testid="stVerticalBlock"]:has(.filter-title) [data-baseweb="select"]{
+        max-width: 100%;
+      }
+      div[data-testid="stVerticalBlock"]:has(.filter-title) [data-baseweb="select"] [value]{
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      div[data-testid="stVerticalBlock"]:has(.filter-title) [data-baseweb="select"] input{
+        max-width: 100%;
+      }
+      div[class*="st-key-activity_select"]{
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 10px 12px;
+      }
+      div[class*="st-key-activity_select"] [data-testid="stWidgetLabel"] p{
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: 0.1px;
+        line-height: 1.1;
+        margin: 0 0 6px 0;
+      }
+      div[class*="st-key-activity_select"] [data-baseweb="select"] div[value]{
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--text);
+        line-height: 1.1;
+      }
+      div[class*="st-key-activity_select"] [data-baseweb="select"] input{
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--text);
+      }
+      div[data-testid="stVerticalBlock"]:has(.scurve-hero-title){
+        position: relative;
+        --glow-height: 120%;
+        background: linear-gradient(180deg, rgba(22,29,58,.96), rgba(13,19,48,.92));
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) + 6px);
+        box-shadow: var(--shadow);
+        padding: 18px 18px 12px;
+        overflow: hidden;
+      }
+      div[data-testid="stVerticalBlock"]:has(.scurve-hero-title)::before{
+        content: "";
+        position: absolute;
+        inset: -15% -10% -15% -10%;
+        height: var(--glow-height);
+        background:
+          radial-gradient(520px 240px at 12% 0%, rgba(75,111,244,.20), transparent 60%),
+          radial-gradient(520px 240px at 88% 10%, rgba(47,193,146,.16), transparent 62%),
+          radial-gradient(640px 280px at 50% 90%, rgba(75,111,244,.14), transparent 70%);
+        pointer-events: none;
+      }
+      .scurve-hero-title{
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--text);
+        margin: 0 0 4px 0;
+      }
+      .scurve-hero-sub{
+        font-size: 14px;
+        color: var(--muted);
+        margin: 0 0 8px 0;
+      }
+      .scurve-hero-chart-title{
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 6px 0 8px 0;
+      }
+      .scurve-hero-note{
+        color: var(--muted);
+        font-size: 12px;
+        margin: 6px 0 0 0;
+      }
+      div[data-testid="stVerticalBlock"]:has(.scurve-hero-title) [data-testid="stSelectbox"]{
+        margin-top: 6px;
+      }
+      div[data-testid="stVerticalBlock"]:has(.scurve-hero-title) .stPlotlyChart{
+        padding: 0 2px 6px 2px;
+        box-sizing: border-box;
+      }
+
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
@@ -253,11 +728,6 @@ def grid_start(cols12:bool=True):
 
 def grid_end():
     st.markdown('</div>', unsafe_allow_html=True)
-
-def sidebar_rcv_buttons(options, key_prefix:str, title="RCV / Lots / Sous Lots"):
-    # unchanged: keep your existing implementation if you had one, otherwise simple select
-    st.markdown(f"<div class='muted' style='font-weight:700;margin-bottom:6px'>{title}</div>", unsafe_allow_html=True)
-    return st.selectbox("", ["__ALL__"] + list(options), index=0, key=f"{key_prefix}_rcv")
 
 def kpi_group(items):
     # items: list of dicts {label, value, sub}

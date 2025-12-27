@@ -13,7 +13,7 @@ MAPPINGS = {
     "cum_planned":   None,
     "cum_actual":    None,
     "cum_forecast":  None,
-    "rcv": "RCV / Lots / Sous Lots",
+    "rcv": "RCV / Lots / Sub-lots",
 
     # NEW: baseline start/finish column names from your file
     "bl_start":  "BL Project Start",
@@ -21,7 +21,7 @@ MAPPINGS = {
 }
 
 DEFAULT_WBS = {
-    "label": "Poste Transfo - Programme",
+    "label": "Substation Program",
     "level": 1,
     "metrics": {
         "planned_finish": "20 Nov 25",
@@ -34,7 +34,7 @@ DEFAULT_WBS = {
     },
     "children": [
         {
-            "label": "Travaux Civils",
+            "label": "Civil Works",
             "level": 2,
             "metrics": {
                 "planned_finish": "05 Oct 25",
@@ -47,7 +47,7 @@ DEFAULT_WBS = {
             },
         },
         {
-            "label": "Montage Électrique",
+            "label": "Electrical Assembly",
             "level": 2,
             "metrics": {
                 "planned_finish": "02 Nov 25",
@@ -60,7 +60,7 @@ DEFAULT_WBS = {
             },
         },
         {
-            "label": "Essais & Mise en service",
+            "label": "Testing & Commissioning",
             "level": 2,
             "metrics": {
                 "planned_finish": "18 Nov 25",
@@ -77,8 +77,8 @@ DEFAULT_WBS = {
 
 def load_wbs_data(path: Path | str | None = None):
     """
-    Charge les données WBS depuis un fichier JSON facultatif.
-    Si le fichier n'existe pas ou est invalide, renvoie un échantillon par défaut.
+    Load WBS data from an optional JSON file.
+    If the file does not exist or is invalid, return a default sample.
     """
     if path:
         path = Path(path)

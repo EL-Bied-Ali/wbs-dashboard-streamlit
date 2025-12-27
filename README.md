@@ -21,6 +21,19 @@ Streamlit dashboards to explore project progress data with S-curves, KPIs, and W
 - Upload an Excel progress file when prompted; column mappings live in `data.py` (`MAPPINGS` dict).
 - If you deploy the dashboard alongside the WBS UI, set `WBS_URL` (env var or Streamlit secret) so the cross-link points to the right host/port. The app defaults to `http://localhost:8502` when running locally.
 
+## Google auth
+This app supports Google OAuth with a signed cookie session. Configure the following secrets or env vars:
+```
+GOOGLE_CLIENT_ID = "..."
+GOOGLE_CLIENT_SECRET = "..."
+AUTH_COOKIE_SECRET = "set-a-long-random-string"
+AUTH_REDIRECT_URI = "http://localhost:8501"
+AUTH_COOKIE_TTL_DAYS = "7"
+```
+Notes:
+- Add your redirect URI(s) in the Google Console (local and Streamlit Cloud URLs).
+- `AUTH_COOKIE_SECRET` must stay stable across restarts or all sessions are invalidated.
+
 ## Repo notes
 - `.gitignore` excludes virtualenvs, caches, Excel exports, and large videos so the repo stays light.
 - Everything else can be committed normally; keep the two apps independent so each retains its theme.
