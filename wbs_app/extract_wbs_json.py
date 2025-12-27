@@ -31,7 +31,6 @@ SUMMARY_HEADER_GROUPS = {
 
 ASSIGN_HEADER_GROUPS = {
     "activity id": ["Activity ID", "ActivityID"],
-    "activity name": ["Activity Name", "ActivityName"],
     "start": ["Start", "Start Date"],
     "finish": ["Finish", "Finish Date"],
     "budgeted units": ["Budgeted Units", "Budget Units"],
@@ -56,7 +55,6 @@ ASSIGN_REQUIRED_FIELDS = [
     "Spreadsheet Field",
 ]
 ASSIGN_OPTIONAL_FIELDS = [
-    "Activity Name",
     "Start",
     "Finish",
 ]
@@ -75,7 +73,6 @@ SUMMARY_FIELD_VARIANTS = {
 
 ASSIGN_FIELD_VARIANTS = {
     "Activity ID": ASSIGN_HEADER_GROUPS["activity id"] + ["Activity ID"],
-    "Activity Name": ASSIGN_HEADER_GROUPS["activity name"] + ["Activity Name"],
     "Start": ASSIGN_HEADER_GROUPS["start"] + ["Start"],
     "Finish": ASSIGN_HEADER_GROUPS["finish"] + ["Finish"],
     "Budgeted Units": ASSIGN_HEADER_GROUPS["budgeted units"] + ["Budgeted Units"],
@@ -446,8 +443,7 @@ def detect_expected_tables(input_xlsx: str) -> List[Dict[str, Any]]:
                 len(matched_summary) >= 3
             )
             assign_ok = (
-                {"activity id", "activity name", "start", "finish"}.issubset(set(matched_assign)) and
-                len(matched_assign) >= 5 and
+                {"activity id", "budgeted units", "spreadsheet field"}.issubset(set(matched_assign)) and
                 date_cols >= 5
             )
 
