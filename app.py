@@ -1458,18 +1458,9 @@ def render_dashboard():
     header_cols = st.columns([2.6, 2.4], gap="small", vertical_alignment="top")
     with header_cols[0]:
         st.markdown(
-            f"""
-            <div style="margin:12px 0 18px 0; padding:0 8px;">
-                <div class="page-header-card card">
-                  <div class="page-header">
-                    <div class="page-header-main">
-                      <div class="title-row">
-                        <div class="title">▸ Progress Pulse</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-            </div>
+            """
+            <div class="scurve-hero-title">▸ Progress Pulse</div>
+            <div class="scurve-hero-sub">Planned vs actual status and schedule health</div>
             """,
             unsafe_allow_html=True,
         )
