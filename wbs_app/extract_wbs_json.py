@@ -40,13 +40,13 @@ ASSIGN_HEADER_GROUPS = {
 
 SUMMARY_REQUIRED_FIELDS = [
     "Activity ID",
+    "Activity Name",
     "BL Project Finish",
     "Finish",
     "Units % Complete",
     "Variance - BL Project Finish Date",
 ]
 SUMMARY_OPTIONAL_FIELDS = [
-    "Activity Name",
     "Activity Status",
     "Budgeted Labor Units",
 ]

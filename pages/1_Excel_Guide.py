@@ -40,13 +40,16 @@ st.markdown(
     "**Activity Summary** and **Resource Assignments**. "
     "The tables can be on the same sheet or different sheets."
 )
+st.markdown(
+    "**Important**: the set of Activity ID values must be identical in both tables."
+)
 
 st.markdown("### Activity Summary (required)")
 st.markdown(
-    "- Required columns: Activity ID, BL Project Finish, Finish, Units % Complete, "
+    "- Required columns: Activity ID, Activity Name, BL Project Finish, Finish, Units % Complete, "
     "Variance - BL Project Finish Date"
 )
-st.markdown("- Optional columns: Activity Name, Activity Status, Budgeted Labor Units")
+st.markdown("- Optional columns: Activity Status, Budgeted Labor Units")
 st.markdown(
     "- **Hierarchy**: use leading spaces in Activity ID to define levels (2 spaces per level)."
 )
@@ -69,7 +72,7 @@ st.markdown(
     "- Required columns: Activity ID, Budgeted Units, Spreadsheet Field"
 )
 st.markdown(
-    "- Optional columns: Activity Name (leaf rows only: final nodes with no children), Start, Finish"
+    "- Optional columns: Activity Name (leaf rows only: final nodes with no children; leave blank for non-leaf), Start, Finish"
 )
 st.markdown(
     "- Activity ID values should match the Activity Summary table (same IDs/indentation)"
@@ -82,6 +85,8 @@ st.markdown(
     """
 | Activity ID | Activity Name | Start      | Finish     | Budgeted Units | Spreadsheet Field         | 2025-01-06 | 2025-01-13 |
 |------------|---------------|------------|------------|----------------|---------------------------|------------|------------|
+| A-100      |               |            |            | 310            | Cum Budgeted Units        | 10         | 25         |
+| &nbsp;&nbsp;A-110 |               |            |            | 190            | Cum Budgeted Units        | 5          | 15         |
 | &nbsp;&nbsp;&nbsp;&nbsp;A-111 | Mobilize crew  | 2025-01-06 | 2025-01-07 | 120            | Cum Budgeted Units        | 10         | 25         |
 | &nbsp;&nbsp;&nbsp;&nbsp;A-111 |               | 2025-01-06 | 2025-01-07 | 120            | Cum Actual Units          | 8          | 20         |
 | &nbsp;&nbsp;&nbsp;&nbsp;A-111 |               | 2025-01-06 | 2025-01-07 | 120            | Cum Remaining Early Units | 0          | 5          |
