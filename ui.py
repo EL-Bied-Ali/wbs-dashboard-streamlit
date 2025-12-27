@@ -3,6 +3,9 @@ import streamlit as st
 from textwrap import dedent
 
 def inject_theme():
+    anim_flag = st.session_state.get("_plotly_anim_flag", "a")
+    anim_flag = "b" if anim_flag == "a" else "a"
+    st.session_state["_plotly_anim_flag"] = anim_flag
     css = """
     <style>
       :root{
@@ -97,16 +100,24 @@ def inject_theme():
       div[data-testid="stElementContainer"]:has(.stPlotlyChart){
         overflow: visible !important;
       }
-      .stPlotlyChart{
-        animation: chartFadeUp 900ms cubic-bezier(.22,.7,.2,1) both;
+      html[data-plotly-anim="a"] .stPlotlyChart{
+        animation: chartFadeUpA 900ms cubic-bezier(.22,.7,.2,1) both;
         will-change: transform, opacity;
       }
-      @keyframes chartFadeUp{
+      html[data-plotly-anim="b"] .stPlotlyChart{
+        animation: chartFadeUpB 900ms cubic-bezier(.22,.7,.2,1) both;
+        will-change: transform, opacity;
+      }
+      @keyframes chartFadeUpA{
+        from{ opacity:0; transform: translateY(10px) scale(0.995); }
+        to{ opacity:1; transform: translateY(0) scale(1); }
+      }
+      @keyframes chartFadeUpB{
         from{ opacity:0; transform: translateY(10px) scale(0.995); }
         to{ opacity:1; transform: translateY(0) scale(1); }
       }
       @media (prefers-reduced-motion: reduce){
-        .stPlotlyChart{ animation: none; }
+        .stPlotlyChart{ animation: none !important; }
       }
       /* Lock Plotly chart containers to their assigned heights to prevent growth */
       div[data-testid="stElementContainer"][height="260px"]:has(.stPlotlyChart){
@@ -776,6 +787,10 @@ def inject_theme():
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
+    st.markdown(
+        f"<script>document.documentElement.setAttribute('data-plotly-anim','{anim_flag}');</script>",
+        unsafe_allow_html=True,
+    )
     st.markdown('<div class="app-bg"></div>', unsafe_allow_html=True)
 
 
