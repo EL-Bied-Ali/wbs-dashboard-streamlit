@@ -343,7 +343,9 @@ def inject_theme():
       div.st-key-brand_logo_row{
         position: absolute;
         top: var(--pulse-hero-offset);
-        right: -8px;
+        right: -12px;
+        left: auto !important;
+        width: auto !important;
         margin: 0 !important;
         z-index: 4;
       }
