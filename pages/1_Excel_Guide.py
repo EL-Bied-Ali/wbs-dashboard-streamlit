@@ -12,7 +12,7 @@ st.markdown(
 )
 
 user = require_login()
-render_auth_sidebar(user, show_logo=False)
+render_auth_sidebar(user, show_logo=False, show_branding=False)
 inject_theme()
 
 st.sidebar.markdown('<div class="sidebar-nav-title">Navigation</div>', unsafe_allow_html=True)

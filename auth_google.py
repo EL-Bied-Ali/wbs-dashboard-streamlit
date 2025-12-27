@@ -831,7 +831,11 @@ def logout() -> None:
     _clear_query_params()
 
 
-def render_auth_sidebar(user: dict[str, Any] | None, show_logo: bool = True) -> None:
+def render_auth_sidebar(
+    user: dict[str, Any] | None,
+    show_logo: bool = True,
+    show_branding: bool = True,
+) -> None:
     if not user:
         return
     with st.sidebar:
@@ -877,39 +881,40 @@ def render_auth_sidebar(user: dict[str, Any] | None, show_logo: bool = True) -> 
             if st.button("\u23fb", key="auth_logout_btn", help="Sign out"):
                 logout()
                 _rerun()
-        with st.container(key="brand_card"):
-            st.markdown(
-                '<div class="brand-title">Branding</div>',
-                unsafe_allow_html=True,
-            )
-            cols = st.columns(2, gap="small")
-            for col, role, label in (
-                (cols[0], "company", "Company"),
-                (cols[1], "client", "Client"),
-            ):
-                with col:
-                    preview_slot = st.empty()
-                    uploaded = st.file_uploader(
-                        f"Upload {label} logo",
-                        type=["png", "jpg", "jpeg", "svg"],
-                        key=f"logo_upload_{role}",
-                        label_visibility="collapsed",
-                    )
-                    if uploaded is not None:
-                        file_key = f"{uploaded.name}:{uploaded.size}"
-                        state_key = f"_logo_upload_{role}_key"
-                        if st.session_state.get(state_key) != file_key:
-                            _save_custom_logo(role, uploaded)
-                            st.session_state[state_key] = file_key
-                    logo = _custom_logo_data_uri(role)
-                    if logo:
-                        preview_slot.markdown(
-                            f'<div class="brand-preview"><img src="{logo}" '
-                            f'alt="{label} logo" /></div>',
-                            unsafe_allow_html=True,
+        if show_branding:
+            with st.container(key="brand_card"):
+                st.markdown(
+                    '<div class="brand-title">Branding</div>',
+                    unsafe_allow_html=True,
+                )
+                cols = st.columns(2, gap="small")
+                for col, role, label in (
+                    (cols[0], "company", "Company"),
+                    (cols[1], "client", "Client"),
+                ):
+                    with col:
+                        preview_slot = st.empty()
+                        uploaded = st.file_uploader(
+                            f"Upload {label} logo",
+                            type=["png", "jpg", "jpeg", "svg"],
+                            key=f"logo_upload_{role}",
+                            label_visibility="collapsed",
                         )
-                    else:
-                        preview_slot.markdown(
-                            f'<div class="brand-preview placeholder">{label}</div>',
-                            unsafe_allow_html=True,
-                        )
+                        if uploaded is not None:
+                            file_key = f"{uploaded.name}:{uploaded.size}"
+                            state_key = f"_logo_upload_{role}_key"
+                            if st.session_state.get(state_key) != file_key:
+                                _save_custom_logo(role, uploaded)
+                                st.session_state[state_key] = file_key
+                        logo = _custom_logo_data_uri(role)
+                        if logo:
+                            preview_slot.markdown(
+                                f'<div class="brand-preview"><img src="{logo}" '
+                                f'alt="{label} logo" /></div>',
+                                unsafe_allow_html=True,
+                            )
+                        else:
+                            preview_slot.markdown(
+                                f'<div class="brand-preview placeholder">{label}</div>',
+                                unsafe_allow_html=True,
+                            )
