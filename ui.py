@@ -21,10 +21,12 @@ def inject_theme():
         --shadow:0 16px 40px rgba(0,0,0,0.45);
         --ui-zoom:1;
       }
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
       body, [data-testid="stAppViewContainer"], .main{
         background:var(--bg);
         color:var(--text);
-        font-family: 'Inter','Segoe UI',sans-serif;
+        font-family: 'DM Sans','Segoe UI',sans-serif;
         font-size:15px;
       }
       .block-container{ padding:18px 24px 40px 24px; }
@@ -57,7 +59,7 @@ def inject_theme():
         z-index: 1;
       }
       .chart-card{ padding:8px 10px; overflow:hidden; }
-      .chart-heading{ font-size:16px; font-weight:700; color:var(--text); margin:0 0 8px 0; }
+      .chart-heading{ font-size:17px; font-weight:700; color:var(--text); margin:0 0 8px 0; font-family:'Space Grotesk','DM Sans',sans-serif; letter-spacing:0.2px; }
       div[data-testid="stVerticalBlock"]:has(.chart-heading){
         position: relative;
         --glow-height: min(55%, calc(2.8em + 32px));
@@ -250,7 +252,7 @@ def inject_theme():
       .metric .sub{ color:var(--muted); font-size:12px; }
 
       .page-header{ display:flex; flex-direction:column; gap:2px; margin:12px 8px 18px 8px; padding:0 4px; }
-      .page-header .title{ font-size:66px; font-weight:800; color:var(--text); }
+      .page-header .title{ font-size:66px; font-weight:800; color:var(--text); font-family:'Space Grotesk','DM Sans',sans-serif; letter-spacing:0.3px; }
       .muted{ color:var(--muted); font-size:14px; }
       .page-header--brand{ flex-direction: column; gap: 6px; }
       .page-header--brand .page-header-main{ display:flex; flex-direction:column; gap:2px; }
@@ -316,6 +318,12 @@ def inject_theme():
         gap:12px;
         flex-wrap: nowrap;
       }
+      div.st-key-brand_logo_row_scurve > div[data-testid="stHorizontalBlock"],
+      div.st-key-brand_logo_row_wbs > div[data-testid="stHorizontalBlock"]{
+        justify-content: flex-end;
+        gap: 12px;
+        flex-wrap: nowrap;
+      }
       div.st-key-brand_logo_row div[data-testid="stColumn"]{
         flex: 0 0 auto !important;
         min-width: 0 !important;
@@ -333,11 +341,11 @@ def inject_theme():
         grid-area: stack;
       }
       div[class*="st-key-brand_logo_item_"] .stButton{
-        align-self: start;
-        justify-self: end;
+        align-self: center;
+        justify-self: center;
         z-index: 5;
         pointer-events: auto;
-        margin: 10px !important;
+        margin: 0 !important;
       }
       div[class*="st-key-brand_logo_item_"] .stButton button{
         width: 44px;
@@ -561,6 +569,11 @@ def inject_theme():
         letter-spacing: 0.14em;
         color: rgba(157,168,198,.85);
         margin-bottom: 10px;
+      }
+      section[data-testid="stSidebar"] .brand-note{
+        font-size: 12px;
+        color: var(--muted);
+        margin: -2px 0 10px 0;
       }
       section[data-testid="stSidebar"] .brand-label{
         font-size: 12px;
@@ -877,10 +890,12 @@ def inject_theme():
         pointer-events: none;
       }
       .scurve-hero-title{
-        font-size: 24px;
+        font-size: 26px;
         font-weight: 800;
         color: var(--text);
         margin: 0 0 4px 0;
+        font-family:'Space Grotesk','DM Sans',sans-serif;
+        letter-spacing:0.2px;
       }
       .scurve-hero-sub{
         font-size: 14px;
@@ -888,10 +903,12 @@ def inject_theme():
         margin: 0 0 8px 0;
       }
       .scurve-hero-chart-title{
-        font-size: 16px;
+        font-size: 17px;
         font-weight: 700;
         color: var(--text);
         margin: 6px 0 8px 0;
+        font-family:'Space Grotesk','DM Sans',sans-serif;
+        letter-spacing:0.2px;
       }
       .scurve-hero-note{
         color: var(--muted);
