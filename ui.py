@@ -19,7 +19,7 @@ def inject_theme():
         --danger:#f97070;
         --radius:14px;
         --header-logo-size:200px;
-        --pulse-hero-offset:26px;
+        --pulse-hero-offset:40px;
         --shadow:0 16px 40px rgba(0,0,0,0.45);
         --ui-zoom:1;
       }
