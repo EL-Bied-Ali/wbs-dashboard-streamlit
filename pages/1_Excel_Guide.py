@@ -69,7 +69,7 @@ st.markdown(
     "- Required columns: Activity ID, Budgeted Units, Spreadsheet Field"
 )
 st.markdown(
-    "- Optional columns: Activity Name (leaf rows only), Start, Finish"
+    "- Optional columns: Activity Name (leaf rows only: final nodes with no children), Start, Finish"
 )
 st.markdown(
     "- Activity ID values should match the Activity Summary table (same IDs/indentation)"

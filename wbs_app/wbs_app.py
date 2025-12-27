@@ -87,7 +87,7 @@ def _render_excel_format_help():
                     "- Activity Summary table with columns:",
                     "  Activity ID, BL Project Finish (or Planned Finish), Finish (or Forecast Finish), Units % Complete, Variance - BL Project Finish Date",
                     "- Resource Assignments table with columns:",
-                    "  Activity ID, Activity Name (leaf rows only), Start, Finish, Budgeted Units, Spreadsheet Field",
+                    "  Activity ID, Activity Name (leaf rows only: final nodes with no children), Start, Finish, Budgeted Units, Spreadsheet Field",
                     "- Weekly date columns (week start) in Resource Assignments for planned/actual values",
                     "",
                     "**Tips**",
