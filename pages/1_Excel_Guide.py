@@ -103,6 +103,51 @@ st.markdown(
     "- Cum Remaining Early Units: forecast cumulative curve"
 )
 
+st.markdown("### Calculations (from Excel)")
+st.markdown(
+    """
+These formulas apply when an Excel file is loaded and an Activity ID is selected.
+If data is missing, the UI shows "?" and may fall back to demo values.
+
+**Project Progress dashboard**
+- Planned Progress (gauge): Schedule % for the selected Activity ID.
+  `Schedule % = (units in current week / Budgeted Units) * 100` using the
+  Resource Assignments table where Spreadsheet Field = "Cum Budgeted Units".
+  Current week is the Monday of today's week.
+- Actual Progress (gauge): Activity Summary `Units % Complete` for the selected Activity ID.
+- Planned Finish: Activity Summary `BL Project Finish` for the selected Activity ID.
+- Forecast Finish: Activity Summary `Finish` for the selected Activity ID.
+- Delay/Ahead: Activity Summary `Variance - BL Project Finish Date` (days) for the selected Activity ID.
+- SV %: `Units % Complete - Schedule %`.
+- SPI: `Units % Complete / Schedule %` (displayed as a percent).
+- Weekly Progress chart: 7-week window centered on the current week (3 before, current, 3 after).
+  Planned % per week = `(Cum Budgeted Units week value - previous week value) / Budgeted Units * 100`.
+  Actual % per week uses `Cum Actual Units` for past weeks and `Cum Remaining Early Units` for current/future weeks.
+- Weekly SV % chart: `Planned % - Actual %` (or `Planned % - Forecast %` when actual is missing).
+- Activities Status donut: for the selected activity, find leaf activities (no children) under it,
+  sum Activity Summary `Budgeted Labor Units` by `Activity Status`, then divide by the parent
+  activity's `Budgeted Labor Units` to get percentages.
+
+**S-Curve page**
+- Planned curve: cumulative planned % = `Cum Budgeted Units / Budgeted Units * 100`.
+- Actual curve: cumulative actual % = `Cum Actual Units / Budgeted Units * 100` (past weeks only).
+- Forecast curve: cumulative forecast % = `Cum Remaining Early Units / Budgeted Units * 100`,
+  stitched from the last actual point when forecast starts on the same or next week.
+- Weekly bars: weekly actual % = difference between consecutive points in the actual curve.
+
+**WBS page**
+- Hierarchy uses Activity ID indentation from Activity Summary (2 spaces per level).
+- Planned Finish: Activity Summary `BL Project Finish`.
+- Forecast Finish: Activity Summary `Finish`.
+- Earned %: Activity Summary `Units % Complete` (fallback to `Earned %` if present).
+- Schedule %: same as dashboard Schedule % (current week / Budgeted Units from Resource Assignments).
+- Variance: `Earned % - Schedule %`.
+- Impact: `(Activity Budgeted Units / Root Budgeted Units) * Variance`.
+- Slip: Activity Summary `Variance - BL Project Finish Date` (days).
+""",
+    unsafe_allow_html=False,
+)
+
 st.markdown("### Notes")
 st.markdown(
     "- All curves are computed as percent of **Budgeted Units**.\n"
