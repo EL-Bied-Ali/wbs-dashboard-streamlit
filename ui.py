@@ -19,6 +19,7 @@ def inject_theme():
         --danger:#f97070;
         --radius:14px;
         --header-logo-size:200px;
+        --header-logo-inset:120px;
         --pulse-hero-offset:24px;
         --shadow:0 16px 40px rgba(0,0,0,0.45);
         --ui-zoom:1;
@@ -325,6 +326,7 @@ def inject_theme():
         flex-wrap: nowrap;
         width: fit-content;
         margin-left: auto;
+        padding-right: var(--header-logo-inset);
       }
       div.st-key-brand_logo_row_scurve > div[data-testid="stHorizontalBlock"],
       div.st-key-brand_logo_row_wbs > div[data-testid="stHorizontalBlock"]{
