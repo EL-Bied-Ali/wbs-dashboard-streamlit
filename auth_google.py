@@ -717,6 +717,7 @@ def _render_home_screen(
 
     safe_url = html.escape(auth_url, quote=True)
     safe_app_url = html.escape(app_url or _app_url(), quote=True)
+    auth_link_attrs = ' target="_blank" rel="noopener noreferrer"'
     logo_uri = _get_logo_data_uri()
     logo_html = (
         f'<img class="brand-logo" src="{logo_uri}" alt="Chronoplan logo" />'
@@ -732,6 +733,15 @@ def _render_home_screen(
         if email and email not in signed_in_note:
             signed_in_note += f" ({html.escape(email)})"
         signed_in_note = f'<div class="cta-note">{signed_in_note}</div>'
+    primary_cta = f'<a class="cta" href="{safe_app_url}">Open Project Progress</a>'
+    secondary_cta = f'<a class="cta secondary" href="{safe_url}"{auth_link_attrs}>Switch account</a>'
+    session_note = '<div class="cta-note">Session secured with signed cookies.</div>'
+    if not user:
+        primary_cta = f'<a class="cta" href="{safe_url}"{auth_link_attrs}>Continue with Google</a>'
+        secondary_cta = ""
+        signed_in_note = ""
+        session_note = ""
+
     page_html = f"""
     <div class="home-shell">
       <div class="topbar">
@@ -753,10 +763,10 @@ def _render_home_screen(
             visual, and decision-ready. Upload your file, see the story.
           </p>
           <div class="cta-row">
-            <a class="cta" href="{safe_app_url}">Open Project Progress</a>
-            <a class="cta secondary" href="{safe_url}">Switch account</a>
+            {primary_cta}
+            {secondary_cta}
             {signed_in_note}
-            <div class="cta-note">Session secured with signed cookies.</div>
+            {session_note}
           </div>
           <div class="marquee">
             <span>Weekly progress</span>
@@ -806,16 +816,6 @@ def _render_home_screen(
     </div>
     """
 
-    if not user:
-        page_html = page_html.replace(
-            f'<a class="cta" href="{safe_app_url}">Open Project Progress</a>',
-            f'<a class="cta" href="{safe_url}">Continue with Google</a>',
-        )
-        page_html = page_html.replace(
-            f'<a class="cta secondary" href="{safe_url}">Switch account</a>',
-            "",
-        )
-        page_html = page_html.replace(signed_in_note, "")
     st.html(page_html)  # type: ignore[attr-defined]
 
 
