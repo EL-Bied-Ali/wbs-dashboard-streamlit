@@ -31,6 +31,7 @@ NONCE_COOKIE = "oauth_nonce"
 def _get_logo_path() -> Path | None:
     root = Path(__file__).resolve().parent
     candidates = [
+        root / "chronoplan_logo.png",
         root / "Wibis_logo.png",
         root / "wibis_logo.png",
         root / "logo.png",
@@ -718,7 +719,7 @@ def _render_home_screen(
     safe_app_url = html.escape(app_url or _app_url(), quote=True)
     logo_uri = _get_logo_data_uri()
     logo_html = (
-        f'<img class="brand-logo" src="{logo_uri}" alt="Wibis logo" />'
+        f'<img class="brand-logo" src="{logo_uri}" alt="Chronoplan logo" />'
         if logo_uri
         else '<div class="brand-mark"></div>'
     )
@@ -909,7 +910,7 @@ def render_auth_sidebar(
             if logo_uri:
                 st.markdown(
                     f'<div style="margin: 10px 0 18px; display: flex; justify-content: center; align-items: center; width: 100%; padding-left: 12px;">'
-                    f'<img src="{logo_uri}" alt="Wibis logo" '
+                    f'<img src="{logo_uri}" alt="Chronoplan logo" '
                     f'style="width: 230px; max-width: 92%; height: auto; display: block; transform: translateX(6px);" />'
                     f"</div>",
                     unsafe_allow_html=True,

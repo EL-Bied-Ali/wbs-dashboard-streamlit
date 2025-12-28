@@ -6,7 +6,7 @@ from auth_google import require_login, render_auth_sidebar
 from ui import inject_theme
 
 
-_icon_path = Path(__file__).resolve().parents[1] / "Wibis_logo.png"
+_icon_path = Path(__file__).resolve().parents[1] / "chronoplan_logo.png"
 st.set_page_config(
     page_title="Wibis",
     page_icon=str(_icon_path) if _icon_path.exists() else "🧭",

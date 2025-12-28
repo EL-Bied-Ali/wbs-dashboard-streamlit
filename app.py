@@ -49,7 +49,7 @@ if page_override and page_source != "S-Curve":
     st.session_state.pop("_page_source", None)
     page_override = None
 
-_icon_path = Path(__file__).resolve().parent / "Wibis_logo.png"
+_icon_path = Path(__file__).resolve().parent / "chronoplan_logo.png"
 st.set_page_config(
     page_title="Wibis",
     page_icon=str(_icon_path) if _icon_path.exists() else "🧭",
