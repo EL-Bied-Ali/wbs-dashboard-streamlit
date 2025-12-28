@@ -19,7 +19,7 @@ def inject_theme():
         --danger:#f97070;
         --radius:14px;
         --header-logo-size:200px;
-        --header-logo-inset:120px;
+        --header-logo-inset:4%;
         --pulse-hero-offset:24px;
         --shadow:0 16px 40px rgba(0,0,0,0.45);
         --ui-zoom:1;
@@ -340,6 +340,7 @@ def inject_theme():
       }
       div.st-key-brand_logo_row_header{
         margin: 6px 8px 8px 8px;
+        width: calc(100% - 16px);
         min-height: calc(var(--header-logo-size) + 8px);
       }
       .brand-logo-spacer{
