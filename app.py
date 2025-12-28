@@ -1062,9 +1062,15 @@ def activities_status_fig(data: dict, error_msg: str | None = None):
     values = list(data.values())
     colors = ["#2fc192", "#f0aa3c", "#4b6ff4"]
 
+    total = sum(v for v in values if isinstance(v, (int, float)))
+    if total > 0:
+        percent_labels = [f"{(v / total * 100):.1f}%" for v in values]
+    else:
+        percent_labels = ["0.0%" for _ in values]
+
     textinfo = "percent"
     hovertemplate = "%{label}: %{value:.2f}%<extra></extra>"
-    text = None
+    text = percent_labels
     if error_msg:
         values = [1, 1, 1]
         textinfo = "text"
@@ -1079,7 +1085,15 @@ def activities_status_fig(data: dict, error_msg: str | None = None):
             marker=dict(colors=colors, line=dict(color="#11162d", width=2)),
             textinfo=textinfo,
             text=text,
+            texttemplate="%{percent:.1%}",
+            textposition="outside" if not error_msg else "inside",
+            textfont=dict(size=12, color="#e6eaf1"),
+            outsidetextfont=dict(size=12, color="#e6eaf1"),
+            insidetextorientation="radial",
             hovertemplate=hovertemplate,
+            sort=False,
+            direction="clockwise",
+            rotation=90,
         )
     )
     if error_msg:
@@ -1096,7 +1110,8 @@ def activities_status_fig(data: dict, error_msg: str | None = None):
         title_text="",
         showlegend=True,
         legend=dict(orientation="h", x=0.5, y=0, xanchor="center"),
-        margin=dict(l=10, r=10, t=10, b=30),
+        margin=dict(l=20, r=20, t=10, b=30),
+        uniformtext=dict(minsize=10, mode="show"),
     )
     return base_layout(fig, height=260)
 
@@ -1177,21 +1192,47 @@ if activity_rows:
     activity_options = []
     activity_display = {}
     activity_rows_map = {}
+    activity_levels = {}
+    activity_labels = {}
     max_level = 0
     for idx, row in enumerate(activity_rows):
         key = f"act_{idx}"
         row["_idx"] = idx
         level = int(row.get("level", 0))
         max_level = max(max_level, level)
-        prefix = "|--" * level
         label = row.get("display_label") or row.get("label", "")
         label = _truncate_label(label, 44)
         activity_options.append(key)
-        activity_display[key] = f"{prefix} {label}".strip()
+        activity_levels[key] = level
+        activity_labels[key] = label
         activity_rows_map[key] = row
+
+    start_choices = [str(i) for i in range(0, max_level + 1)]
+    start_choice = st.session_state.get("activity_start_depth", "0")
+    if start_choice not in start_choices:
+        start_choice = "0"
+        st.session_state["activity_start_depth"] = start_choice
+    st.sidebar.selectbox(
+        "Start depth",
+        start_choices,
+        index=start_choices.index(start_choice),
+        key="activity_start_depth",
+    )
+    start_depth_level = st.session_state.get("activity_start_depth", "0")
+    if isinstance(start_depth_level, str) and start_depth_level.isdigit():
+        start_depth_level = int(start_depth_level)
+    else:
+        start_depth_level = 0
 
     depth_choices = ["All levels"] + [str(i) for i in range(1, max_level + 2)]
     depth_choice = st.session_state.get("activity_depth_filter", "All levels")
+    if depth_choice not in depth_choices:
+        depth_choice = "All levels"
+        st.session_state["activity_depth_filter"] = depth_choice
+    if depth_choice != "All levels":
+        if int(depth_choice) - 1 < start_depth_level:
+            depth_choice = str(start_depth_level + 1)
+            st.session_state["activity_depth_filter"] = depth_choice
     st.sidebar.selectbox(
         "Max depth",
         depth_choices,
@@ -1204,13 +1245,23 @@ if activity_rows:
     else:
         depth_limit = int(depth_choice) - 1
 
-    if depth_limit is not None:
-        filtered_options = [
-            k for k in activity_options
-            if int(activity_rows_map[k].get("level", 0)) <= depth_limit
-        ]
-    else:
-        filtered_options = activity_options[:]
+    for key in activity_options:
+        level = activity_levels.get(key, 0)
+        prefix = "|--" * max(0, level - start_depth_level)
+        label = activity_labels.get(key, "")
+        activity_display[key] = f"{prefix} {label}".strip()
+
+    def _level_in_range(level: int) -> bool:
+        if level < start_depth_level:
+            return False
+        if depth_limit is not None and level > depth_limit:
+            return False
+        return True
+
+    filtered_options = [
+        k for k in activity_options
+        if _level_in_range(int(activity_rows_map[k].get("level", 0)))
+    ]
 
     if not filtered_options:
         filtered_options = activity_options[:1]
@@ -1455,33 +1506,34 @@ def render_dashboard():
     if client_logo:
         header_logos.append(("client", "Client", client_logo))
 
-    header_cols = st.columns([2.6, 2.4], gap="small", vertical_alignment="top")
-    with header_cols[0]:
-        st.markdown(
-            """
-            <div class="pulse-hero">
-              <div class="scurve-hero-title">▸ Progress Pulse</div>
-              <div class="scurve-hero-sub">Planned vs actual status and schedule health</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with header_cols[1]:
+    with st.container(key="brand_logo_row_header"):
         if header_logos:
-            with st.container(key="brand_logo_row"):
-                logo_cols = st.columns(len(header_logos), gap="small")
-                for col, (role, label, src) in zip(logo_cols, header_logos):
-                    with col:
-                        with st.container(key=f"brand_logo_item_{role}"):
-                            st.markdown(
-                                f'<div class="brand-pill brand-pill--header" title="{html.escape(label)} logo">'
-                                f'<img src="{src}" alt="{html.escape(label)} logo" /></div>',
-                                unsafe_allow_html=True,
-                            )
-                            if st.button("×", key=f"brand_remove_{role}", help=f"Remove {label} logo"):
-                                _remove_custom_logo(role)
-                                st.session_state.pop(f"_logo_upload_{role}_key", None)
-                                st.rerun()
+            weights = [1.0] + [0.35] * len(header_logos)
+            logo_cols = st.columns(weights, gap="small")
+            for col, (role, label, src) in zip(logo_cols[1:], header_logos):
+                with col:
+                    with st.container(key=f"brand_logo_item_{role}"):
+                        st.markdown(
+                            f'<div class="brand-pill brand-pill--header" title="{html.escape(label)} logo">'
+                            f'<img src="{src}" alt="{html.escape(label)} logo" /></div>',
+                            unsafe_allow_html=True,
+                        )
+                        if st.button("×", key=f"brand_remove_{role}", help=f"Remove {label} logo"):
+                            _remove_custom_logo(role)
+                            st.session_state.pop(f"_logo_upload_{role}_key", None)
+                            st.rerun()
+        else:
+            st.markdown('<div class="brand-logo-spacer"></div>', unsafe_allow_html=True)
+
+    st.markdown(
+        """
+        <div class="pulse-hero">
+          <div class="scurve-hero-title">▸ Progress Pulse</div>
+          <div class="scurve-hero-sub">Planned vs actual status and schedule health</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     layout_top = st.columns([2.0, 2.8])
 

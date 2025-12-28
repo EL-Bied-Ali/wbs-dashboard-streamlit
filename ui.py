@@ -19,9 +19,7 @@ def inject_theme():
         --danger:#f97070;
         --radius:14px;
         --header-logo-size:200px;
-        --header-logo-right:0px;
-        --header-logo-shift:0px;
-        --pulse-hero-offset:80px;
+        --pulse-hero-offset:24px;
         --shadow:0 16px 40px rgba(0,0,0,0.45);
         --ui-zoom:1;
       }
@@ -321,10 +319,12 @@ def inject_theme():
         box-shadow: none;
       }
 
-      div.st-key-brand_logo_row > div[data-testid="stHorizontalBlock"]{
+      div.st-key-brand_logo_row_header [data-testid="stHorizontalBlock"]{
         justify-content:flex-end;
         gap:12px;
         flex-wrap: nowrap;
+        width: fit-content;
+        margin-left: auto;
       }
       div.st-key-brand_logo_row_scurve > div[data-testid="stHorizontalBlock"],
       div.st-key-brand_logo_row_wbs > div[data-testid="stHorizontalBlock"]{
@@ -332,29 +332,16 @@ def inject_theme():
         gap: 12px;
         flex-wrap: nowrap;
       }
-      div.st-key-brand_logo_row div[data-testid="stColumn"]{
+      div.st-key-brand_logo_row_header [data-testid="stColumn"]{
         flex: 0 0 auto !important;
         min-width: 0 !important;
       }
-      div[data-testid="stHorizontalBlock"]:has(.pulse-hero){
-        position: relative;
+      div.st-key-brand_logo_row_header{
+        margin: 6px 8px 8px 8px;
+        min-height: calc(var(--header-logo-size) + 8px);
       }
-      div[data-testid="stHorizontalBlock"]:has(.brand-pill--header){
-        min-height: calc(var(--header-logo-size) + var(--pulse-hero-offset) + 18px);
-      }
-      div.st-key-brand_logo_row{
-        position: absolute;
-        top: var(--pulse-hero-offset);
-        right: var(--header-logo-right);
-        left: auto !important;
-        width: fit-content !important;
-        margin: 0 !important;
-        z-index: 4;
-        transform: translateX(var(--header-logo-shift));
-      }
-      div.st-key-brand_logo_row > div[data-testid="stHorizontalBlock"]{
-        width: fit-content !important;
-        display: inline-flex !important;
+      .brand-logo-spacer{
+        height: var(--header-logo-size);
       }
       div[class*="st-key-brand_logo_item_"]{
         position: relative;
