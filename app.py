@@ -1057,45 +1057,41 @@ def weekly_sv_fig(data, current_week: str | date | None):
     return base_layout(fig, height=280)
 
 
-def activities_status_fig(data: dict, error_msg: str | None = None):
+def activities_status_fig(data: dict, error_msg: str | None = None, apply_layout: bool = True):
     labels = list(data.keys())
-    values = list(data.values())
+    values = [float(v) if isinstance(v, (int, float)) else 0.0 for v in data.values()]
     colors = ["#2fc192", "#f0aa3c", "#4b6ff4"]
 
-    total = sum(v for v in values if isinstance(v, (int, float)))
-    if total > 0:
-        percent_labels = [f"{(v / total * 100):.1f}%" for v in values]
-    else:
-        percent_labels = ["0.0%" for _ in values]
-
-    textinfo = "percent"
-    hovertemplate = "%{label}: %{value:.2f}%<extra></extra>"
-    text = percent_labels
     if error_msg:
+        labels = ["Completed", "In Progress", "Not Started"]
         values = [1, 1, 1]
-        textinfo = "text"
-        text = ["?", "?", "?"]
-        hovertemplate = f"%{{label}}: ?<br>{error_msg}<extra></extra>"
 
-    fig = go.Figure(
-        go.Pie(
-            labels=labels,
-            values=values,
-            hole=0.68,
-            marker=dict(colors=colors, line=dict(color="#11162d", width=2)),
-            textinfo=textinfo,
-            text=text,
-            texttemplate="%{percent:.1%}",
-            textposition="outside" if not error_msg else "inside",
-            textfont=dict(size=12, color="#e6eaf1"),
-            outsidetextfont=dict(size=12, color="#e6eaf1"),
-            insidetextorientation="radial",
-            hovertemplate=hovertemplate,
-            sort=False,
-            direction="clockwise",
-            rotation=90,
-        )
+    pie_kwargs = dict(
+        labels=labels,
+        values=values,
+        hole=0.58,
+        marker=dict(colors=colors, line=dict(color="#11162d", width=2)),
+        textposition="inside",
+        textfont=dict(size=14, color="#e6eaf1"),
+        insidetextorientation="auto",
+        sort=False,
+        direction="clockwise",
+        rotation=90,
     )
+    if error_msg:
+        pie_kwargs.update(
+            text=["?", "?", "?"],
+            textinfo="text",
+            hovertemplate=f"%{{label}}: ?<br>{error_msg}<extra></extra>",
+        )
+    else:
+        pie_kwargs.update(
+            textinfo="text",
+            texttemplate="%{percent:.1%}",
+            hovertemplate="%{label}: %{percent:.2%}<extra></extra>",
+        )
+
+    fig = go.Figure(go.Pie(**pie_kwargs))
     if error_msg:
         fig.add_annotation(
             text="?",
@@ -1110,10 +1106,12 @@ def activities_status_fig(data: dict, error_msg: str | None = None):
         title_text="",
         showlegend=True,
         legend=dict(orientation="h", x=0.5, y=0, xanchor="center"),
-        margin=dict(l=20, r=20, t=10, b=30),
-        uniformtext=dict(minsize=10, mode="show"),
+        margin=dict(l=10, r=10, t=10, b=30),
+        uniformtext=None,
     )
-    return base_layout(fig, height=260)
+    if apply_layout:
+        return base_layout(fig, height=260)
+    return fig
 
 
 # ---------- Sidebar navigation ----------
@@ -1189,23 +1187,64 @@ if shared_path:
         st.sidebar.warning(f"Excel read error: {e}")
 
 if activity_rows:
-    activity_options = []
-    activity_display = {}
-    activity_rows_map = {}
-    activity_levels = {}
-    activity_labels = {}
-    max_level = 0
+    ROOT_ACTIVITY_ALL = "__all__"
+    activity_id_options = []
+    activity_id_meta = {}
     for idx, row in enumerate(activity_rows):
-        key = f"act_{idx}"
         row["_idx"] = idx
+        activity_id = str(row.get("activity_id") or "").strip()
+        if not activity_id or activity_id in activity_id_meta:
+            continue
         level = int(row.get("level", 0))
-        max_level = max(max_level, level)
-        label = row.get("display_label") or row.get("label", "")
+        label = row.get("display_label") or row.get("label", "") or activity_id
         label = _truncate_label(label, 44)
-        activity_options.append(key)
-        activity_levels[key] = level
-        activity_labels[key] = label
-        activity_rows_map[key] = row
+        activity_id_options.append(activity_id)
+        activity_id_meta[activity_id] = {"idx": idx, "level": level, "label": label}
+
+    root_options = [ROOT_ACTIVITY_ALL] + activity_id_options
+    root_choice = st.session_state.get("activity_root_id", ROOT_ACTIVITY_ALL)
+    if root_choice not in root_options:
+        root_choice = ROOT_ACTIVITY_ALL
+        st.session_state["activity_root_id"] = root_choice
+
+    def _root_label(value: str) -> str:
+        if value == ROOT_ACTIVITY_ALL:
+            return "All activities"
+        meta = activity_id_meta.get(value)
+        if not meta:
+            return value
+        prefix = "|--" * max(0, meta["level"])
+        label = meta.get("label") or value
+        return f"{prefix} {label}".strip()
+
+    st.sidebar.selectbox(
+        "Root activity",
+        root_options,
+        index=root_options.index(root_choice),
+        format_func=_root_label,
+        key="activity_root_id",
+    )
+
+    if root_choice != ROOT_ACTIVITY_ALL and root_choice in activity_id_meta:
+        root_meta = activity_id_meta[root_choice]
+        root_idx = root_meta["idx"]
+        root_level = root_meta["level"]
+        end_idx = len(activity_rows)
+        for i in range(root_idx + 1, len(activity_rows)):
+            if int(activity_rows[i].get("level", 0)) <= root_level:
+                end_idx = i
+                break
+        scoped_rows = activity_rows[root_idx:end_idx]
+        base_level = root_level
+    else:
+        scoped_rows = activity_rows
+        base_level = 0
+
+    max_level = 0
+    for row in scoped_rows:
+        level = int(row.get("level", 0)) - base_level
+        if level > max_level:
+            max_level = level
 
     start_choices = [str(i) for i in range(0, max_level + 1)]
     start_choice = st.session_state.get("activity_start_depth", "0")
@@ -1245,6 +1284,21 @@ if activity_rows:
     else:
         depth_limit = int(depth_choice) - 1
 
+    activity_options = []
+    activity_display = {}
+    activity_rows_map = {}
+    activity_levels = {}
+    activity_labels = {}
+    for row in scoped_rows:
+        key = f"act_{row['_idx']}"
+        level = max(0, int(row.get("level", 0)) - base_level)
+        label = row.get("display_label") or row.get("label", "")
+        label = _truncate_label(label, 44)
+        activity_options.append(key)
+        activity_levels[key] = level
+        activity_labels[key] = label
+        activity_rows_map[key] = row
+
     for key in activity_options:
         level = activity_levels.get(key, 0)
         prefix = "|--" * max(0, level - start_depth_level)
@@ -1260,7 +1314,7 @@ if activity_rows:
 
     filtered_options = [
         k for k in activity_options
-        if _level_in_range(int(activity_rows_map[k].get("level", 0)))
+        if _level_in_range(activity_levels.get(k, 0))
     ]
 
     if not filtered_options:
@@ -1506,11 +1560,10 @@ def render_dashboard():
     if client_logo:
         header_logos.append(("client", "Client", client_logo))
 
-    with st.container(key="brand_logo_row_header"):
-        if header_logos:
-            weights = [1.0] + [0.35] * len(header_logos)
-            logo_cols = st.columns(weights, gap="small")
-            for col, (role, label, src) in zip(logo_cols[1:], header_logos):
+    if header_logos:
+        with st.container(key="brand_logo_row_header"):
+            logo_cols = st.columns(len(header_logos), gap="small")
+            for col, (role, label, src) in zip(logo_cols, header_logos):
                 with col:
                     with st.container(key=f"brand_logo_item_{role}"):
                         st.markdown(
@@ -1522,8 +1575,6 @@ def render_dashboard():
                             _remove_custom_logo(role)
                             st.session_state.pop(f"_logo_upload_{role}_key", None)
                             st.rerun()
-        else:
-            st.markdown('<div class="brand-logo-spacer"></div>', unsafe_allow_html=True)
 
     st.markdown(
         """

@@ -191,6 +191,44 @@ def _bypass_user_from_env() -> dict[str, Any] | None:
     return {"email": email, "name": name, "picture": picture, "bypass": True}
 
 
+def _is_localhost_host(host: str | None) -> bool:
+    if not host:
+        return False
+    base = host.split(":")[0].strip().lower()
+    return base in {"localhost", "127.0.0.1", "::1"}
+
+
+def _request_host() -> str | None:
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        ctx = get_script_run_ctx()
+        req = getattr(ctx, "request", None) if ctx else None
+        headers = getattr(req, "headers", None) if req else None
+        if headers:
+            return headers.get("host") or headers.get("Host")
+    except Exception:
+        pass
+    try:
+        return st.get_option("server.address")
+    except Exception:
+        return None
+
+
+def _bypass_user_for_localhost() -> dict[str, Any] | None:
+    raw = (_get_setting("AUTH_BYPASS_LOCALHOST") or "").strip().lower()
+    if raw in {"1", "true", "yes"}:
+        host_ok = True
+    else:
+        host = _request_host()
+        host_ok = _is_localhost_host(host)
+    if not host_ok:
+        return None
+    email = _get_setting("AUTH_LOCALHOST_EMAIL", "local@dev") or "local@dev"
+    name = _get_setting("AUTH_LOCALHOST_NAME", "Local Dev") or "Local Dev"
+    picture = _get_setting("AUTH_LOCALHOST_PICTURE", "") or ""
+    return {"email": email, "name": name, "picture": picture, "bypass": True, "localhost": True}
+
+
 def _clear_query_params() -> None:
     try:
         st.query_params.clear()  # type: ignore[attr-defined]
@@ -789,6 +827,10 @@ def require_login() -> dict[str, Any]:
     if bypass_user:
         st.session_state[SESSION_KEY] = bypass_user
         return bypass_user
+    localhost_user = _bypass_user_for_localhost()
+    if localhost_user:
+        st.session_state[SESSION_KEY] = localhost_user
+        return localhost_user
 
     if st.session_state.pop("_force_home", False):
         try:

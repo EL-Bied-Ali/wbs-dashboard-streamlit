@@ -44,7 +44,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 user = require_login()
-render_auth_sidebar(user)
+render_auth_sidebar(user, show_branding=False)
 inject_theme()
 PREVIEW_ENABLED = os.getenv("PREVIEW_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
 
@@ -363,6 +363,54 @@ def _truncate_label(text: str, max_len: int = 42) -> str:
         return text[:max_len]
     return text[: max_len - 3] + "..."
 
+ROOT_ACTIVITY_ALL = "__all__"
+
+def _find_node_by_activity_id(root: dict, activity_id: str) -> dict | None:
+    if not root or not activity_id:
+        return None
+    target = str(activity_id).strip()
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        node_id = str(node.get("activity_id") or node.get("label", "")).strip()
+        if node_id == target:
+            return node
+        children = node.get("children") or []
+        stack.extend(reversed(children))
+    return None
+
+def _rebase_tree_levels(node: dict, delta: int) -> dict:
+    if not node:
+        return {}
+    level = int(node.get("level", 1))
+    rebased = {
+        **node,
+        "level": max(1, level - delta),
+        "children": [_rebase_tree_levels(ch, delta) for ch in (node.get("children") or [])],
+    }
+    return rebased
+
+def _build_display_label_map(rows: list[dict]) -> dict[str, str]:
+    label_map: dict[str, str] = {}
+    for row in rows:
+        activity_id = str(row.get("activity_id") or "").strip()
+        if not activity_id:
+            continue
+        display = row.get("display_label") or row.get("label") or activity_id
+        if display:
+            label_map[activity_id] = display
+    return label_map
+
+def _apply_display_labels(node: dict, label_map: dict[str, str]) -> None:
+    if not node or not label_map:
+        return
+    activity_id = str(node.get("activity_id") or "").strip()
+    display = label_map.get(activity_id)
+    if display:
+        node["label"] = display
+    for child in node.get("children") or []:
+        _apply_display_labels(child, label_map)
+
 def _title_span(full_label: str, display_label: str) -> str:
     safe_display = html.escape(display_label)
     safe_full = html.escape(full_label)
@@ -602,6 +650,33 @@ def _max_tree_depth(node: dict, depth: int = 1) -> int:
         return depth
     return max(_max_tree_depth(child, depth + 1) for child in children)
 
+def _collect_nodes_by_depth(
+    node: dict,
+    target_depth: int,
+    current_depth: int = 1,
+    path: list[str] | None = None,
+    node_id: int | None = None,
+) -> list[tuple[dict, list[str], int | None]]:
+    path = path or []
+    label = node.get("label", "")
+    label_key = f"{label}__{node_id}" if node_id is not None else label
+    if current_depth == target_depth:
+        return [(node, path, node_id)]
+    children = node.get("children") or []
+    next_path = path + [label_key]
+    results: list[tuple[dict, list[str], int | None]] = []
+    for idx, child in enumerate(children):
+        results.extend(
+            _collect_nodes_by_depth(
+                child,
+                target_depth,
+                current_depth + 1,
+                next_path,
+                node_id=idx,
+            )
+        )
+    return results
+
 def render_node(
     node:dict,
     depth:int,
@@ -612,9 +687,12 @@ def render_node(
     node_id:int|None=None,
     max_depth:int|None=None,
     truncate_labels: bool = True,
+    level_offset: int = 0,
 ):
     path = path or []
     label=node.get("label",""); level=int(node.get("level", depth)); metrics=node.get("metrics") or {}
+    if level_offset:
+        level = max(1, level - level_offset + 1)
     display_label = _truncate_label(label) if truncate_labels else label
     children = node.get("children") or []
     if max_depth is not None and depth >= max_depth:
@@ -657,6 +735,7 @@ def render_node(
                 node_id=idx,
                 max_depth=max_depth,
                 truncate_labels=truncate_labels,
+                level_offset=level_offset,
             )
         child_open = any(
             st.session_state.get(_node_base(ch.get("label",""), depth + 1, wbs_key, next_path, node_id=idx), False)
@@ -684,17 +763,40 @@ def render_all(
     debug:bool=False,
     max_depth:int|None=None,
     truncate_labels: bool = True,
+    start_depth: int = 0,
 ):
     with st.container(key=f"hero_wrap__{anim_seq%2}"):
-        render_node(
-            root,
-            1,
-            anim_seq,
-            wbs_key,
-            debug=debug,
-            max_depth=max_depth,
-            truncate_labels=truncate_labels,
-        )
+        start_depth = max(0, int(start_depth or 0))
+        target_depth = start_depth + 1
+        level_offset = start_depth
+        if start_depth <= 0:
+            render_node(
+                root,
+                1,
+                anim_seq,
+                wbs_key,
+                debug=debug,
+                max_depth=max_depth,
+                truncate_labels=truncate_labels,
+                level_offset=level_offset,
+            )
+        else:
+            nodes = _collect_nodes_by_depth(root, target_depth)
+            if not nodes:
+                st.info("No nodes available at the selected start depth.")
+            for node, path, node_id in nodes:
+                render_node(
+                    node,
+                    target_depth,
+                    anim_seq,
+                    wbs_key,
+                    debug=debug,
+                    path=path,
+                    node_id=node_id,
+                    max_depth=max_depth,
+                    truncate_labels=truncate_labels,
+                    level_offset=level_offset,
+                )
     st.divider()
 
 # ===== Sidebar: importer (unchanged) =====
@@ -705,14 +807,6 @@ st.sidebar.page_link("pages/2_WBS.py", label="WBS")
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 
 with st.sidebar:
-    _render_excel_format_help()
-    shared_upload = st.file_uploader(
-        "Upload project Excel (.xlsx)",
-        type=["xlsx", "xlsm"],
-        key="excel_upload_shared",
-        label_visibility="collapsed",
-    )
-    _store_shared_upload(shared_upload)
     if PREVIEW_ENABLED:
         use_test = st.toggle(
             "Use test Excel (artifacts/W_example.xlsx)",
@@ -730,8 +824,6 @@ with st.sidebar:
             source_path = str(test_path)
         else:
             st.info("Test file not found at artifacts/W_example.xlsx.")
-
-    _maybe_open_mapping_dialog(source_path)
 
     if source_path:
         try:
@@ -761,11 +853,71 @@ with st.sidebar:
             st.error(f"Extraction error: {e}")
 
     if packs:
-        max_depth = _max_tree_depth(packs[0]["wbs"])
+        preview_rows = st.session_state.get("_preview_rows", [])
+        activity_id_options = []
+        activity_id_meta = {}
+        for row in preview_rows:
+            activity_id = str(row.get("activity_id") or row.get("label") or "").strip()
+            if not activity_id or activity_id in activity_id_meta:
+                continue
+            level = int(row.get("level", 0))
+            label = row.get("display_label") or row.get("label", "") or activity_id
+            label = _truncate_label(label, 44)
+            activity_id_options.append(activity_id)
+            activity_id_meta[activity_id] = {"level": level, "label": label}
+
+        root_options = [ROOT_ACTIVITY_ALL] + activity_id_options
+        root_choice = st.session_state.get("activity_root_id", ROOT_ACTIVITY_ALL)
+        if root_choice not in root_options:
+            root_choice = ROOT_ACTIVITY_ALL
+            st.session_state["activity_root_id"] = root_choice
+
+        def _root_label(value: str) -> str:
+            if value == ROOT_ACTIVITY_ALL:
+                return "All activities"
+            meta = activity_id_meta.get(value)
+            if not meta:
+                return value
+            prefix = "|--" * max(0, meta["level"])
+            label = meta.get("label") or value
+            return f"{prefix} {label}".strip()
+
+        st.selectbox(
+            "Root activity",
+            root_options,
+            index=root_options.index(root_choice),
+            format_func=_root_label,
+            key="activity_root_id",
+        )
+
+        root_node = packs[0]["wbs"]
+        if root_choice != ROOT_ACTIVITY_ALL:
+            found = _find_node_by_activity_id(root_node, root_choice)
+            if found:
+                root_node = found
+
+        max_depth = _max_tree_depth(root_node)
+        start_depth_choices = [str(i) for i in range(0, max_depth)]
+        start_choice = st.session_state.get("activity_start_depth", "0")
+        if start_choice not in start_depth_choices:
+            start_choice = "0"
+            st.session_state["activity_start_depth"] = start_choice
+        st.selectbox(
+            "Start depth",
+            start_depth_choices,
+            index=start_depth_choices.index(start_choice),
+            key="activity_start_depth",
+        )
         depth_choices = ["All levels"] + [str(i) for i in range(1, max_depth + 1)]
         current_choice = st.session_state.get("wbs_max_depth", "All levels")
         if current_choice not in depth_choices:
             current_choice = "All levels"
+            st.session_state["wbs_max_depth"] = current_choice
+        if current_choice != "All levels":
+            start_depth_level = int(st.session_state.get("activity_start_depth", "0"))
+            if int(current_choice) - 1 < start_depth_level:
+                current_choice = str(start_depth_level + 1)
+                st.session_state["wbs_max_depth"] = current_choice
         st.selectbox(
             "Max depth",
             depth_choices,
@@ -777,6 +929,11 @@ packs = st.session_state.get("_packs", [])
 detected_tables = st.session_state.get("_detected_tables", [])
 mismatch = st.session_state.get("_table_mismatch")
 schedule_info = st.session_state.get("_schedule_info", {})
+preview_rows = st.session_state.get("_preview_rows", [])
+display_label_map = _build_display_label_map(preview_rows)
+if display_label_map:
+    for pack in packs:
+        _apply_display_labels(pack.get("wbs", {}), display_label_map)
 if mismatch and (mismatch.get("summary_only") or mismatch.get("assign_only")):
     st.warning(
         "Activity ID mismatch between the two tables. "
@@ -847,14 +1004,38 @@ if preview_mode:
 
     # Mapping diagnostics (missing IDs / values)
     schedule_lookup = st.session_state.get("_schedule_lookup", {})
-    activity_ids = [str(r.get("label", "")).strip() for r in preview_rows if str(r.get("label", "")).strip()]
-    schedule_missing = [aid for aid in activity_ids if aid not in schedule_lookup or schedule_lookup[aid].get("value") is None]
-    earned_missing = [r.get("label") for r in preview_rows if r.get("units_complete") in (None, "", " ")]
+    activity_ids = [
+        str(r.get("activity_id") or "").strip()
+        for r in preview_rows
+        if str(r.get("activity_id") or "").strip()
+    ]
+    schedule_missing = [
+        r.get("display_label") or r.get("label") or r.get("activity_id")
+        for r in preview_rows
+        if str(r.get("activity_id") or "").strip()
+        and (
+            str(r.get("activity_id") or "").strip() not in schedule_lookup
+            or schedule_lookup[str(r.get("activity_id") or "").strip()].get("value") is None
+        )
+    ]
+    earned_missing = [
+        r.get("display_label") or r.get("label") or r.get("activity_id")
+        for r in preview_rows
+        if r.get("units_complete") in (None, "", " ")
+    ]
     root_budget = None
     if activity_ids:
         root_entry = schedule_lookup.get(activity_ids[0])
         root_budget = root_entry.get("budgeted_units") if root_entry else None
-    budget_missing = [aid for aid in activity_ids if aid not in schedule_lookup or schedule_lookup[aid].get("budgeted_units") in (None, 0)]
+    budget_missing = [
+        r.get("display_label") or r.get("label") or r.get("activity_id")
+        for r in preview_rows
+        if str(r.get("activity_id") or "").strip()
+        and (
+            str(r.get("activity_id") or "").strip() not in schedule_lookup
+            or schedule_lookup[str(r.get("activity_id") or "").strip()].get("budgeted_units") in (None, 0)
+        )
+    ]
     if schedule_info and schedule_info.get("status") not in (None, "ok"):
         st.warning("Schedule issues: " + " ".join(schedule_info.get("errors", [])))
     if schedule_missing or earned_missing or budget_missing:
@@ -883,14 +1064,15 @@ if preview_mode:
     schedule_lookup = st.session_state.get("_schedule_lookup", {})
     root_budget = None
     if preview_rows:
-        root_entry = schedule_lookup.get(str(preview_rows[0].get("label", "")).strip())
+        root_entry = schedule_lookup.get(str(preview_rows[0].get("activity_id") or "").strip())
         if root_entry:
             root_budget = root_entry.get("budgeted_units")
 
     def _preview_metrics(row: dict) -> dict:
-        label = row.get("label", "")
+        activity_id = str(row.get("activity_id") or "").strip()
+        label = row.get("display_label") or row.get("label") or activity_id
         rng = _rng(label)
-        schedule_entry = schedule_lookup.get(label.strip())
+        schedule_entry = schedule_lookup.get(activity_id) if activity_id else None
         if schedule_entry:
             schedule = schedule_entry.get("value")
             schedule_display = schedule_entry.get("display", "?")
@@ -1005,8 +1187,9 @@ if preview_mode:
         for r in rows:
             lvl = (r.get("level", 0) - min_level) + 1
             node = {
-                "label": r["label"],
+                "label": r.get("display_label") or r["label"],
                 "level": lvl,
+                "activity_id": r.get("activity_id") or r["label"],
                 "metrics": _preview_metrics(r),
                 "children": [],
             }
@@ -1028,14 +1211,26 @@ if preview_mode:
     if not root:
         st.info("No preview tree available.")
         st.stop()
+    root_choice = st.session_state.get("activity_root_id", ROOT_ACTIVITY_ALL)
+    if root_choice != ROOT_ACTIVITY_ALL:
+        found = _find_node_by_activity_id(root, root_choice)
+        if found:
+            root_level = int(found.get("level", 1))
+            root = _rebase_tree_levels(found, max(0, root_level - 1))
     st.caption("Preview uses placeholder metrics until we map real values.")
     st.session_state.setdefault("_preview_anim_seq", 0)
+    start_depth_level = st.session_state.get("activity_start_depth", "0")
+    if isinstance(start_depth_level, str) and start_depth_level.isdigit():
+        start_depth_level = int(start_depth_level)
+    else:
+        start_depth_level = 0
     render_all(
         root,
         st.session_state["_preview_anim_seq"],
         wbs_key="preview",
         debug=False,
         truncate_labels=truncate_labels,
+        start_depth=start_depth_level,
     )
     st.info("Disable preview in the sidebar to render the WBS.")
     st.stop()
@@ -1057,11 +1252,24 @@ st.session_state.setdefault("_idx_prev", -1)
 
 depth_choice = st.session_state.get("wbs_max_depth", "All levels")
 max_depth = int(depth_choice) if isinstance(depth_choice, str) and depth_choice.isdigit() else None
+start_depth_level = st.session_state.get("activity_start_depth", "0")
+if isinstance(start_depth_level, str) and start_depth_level.isdigit():
+    start_depth_level = int(start_depth_level)
+else:
+    start_depth_level = 0
+if max_depth is not None and max_depth <= start_depth_level:
+    max_depth = start_depth_level + 1
 
 idx = 0
 wbs_idx = idx
 sel = packs[wbs_idx]
 root = sel["wbs"]
+root_choice = st.session_state.get("activity_root_id", ROOT_ACTIVITY_ALL)
+if root_choice != ROOT_ACTIVITY_ALL:
+    found = _find_node_by_activity_id(root, root_choice)
+    if found:
+        root_level = int(found.get("level", 1))
+        root = _rebase_tree_levels(found, max(0, root_level - 1))
 wbs_key = _slug(sel.get("sheet","sheet")) + "__" + _slug(sel.get("range","range")) + "__" + _slug(root.get("label","wbs")) + f"__{wbs_idx}"
 if st.session_state["_active_ctx"] != wbs_key or st.session_state["_idx_prev"] != wbs_idx:
     st.session_state["_anim_seq"] += 1
@@ -1079,4 +1287,5 @@ with st.container(key="glass_wrap"):
             debug=debug_remount,
             max_depth=max_depth,
             truncate_labels=truncate_labels,
+            start_depth=start_depth_level,
         )

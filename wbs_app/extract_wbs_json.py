@@ -330,6 +330,20 @@ def clean_label(s: Any) -> str:
     if s is None: return ""
     return str(s).strip()
 
+def _normalize_activity_id(value: Any) -> str:
+    if value is None:
+        return ""
+    text = str(value).replace("\u00a0", " ").strip()
+    return re.sub(r"\s+", " ", text)
+
+def _extract_activity_id(label: str) -> str:
+    if not label:
+        return ""
+    if " - " in label:
+        return label.split(" - ", 1)[0].strip()
+    parts = label.split()
+    return parts[0].strip() if parts else label.strip()
+
 def _norm(x: Any) -> str:
     return re.sub(r"\s+", " ", str(x or "")).strip().lower()
 
@@ -1328,6 +1342,51 @@ def build_preview_rows(
         r["level"] = indent_to_level.get(r["indent"], 0)
     return rows
 
+def _match_column(columns: list[Any], candidates: list[str]) -> Any | None:
+    for cand in candidates:
+        cand_norm = _norm_header(cand)
+        for col in columns:
+            if _norm_header(col) == cand_norm:
+                return col
+    return None
+
+def _build_activity_name_map(
+    input_xlsx: str,
+    column_mapping: dict[str, dict[str, str]] | None = None,
+) -> Dict[str, str]:
+    table = _load_detected_table(
+        input_xlsx,
+        "activity_summary",
+        column_mapping=column_mapping,
+    )
+    if not table:
+        return {}
+    df, _, _ = table
+    id_col = _match_column(
+        list(df.columns),
+        SUMMARY_FIELD_VARIANTS.get("Activity ID", []) + ["Activity ID", "ActivityID"],
+    )
+    name_col = _match_column(
+        list(df.columns),
+        SUMMARY_FIELD_VARIANTS.get("Activity Name", []) + ["Activity Name", "ActivityName"],
+    )
+    if not id_col or not name_col:
+        return {}
+    name_map: Dict[str, str] = {}
+    for _, row in df.iterrows():
+        raw_id = row.get(id_col)
+        if raw_id is None or str(raw_id).strip() == "":
+            continue
+        activity_id = _normalize_activity_id(raw_id)
+        if not activity_id:
+            continue
+        raw_name = row.get(name_col)
+        name_text = str(raw_name).strip() if raw_name is not None else ""
+        if not name_text:
+            continue
+        name_map[activity_id] = name_text
+    return name_map
+
 # ---------- Choix de la colonne Label ----------
 def pick_label_col(df: pd.DataFrame) -> str:
     """
@@ -1365,6 +1424,7 @@ def to_wbs_tree(
     schedule_lookup: Dict[str, Dict[str, Any]] | None = None,
     schedule_info: Dict[str, Any] | None = None,
     source_meta: Dict[str, Any] | None = None,
+    activity_name_map: Dict[str, str] | None = None,
 ) -> Dict:
     df = df.copy()
     df["_row_idx"] = df.index
@@ -1567,12 +1627,40 @@ def to_wbs_tree(
     stack: List[Dict] = []
 
     for _, r in df.iterrows():
-        label = clean_label(r[label_col])
-        if not label:
+        base_label = clean_label(r[label_col])
+        if not base_label:
             continue
         lvl = space2lvl.get(r["_indent"], len(space2lvl))  # fallback = plus profond
         row_idx = int(r.get("_row_idx")) if "_row_idx" in r else None
-        node = {"label": label, "level": int(lvl), "metrics": row_metrics(r, row_idx), "children": []}
+        activity_id = _normalize_activity_id(r.get(activity_id_col))
+        activity_name = str(r.get("Activity Name") or r.get("ActivityName") or "").strip()
+        if activity_name_map:
+            lookup_id = activity_id
+            if not lookup_id:
+                lookup_id = _normalize_activity_id(base_label)
+            if lookup_id and lookup_id in activity_name_map and not activity_name:
+                activity_name = activity_name_map.get(lookup_id, "")
+                activity_id = lookup_id
+            elif lookup_id and lookup_id not in activity_name_map:
+                alt_id = _extract_activity_id(base_label)
+                alt_id = _normalize_activity_id(alt_id)
+                if alt_id and alt_id in activity_name_map:
+                    activity_id = alt_id
+                    if not activity_name:
+                        activity_name = activity_name_map.get(alt_id, "")
+        if activity_id and activity_name:
+            display_label = f"{activity_id} - {activity_name}"
+        elif activity_id:
+            display_label = activity_id
+        else:
+            display_label = base_label
+        node = {
+            "label": display_label,
+            "level": int(lvl),
+            "activity_id": activity_id or base_label,
+            "metrics": row_metrics(r, row_idx),
+            "children": [],
+        }
 
         if not stack:
             root = node
@@ -1611,6 +1699,10 @@ def extract_all_wbs(
             input_xlsx,
             column_mapping=column_mapping,
         )
+    activity_name_map = _build_activity_name_map(
+        input_xlsx,
+        column_mapping=column_mapping,
+    )
 
     for ws in wb.worksheets:
         blocks = detect_all_blocks_with_left_extension(ws)
@@ -1640,6 +1732,7 @@ def extract_all_wbs(
                 schedule_lookup=schedule_lookup,
                 schedule_info=schedule_info,
                 source_meta=source_meta,
+                activity_name_map=activity_name_map,
             )
             if tree:
                 results.append({
@@ -1667,6 +1760,7 @@ def extract_all_wbs(
         schedule_lookup=schedule_lookup,
         schedule_info=schedule_info,
         source_meta=meta,
+        activity_name_map=activity_name_map,
     )
     if tree:
         results.append({

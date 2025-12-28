@@ -125,19 +125,20 @@ def inject_theme():
         animation: pointPop__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
       }
       .stPlotlyChart .main-svg .trace.pie path,
-      .stPlotlyChart .main-svg .pie .slice path{
-        transform-origin: center;
-        transform-box: fill-box;
-        animation: pieGrow__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
-      }
+      .stPlotlyChart .main-svg .pie .slice path,
       .stPlotlyChart .main-svg .pielayer .slice path.surface,
       .stPlotlyChart .main-svg .pielayer .slice path{
-        transform-origin: center;
-        transform-box: fill-box;
-        animation: pieGrow__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
+        animation: none !important;
+        transform: none !important;
+      }
+      .stPlotlyChart .main-svg .pielayer .slicetext,
+      .stPlotlyChart .main-svg .pielayer .slicetext text{
+        display: block !important;
+        opacity: 1 !important;
+        fill: #e6eaf1 !important;
       }
       .stPlotlyChart .main-svg .pielayer .slicetext{
-        animation: valuePop__ANIM_SEQ__ 1200ms cubic-bezier(.22,.7,.2,1) both;
+        animation: none !important;
       }
       .stPlotlyChart .main-svg .indicatorlayer .value-arc path{
         transform-origin: center;
