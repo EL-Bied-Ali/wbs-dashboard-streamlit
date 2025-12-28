@@ -15,3 +15,4 @@ venv/
 *.xlsx
 *.mp4
 New Python File.py
+!artifacts/Chronoplan_Template.xlsx

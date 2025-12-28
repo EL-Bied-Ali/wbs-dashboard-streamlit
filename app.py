@@ -34,6 +34,12 @@ from charts import s_curve
 from data import demo_series, load_from_excel, sample_dashboard_data
 from services_kpis import compute_kpis, extract_dates_labels
 from ui import inject_theme
+from activity_filters import build_activity_filter_sidebar
+from shared_excel import (
+    persist_shared_excel_state,
+    restore_shared_excel_state,
+    set_default_excel_if_missing,
+)
 
 
 page_override = st.session_state.get("_page_override")
@@ -76,33 +82,12 @@ def _store_shared_upload(uploaded):
         st.session_state["shared_excel_path"] = tmp.name
         st.session_state["shared_excel_key"] = file_key
         st.session_state["shared_excel_name"] = uploaded.name
+        persist_shared_excel_state(tmp.name, uploaded.name, file_key)
     return st.session_state.get("shared_excel_path")
-
-def _set_default_excel_path():
-    if st.session_state.get("shared_excel_path"):
-        return st.session_state.get("shared_excel_path")
-    default_candidates = [
-        Path("artifacts") / "W_example.xlsx",
-        Path("artifacts") / "wbs_sample.xlsx",
-        Path("Progress.xlsx"),
-    ]
-    for path in default_candidates:
-        if path.exists():
-            file_key = f"default:{path.name}:{path.stat().st_mtime}"
-            if st.session_state.get("shared_excel_key") == file_key:
-                return st.session_state.get("shared_excel_path")
-            data = path.read_bytes()
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=path.suffix or ".xlsx")
-            tmp.write(data)
-            tmp.close()
-            st.session_state["shared_excel_path"] = tmp.name
-            st.session_state["shared_excel_key"] = file_key
-            st.session_state["shared_excel_name"] = path.name
-            return tmp.name
-    return None
 
 def _excel_template_bytes():
     candidates = [
+        Path("artifacts") / "Chronoplan_Template.xlsx",
         Path("artifacts") / "W_example.xlsx",
         Path("artifacts") / "wbs_sample.xlsx",
         Path("Progress.xlsx"),
@@ -1126,6 +1111,7 @@ page = "S-Curve" if page_override == "S-Curve" else "Dashboard"
 
 # ---------- Shared Excel upload ----------
 _render_excel_format_help()
+restore_shared_excel_state()
 shared_upload = st.sidebar.file_uploader(
     "Upload project Excel (.xlsx)",
     type=["xlsx", "xlsm"],
@@ -1134,7 +1120,9 @@ shared_upload = st.sidebar.file_uploader(
 )
 shared_path = _store_shared_upload(shared_upload)
 if shared_path is None:
-    shared_path = _set_default_excel_path()
+    shared_path = set_default_excel_if_missing()
+if shared_path and st.session_state.get("shared_excel_name"):
+    st.sidebar.caption(f"Current file: {st.session_state['shared_excel_name']}")
 file_cache_key = _file_cache_key(shared_path)
 today_cache_key = date.today().isoformat()
 
@@ -1187,150 +1175,7 @@ if shared_path:
         st.sidebar.warning(f"Excel read error: {e}")
 
 if activity_rows:
-    ROOT_ACTIVITY_ALL = "__all__"
-    activity_id_options = []
-    activity_id_meta = {}
-    for idx, row in enumerate(activity_rows):
-        row["_idx"] = idx
-        activity_id = str(row.get("activity_id") or "").strip()
-        if not activity_id or activity_id in activity_id_meta:
-            continue
-        level = int(row.get("level", 0))
-        label = row.get("display_label") or row.get("label", "") or activity_id
-        label = _truncate_label(label, 44)
-        activity_id_options.append(activity_id)
-        activity_id_meta[activity_id] = {"idx": idx, "level": level, "label": label}
-
-    root_options = [ROOT_ACTIVITY_ALL] + activity_id_options
-    root_choice = st.session_state.get("activity_root_id", ROOT_ACTIVITY_ALL)
-    if root_choice not in root_options:
-        root_choice = ROOT_ACTIVITY_ALL
-        st.session_state["activity_root_id"] = root_choice
-
-    def _root_label(value: str) -> str:
-        if value == ROOT_ACTIVITY_ALL:
-            return "All activities"
-        meta = activity_id_meta.get(value)
-        if not meta:
-            return value
-        prefix = "|--" * max(0, meta["level"])
-        label = meta.get("label") or value
-        return f"{prefix} {label}".strip()
-
-    st.sidebar.selectbox(
-        "Root activity",
-        root_options,
-        index=root_options.index(root_choice),
-        format_func=_root_label,
-        key="activity_root_id",
-    )
-
-    if root_choice != ROOT_ACTIVITY_ALL and root_choice in activity_id_meta:
-        root_meta = activity_id_meta[root_choice]
-        root_idx = root_meta["idx"]
-        root_level = root_meta["level"]
-        end_idx = len(activity_rows)
-        for i in range(root_idx + 1, len(activity_rows)):
-            if int(activity_rows[i].get("level", 0)) <= root_level:
-                end_idx = i
-                break
-        scoped_rows = activity_rows[root_idx:end_idx]
-        base_level = root_level
-    else:
-        scoped_rows = activity_rows
-        base_level = 0
-
-    max_level = 0
-    for row in scoped_rows:
-        level = int(row.get("level", 0)) - base_level
-        if level > max_level:
-            max_level = level
-
-    start_choices = [str(i) for i in range(0, max_level + 1)]
-    start_choice = st.session_state.get("activity_start_depth", "0")
-    if start_choice not in start_choices:
-        start_choice = "0"
-        st.session_state["activity_start_depth"] = start_choice
-    st.sidebar.selectbox(
-        "Start depth",
-        start_choices,
-        index=start_choices.index(start_choice),
-        key="activity_start_depth",
-    )
-    start_depth_level = st.session_state.get("activity_start_depth", "0")
-    if isinstance(start_depth_level, str) and start_depth_level.isdigit():
-        start_depth_level = int(start_depth_level)
-    else:
-        start_depth_level = 0
-
-    depth_choices = ["All levels"] + [str(i) for i in range(1, max_level + 2)]
-    depth_choice = st.session_state.get("activity_depth_filter", "All levels")
-    if depth_choice not in depth_choices:
-        depth_choice = "All levels"
-        st.session_state["activity_depth_filter"] = depth_choice
-    if depth_choice != "All levels":
-        if int(depth_choice) - 1 < start_depth_level:
-            depth_choice = str(start_depth_level + 1)
-            st.session_state["activity_depth_filter"] = depth_choice
-    st.sidebar.selectbox(
-        "Max depth",
-        depth_choices,
-        index=depth_choices.index(depth_choice) if depth_choice in depth_choices else 0,
-        key="activity_depth_filter",
-    )
-    depth_choice = st.session_state.get("activity_depth_filter", "All levels")
-    if depth_choice == "All levels":
-        depth_limit = None
-    else:
-        depth_limit = int(depth_choice) - 1
-
-    activity_options = []
-    activity_display = {}
-    activity_rows_map = {}
-    activity_levels = {}
-    activity_labels = {}
-    for row in scoped_rows:
-        key = f"act_{row['_idx']}"
-        level = max(0, int(row.get("level", 0)) - base_level)
-        label = row.get("display_label") or row.get("label", "")
-        label = _truncate_label(label, 44)
-        activity_options.append(key)
-        activity_levels[key] = level
-        activity_labels[key] = label
-        activity_rows_map[key] = row
-
-    for key in activity_options:
-        level = activity_levels.get(key, 0)
-        prefix = "|--" * max(0, level - start_depth_level)
-        label = activity_labels.get(key, "")
-        activity_display[key] = f"{prefix} {label}".strip()
-
-    def _level_in_range(level: int) -> bool:
-        if level < start_depth_level:
-            return False
-        if depth_limit is not None and level > depth_limit:
-            return False
-        return True
-
-    filtered_options = [
-        k for k in activity_options
-        if _level_in_range(activity_levels.get(k, 0))
-    ]
-
-    if not filtered_options:
-        filtered_options = activity_options[:1]
-
-    default_key = st.session_state.get("active_activity_key")
-    if default_key not in filtered_options:
-        default_key = filtered_options[0]
-
-    activity_filter = {
-        "filtered_options": filtered_options,
-        "activity_display": activity_display,
-        "activity_rows_map": activity_rows_map,
-        "default_key": default_key,
-        "activity_rows": activity_rows,
-    }
+    activity_filter = build_activity_filter_sidebar(activity_rows)
 
 def compute_dashboard_metrics_from_activity(row: dict, sched_lu: dict):
     if not row:

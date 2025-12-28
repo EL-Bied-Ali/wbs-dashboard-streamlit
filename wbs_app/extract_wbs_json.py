@@ -1434,7 +1434,20 @@ def to_wbs_tree(
 
     uniq = sorted(df["_indent"].unique().tolist()) or [0]
     space2lvl = {sp: i+1 for i, sp in enumerate(uniq)}
-    activity_id_col = "Activity ID" if "Activity ID" in df.columns else label_col
+    activity_id_col = "Activity ID" if "Activity ID" in df.columns else None
+    if activity_id_col is None:
+        activity_id_col = _match_column(
+            list(df.columns),
+            SUMMARY_FIELD_VARIANTS.get("Activity ID", []) + ["Activity ID", "ActivityID"],
+        )
+    if not activity_id_col:
+        activity_id_col = label_col
+    activity_name_col = "Activity Name" if "Activity Name" in df.columns else None
+    if activity_name_col is None:
+        activity_name_col = _match_column(
+            list(df.columns),
+            SUMMARY_FIELD_VARIANTS.get("Activity Name", []) + ["Activity Name", "ActivityName"],
+        )
     root_activity_id = str(df.iloc[0][activity_id_col] or "").strip() if not df.empty else ""
     root_budget = None
     root_budget_cell = None
@@ -1633,7 +1646,10 @@ def to_wbs_tree(
         lvl = space2lvl.get(r["_indent"], len(space2lvl))  # fallback = plus profond
         row_idx = int(r.get("_row_idx")) if "_row_idx" in r else None
         activity_id = _normalize_activity_id(r.get(activity_id_col))
-        activity_name = str(r.get("Activity Name") or r.get("ActivityName") or "").strip()
+        if activity_name_col:
+            activity_name = str(r.get(activity_name_col) or "").strip()
+        else:
+            activity_name = str(r.get("Activity Name") or r.get("ActivityName") or "").strip()
         if activity_name_map:
             lookup_id = activity_id
             if not lookup_id:

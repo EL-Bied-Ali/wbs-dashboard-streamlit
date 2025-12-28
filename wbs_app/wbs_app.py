@@ -15,6 +15,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from auth_google import require_login, render_auth_sidebar
+from activity_filters import build_activity_filter_sidebar, ROOT_ACTIVITY_ALL
+from shared_excel import (
+    persist_shared_excel_state,
+    restore_shared_excel_state,
+    set_default_excel_if_missing,
+)
 from extract_wbs_json import (
     extract_all_wbs,
     detect_expected_tables,
@@ -67,10 +73,12 @@ def _store_shared_upload(uploaded):
         st.session_state["shared_excel_path"] = tmp.name
         st.session_state["shared_excel_key"] = file_key
         st.session_state["shared_excel_name"] = uploaded.name
+        persist_shared_excel_state(tmp.name, uploaded.name, file_key)
     return st.session_state.get("shared_excel_path")
 
 def _excel_template_bytes():
     candidates = [
+        Path("artifacts") / "Chronoplan_Template.xlsx",
         Path("artifacts") / "W_example.xlsx",
         Path("artifacts") / "wbs_sample.xlsx",
         Path("Progress.xlsx"),
@@ -363,8 +371,6 @@ def _truncate_label(text: str, max_len: int = 42) -> str:
         return text[:max_len]
     return text[: max_len - 3] + "..."
 
-ROOT_ACTIVITY_ALL = "__all__"
-
 def _find_node_by_activity_id(root: dict, activity_id: str) -> dict | None:
     if not root or not activity_id:
         return None
@@ -390,26 +396,75 @@ def _rebase_tree_levels(node: dict, delta: int) -> dict:
     }
     return rebased
 
-def _build_display_label_map(rows: list[dict]) -> dict[str, str]:
-    label_map: dict[str, str] = {}
+def _normalize_label(value: str) -> str:
+    return " ".join(str(value or "").replace("\u00a0", " ").split()).lower()
+
+def _normalize_activity_id(value: str) -> str:
+    return " ".join(str(value or "").replace("\u00a0", " ").split()).lower()
+
+def _extract_activity_id(label: str) -> str:
+    if not label:
+        return ""
+    if " - " in label:
+        return label.split(" - ", 1)[0].strip()
+    parts = str(label).split()
+    return parts[0].strip() if parts else label.strip()
+
+def _build_display_label_maps(
+    rows: list[dict],
+) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    label_by_id: dict[str, str] = {}
+    label_by_name: dict[str, str] = {}
+    name_by_id: dict[str, str] = {}
     for row in rows:
         activity_id = str(row.get("activity_id") or "").strip()
-        if not activity_id:
-            continue
         display = row.get("display_label") or row.get("label") or activity_id
-        if display:
-            label_map[activity_id] = display
-    return label_map
+        if activity_id and display:
+            label_by_id[_normalize_activity_id(activity_id)] = display
+            if " - " in display:
+                name_by_id[_normalize_activity_id(activity_id)] = display.split(" - ", 1)[1].strip()
+        name = str(row.get("activity_name") or "").strip()
+        if not name and display and " - " in display:
+            name = display.split(" - ", 1)[1].strip()
+        if name and display:
+            label_by_name[_normalize_label(name)] = display
+            if activity_id:
+                name_by_id[_normalize_activity_id(activity_id)] = name
+    return label_by_id, label_by_name, name_by_id
 
-def _apply_display_labels(node: dict, label_map: dict[str, str]) -> None:
-    if not node or not label_map:
+def _apply_display_labels(
+    node: dict,
+    label_by_id: dict[str, str],
+    label_by_name: dict[str, str],
+    name_by_id: dict[str, str],
+) -> None:
+    if not node or (not label_by_id and not label_by_name):
         return
     activity_id = str(node.get("activity_id") or "").strip()
-    display = label_map.get(activity_id)
+    if activity_id and " - " in activity_id:
+        activity_id = activity_id.split(" - ", 1)[0].strip()
+    activity_key = _normalize_activity_id(activity_id)
+    if not activity_key:
+        activity_key = _normalize_activity_id(_extract_activity_id(node.get("label", "")))
+    display = label_by_id.get(activity_key)
+    if not display:
+        label = str(node.get("label") or "").strip()
+        if " - " in label:
+            label_id = label.split(" - ", 1)[0].strip()
+            display = label_by_id.get(_normalize_activity_id(label_id))
+            if not display:
+                label_name = label.split(" - ", 1)[1].strip()
+                display = label_by_name.get(_normalize_label(label_name))
+        if not display and label:
+            display = label_by_name.get(_normalize_label(label))
+    if not display and activity_key:
+        name = name_by_id.get(activity_key)
+        if name:
+            display = f"{activity_id or _extract_activity_id(node.get('label', ''))} - {name}".strip()
     if display:
         node["label"] = display
     for child in node.get("children") or []:
-        _apply_display_labels(child, label_map)
+        _apply_display_labels(child, label_by_id, label_by_name, name_by_id)
 
 def _title_span(full_label: str, display_label: str) -> str:
     safe_display = html.escape(display_label)
@@ -806,6 +861,20 @@ st.sidebar.page_link("pages/3_S_Curve.py", label="S-Curve")
 st.sidebar.page_link("pages/2_WBS.py", label="WBS")
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 
+_render_excel_format_help()
+restore_shared_excel_state()
+shared_upload = st.sidebar.file_uploader(
+    "Upload project Excel (.xlsx)",
+    type=["xlsx", "xlsm"],
+    key="excel_upload_shared",
+    label_visibility="collapsed",
+)
+shared_path = _store_shared_upload(shared_upload)
+if shared_path is None:
+    shared_path = set_default_excel_if_missing()
+if shared_path and st.session_state.get("shared_excel_name"):
+    st.sidebar.caption(f"Current file: {st.session_state['shared_excel_name']}")
+
 with st.sidebar:
     if PREVIEW_ENABLED:
         use_test = st.toggle(
@@ -817,7 +886,7 @@ with st.sidebar:
         use_test = False
     debug_remount = False
     packs = []
-    source_path = st.session_state.get("shared_excel_path")
+    source_path = shared_path
     test_path = Path("artifacts/W_example.xlsx")
     if not source_path and use_test:
         if test_path.exists():
@@ -847,6 +916,7 @@ with st.sidebar:
             st.session_state["_preview_rows"] = build_preview_rows(
                 source_path,
                 table_type="activity_summary",
+                prefer_first_table=True,
                 column_mapping=st.session_state.get("column_mapping"),
             )
         except Exception as e:
@@ -854,86 +924,22 @@ with st.sidebar:
 
     if packs:
         preview_rows = st.session_state.get("_preview_rows", [])
-        activity_id_options = []
-        activity_id_meta = {}
-        for row in preview_rows:
-            activity_id = str(row.get("activity_id") or row.get("label") or "").strip()
-            if not activity_id or activity_id in activity_id_meta:
-                continue
-            level = int(row.get("level", 0))
-            label = row.get("display_label") or row.get("label", "") or activity_id
-            label = _truncate_label(label, 44)
-            activity_id_options.append(activity_id)
-            activity_id_meta[activity_id] = {"level": level, "label": label}
-
-        root_options = [ROOT_ACTIVITY_ALL] + activity_id_options
-        root_choice = st.session_state.get("activity_root_id", ROOT_ACTIVITY_ALL)
-        if root_choice not in root_options:
-            root_choice = ROOT_ACTIVITY_ALL
-            st.session_state["activity_root_id"] = root_choice
-
-        def _root_label(value: str) -> str:
-            if value == ROOT_ACTIVITY_ALL:
-                return "All activities"
-            meta = activity_id_meta.get(value)
-            if not meta:
-                return value
-            prefix = "|--" * max(0, meta["level"])
-            label = meta.get("label") or value
-            return f"{prefix} {label}".strip()
-
-        st.selectbox(
-            "Root activity",
-            root_options,
-            index=root_options.index(root_choice),
-            format_func=_root_label,
-            key="activity_root_id",
-        )
-
-        root_node = packs[0]["wbs"]
-        if root_choice != ROOT_ACTIVITY_ALL:
-            found = _find_node_by_activity_id(root_node, root_choice)
-            if found:
-                root_node = found
-
-        max_depth = _max_tree_depth(root_node)
-        start_depth_choices = [str(i) for i in range(0, max_depth)]
-        start_choice = st.session_state.get("activity_start_depth", "0")
-        if start_choice not in start_depth_choices:
-            start_choice = "0"
-            st.session_state["activity_start_depth"] = start_choice
-        st.selectbox(
-            "Start depth",
-            start_depth_choices,
-            index=start_depth_choices.index(start_choice),
-            key="activity_start_depth",
-        )
-        depth_choices = ["All levels"] + [str(i) for i in range(1, max_depth + 1)]
-        current_choice = st.session_state.get("wbs_max_depth", "All levels")
-        if current_choice not in depth_choices:
-            current_choice = "All levels"
-            st.session_state["wbs_max_depth"] = current_choice
-        if current_choice != "All levels":
-            start_depth_level = int(st.session_state.get("activity_start_depth", "0"))
-            if int(current_choice) - 1 < start_depth_level:
-                current_choice = str(start_depth_level + 1)
-                st.session_state["wbs_max_depth"] = current_choice
-        st.selectbox(
-            "Max depth",
-            depth_choices,
-            index=depth_choices.index(current_choice),
-            key="wbs_max_depth",
-        )
+        if preview_rows:
+            build_activity_filter_sidebar(
+                preview_rows,
+                sidebar=st.sidebar,
+                fallback_max_depth_key="wbs_max_depth",
+            )
 
 packs = st.session_state.get("_packs", [])
 detected_tables = st.session_state.get("_detected_tables", [])
 mismatch = st.session_state.get("_table_mismatch")
 schedule_info = st.session_state.get("_schedule_info", {})
 preview_rows = st.session_state.get("_preview_rows", [])
-display_label_map = _build_display_label_map(preview_rows)
-if display_label_map:
+label_by_id, label_by_name, name_by_id = _build_display_label_maps(preview_rows)
+if label_by_id or label_by_name or name_by_id:
     for pack in packs:
-        _apply_display_labels(pack.get("wbs", {}), display_label_map)
+        _apply_display_labels(pack.get("wbs", {}), label_by_id, label_by_name, name_by_id)
 if mismatch and (mismatch.get("summary_only") or mismatch.get("assign_only")):
     st.warning(
         "Activity ID mismatch between the two tables. "
@@ -1250,7 +1256,10 @@ st.session_state.setdefault("_anim_seq", 0)
 st.session_state.setdefault("_active_ctx", "")
 st.session_state.setdefault("_idx_prev", -1)
 
-depth_choice = st.session_state.get("wbs_max_depth", "All levels")
+depth_choice = st.session_state.get(
+    "activity_depth_filter",
+    st.session_state.get("wbs_max_depth", "All levels"),
+)
 max_depth = int(depth_choice) if isinstance(depth_choice, str) and depth_choice.isdigit() else None
 start_depth_level = st.session_state.get("activity_start_depth", "0")
 if isinstance(start_depth_level, str) and start_depth_level.isdigit():
