@@ -49,6 +49,8 @@ if pending_code:
     st.session_state.pop("_oauth_code", None)
     st.session_state.pop("_oauth_state", None)
     user = _exchange_code_for_user(cfg, pending_code, pending_state, cookies)
+    if not user:
+        user = get_current_user()
     if user:
         st.session_state[SESSION_KEY] = user
         _store_user_cookie(cookies, cfg, user, save=False)
@@ -58,6 +60,9 @@ if pending_code:
         except Exception:
             _rerun()
         st.stop()
+    auth_error = st.session_state.pop("_oauth_last_error", None)
+    if auth_error:
+        st.error(f"Login failed: {auth_error}. Try again.")
     _save_cookies(cookies)
 
 user = get_current_user()

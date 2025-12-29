@@ -502,6 +502,9 @@ def _exchange_code_for_user(
         )
     except OAuthError as exc:
         detail = getattr(exc, "description", "") or getattr(exc, "error", "") or str(exc)
+        if "invalid_grant" in detail:
+            st.session_state["_oauth_last_error"] = detail
+            return None
         st.error(f"Login failed: {detail}. Check the redirect URI.")
         return None
     except Exception as exc:
