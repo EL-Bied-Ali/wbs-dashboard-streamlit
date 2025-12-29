@@ -816,7 +816,7 @@ def _render_home_screen(
     </div>
     """
 
-    st.html(page_html)  # type: ignore[attr-defined]
+    st.markdown(page_html, unsafe_allow_html=True)
 
 
 def _render_login_screen(auth_url: str) -> None:
