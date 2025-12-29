@@ -4,6 +4,7 @@ import base64
 import html
 import os
 import secrets
+import textwrap
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -717,7 +718,7 @@ def _render_home_screen(
 
     safe_url = html.escape(auth_url, quote=True)
     safe_app_url = html.escape(app_url or _app_url(), quote=True)
-    auth_link_attrs = ' target="_blank" rel="noopener noreferrer"'
+    auth_link_attrs = ""
     logo_uri = _get_logo_data_uri()
     logo_html = (
         f'<img class="brand-logo" src="{logo_uri}" alt="Chronoplan logo" />'
@@ -816,7 +817,7 @@ def _render_home_screen(
     </div>
     """
 
-    st.markdown(page_html, unsafe_allow_html=True)
+    st.markdown(textwrap.dedent(page_html).strip(), unsafe_allow_html=True)
 
 
 def _render_login_screen(auth_url: str) -> None:
