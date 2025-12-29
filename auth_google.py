@@ -1316,15 +1316,19 @@ def require_login() -> dict[str, Any]:
         _auth_log("require_login cookie user")
         return user
     if not _cookies_ready(cookies):
-        now = time.time()
-        wait_until = st.session_state.get("_auth_cookie_wait_until")
-        if not isinstance(wait_until, (int, float)):
-            wait_until = now + 1.5
-            st.session_state["_auth_cookie_wait_until"] = wait_until
-        if now < wait_until:
-            st.info("Loading session...")
-            st.stop()
-        st.session_state.pop("_auth_cookie_wait_until", None)
+        host = _request_host()
+        if _is_localhost_host(host):
+            now = time.time()
+            wait_until = st.session_state.get("_auth_cookie_wait_until")
+            if not isinstance(wait_until, (int, float)):
+                wait_until = now + 1.5
+                st.session_state["_auth_cookie_wait_until"] = wait_until
+            if now < wait_until:
+                st.info("Loading session...")
+                st.stop()
+            st.session_state.pop("_auth_cookie_wait_until", None)
+        else:
+            st.session_state.pop("_auth_cookie_wait_until", None)
 
     auth_url = _build_login_url(cfg, cookies)
     _render_login_screen(auth_url)
