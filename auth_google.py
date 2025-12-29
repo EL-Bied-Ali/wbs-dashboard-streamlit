@@ -415,6 +415,25 @@ def _app_url() -> str:
     return (_get_setting("APP_URL", "/") or "/").strip()
 
 
+def _build_start_oauth_url(cfg: dict[str, Any], app_url: str | None = None) -> str:
+    base = (app_url or cfg.get("redirect_uri") or "/").strip() or "/"
+    joiner = "&" if "?" in base else "?"
+    return f"{base}{joiner}start_oauth=1"
+
+
+def _render_oauth_redirect(auth_url: str) -> None:
+    safe_url = html.escape(auth_url, quote=True)
+    st.html(
+        f"""
+        <script>
+        window.top.location.href = "{safe_url}";
+        </script>
+        <p>Redirecting to Google...</p>
+        <p><a href="{safe_url}">Continue</a></p>
+        """
+    )  # type: ignore[attr-defined]
+
+
 def get_current_user() -> dict[str, Any] | None:
     cfg = _load_config()
     cookies = _get_cookie_manager(refresh=True)
@@ -854,6 +873,11 @@ def require_login() -> dict[str, Any]:
         return user
 
     params = _get_query_params()
+    start_oauth = (_query_value(params, "start_oauth") or "").strip().lower()
+    if start_oauth in {"1", "true", "yes"}:
+        auth_url = _build_login_url(cfg, cookies)
+        _render_oauth_redirect(auth_url)
+        st.stop()
     code = _query_value(params, "code")
     state = _query_value(params, "state")
     if code:
@@ -871,12 +895,12 @@ def require_login() -> dict[str, Any]:
             _save_cookies(cookies)
             _rerun()
         _save_cookies(cookies)
-        auth_url = _build_login_url(cfg, cookies)
-        _render_login_screen(auth_url)
+        start_url = _build_start_oauth_url(cfg)
+        _render_login_screen(start_url)
         st.stop()
 
-    auth_url = _build_login_url(cfg, cookies)
-    _render_login_screen(auth_url)
+    start_url = _build_start_oauth_url(cfg)
+    _render_login_screen(start_url)
     st.stop()
 
 
