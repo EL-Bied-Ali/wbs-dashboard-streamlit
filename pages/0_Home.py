@@ -37,35 +37,30 @@ _flush_pending_cookie(cookies, cfg)
 params = _get_query_params()
 code = _query_value(params, "code")
 state = _query_value(params, "state")
-pending_code = st.session_state.get("_oauth_code")
-pending_state = st.session_state.get("_oauth_state")
-if code and not pending_code:
-    st.session_state["_oauth_code"] = code
-    st.session_state["_oauth_state"] = state
-    _clear_query_params()
-    _rerun()
-
-if pending_code:
-    st.session_state.pop("_oauth_code", None)
-    st.session_state.pop("_oauth_state", None)
-    user = _exchange_code_for_user(cfg, pending_code, pending_state, cookies)
-    if not user:
-        user = get_current_user()
-    if user:
-        st.session_state["_oauth_flow_handled"] = True
+processed_code = st.session_state.get("_oauth_processed_code")
+if code:
+    if processed_code == code:
         _clear_query_params()
-        st.session_state[SESSION_KEY] = user
-        _store_user_cookie(cookies, cfg, user, save=False)
+    else:
+        st.session_state["_oauth_processed_code"] = code
+        user = _exchange_code_for_user(cfg, code, state, cookies)
+        _clear_query_params()
+        if not user:
+            user = get_current_user()
+        if user:
+            st.session_state["_oauth_flow_handled"] = True
+            st.session_state[SESSION_KEY] = user
+            _store_user_cookie(cookies, cfg, user, save=False)
+            _save_cookies(cookies)
+            try:
+                st.switch_page("app.py")  # type: ignore[attr-defined]
+            except Exception:
+                _rerun()
+            st.stop()
+        auth_error = st.session_state.pop("_oauth_last_error", None)
+        if auth_error:
+            st.error(f"Login failed: {auth_error}. Try again.")
         _save_cookies(cookies)
-        try:
-            st.switch_page("app.py")  # type: ignore[attr-defined]
-        except Exception:
-            _rerun()
-        st.stop()
-    auth_error = st.session_state.pop("_oauth_last_error", None)
-    if auth_error:
-        st.error(f"Login failed: {auth_error}. Try again.")
-    _save_cookies(cookies)
 
 user = get_current_user()
 if user:
