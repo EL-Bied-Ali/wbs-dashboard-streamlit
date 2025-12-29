@@ -356,9 +356,31 @@ def _store_user_cookie(
     save: bool = True,
 ) -> None:
     serializer = _serializer(cfg["cookie_secret"])
+    try:
+        if not cookies.ready():
+            st.session_state["_pending_user_cookie"] = user
+            return
+    except Exception:
+        st.session_state["_pending_user_cookie"] = user
+        return
     cookies[cfg["cookie_name"]] = serializer.dumps(user)
     if save:
         _save_cookies(cookies)
+
+
+def _flush_pending_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> None:
+    pending = st.session_state.get("_pending_user_cookie")
+    if not isinstance(pending, dict):
+        return
+    try:
+        if not cookies.ready():
+            return
+    except Exception:
+        return
+    serializer = _serializer(cfg["cookie_secret"])
+    cookies[cfg["cookie_name"]] = serializer.dumps(pending)
+    _save_cookies(cookies)
+    st.session_state.pop("_pending_user_cookie", None)
 
 
 def _build_login_url(cfg: dict[str, Any], cookies: CookieManager) -> str:
@@ -465,6 +487,7 @@ def _app_url() -> str:
 def get_current_user() -> dict[str, Any] | None:
     cfg = _load_config()
     cookies = _get_cookie_manager(refresh=True)
+    _flush_pending_cookie(cookies, cfg)
     debug = _ensure_auth_debug(cookies, cfg)
     user = st.session_state.get(SESSION_KEY)
     if user:
@@ -891,6 +914,7 @@ def require_login() -> dict[str, Any]:
 
     cfg = _load_config()
     cookies = _get_cookie_manager(refresh=True)
+    _flush_pending_cookie(cookies, cfg)
     _ensure_auth_debug(cookies, cfg)
 
     user = st.session_state.get(SESSION_KEY)

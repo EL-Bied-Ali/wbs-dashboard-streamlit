@@ -7,6 +7,7 @@ from auth_google import (
     _build_login_url,
     _clear_query_params,
     _exchange_code_for_user,
+    _flush_pending_cookie,
     _get_cookie_manager,
     _get_query_params,
     _load_config,
@@ -31,6 +32,7 @@ st.markdown(
 
 cfg = _load_config()
 cookies = _get_cookie_manager(refresh=True)
+_flush_pending_cookie(cookies, cfg)
 
 params = _get_query_params()
 code = _query_value(params, "code")
