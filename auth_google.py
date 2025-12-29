@@ -438,7 +438,11 @@ def _build_login_url(cfg: dict[str, Any], cookies: CookieManager) -> str:
         redirect_uri=cfg["redirect_uri"],
     )
     nonce = secrets.token_urlsafe(16)
-    state_payload = {"nonce": nonce, "ts": int(time.time())}
+    state_payload = {
+        "nonce": nonce,
+        "ts": int(time.time()),
+        "redirect_uri": _normalize_redirect_uri(cfg["redirect_uri"]),
+    }
     state = _state_serializer(cfg["cookie_secret"]).dumps(state_payload)
     url, returned_state = oauth.create_authorization_url(
         AUTHORIZATION_ENDPOINT,
@@ -480,17 +484,21 @@ def _exchange_code_for_user(
         st.error("Invalid login state. Please try again.")
         return None
 
+    redirect_uri = _normalize_redirect_uri(cfg["redirect_uri"])
+    if isinstance(state_payload, dict):
+        redirect_uri = _normalize_redirect_uri(state_payload.get("redirect_uri") or redirect_uri)
+
     oauth = OAuth2Session(
         client_id=cfg["client_id"],
         client_secret=cfg["client_secret"],
         scope=SCOPES,
-        redirect_uri=cfg["redirect_uri"],
+        redirect_uri=redirect_uri,
     )
     try:
         token = oauth.fetch_token(
             TOKEN_ENDPOINT,
             code=code,
-            redirect_uri=cfg["redirect_uri"],
+            redirect_uri=redirect_uri,
         )
     except OAuthError as exc:
         st.error(f"Login failed: {exc}. Check the redirect URI.")
