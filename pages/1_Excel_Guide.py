@@ -53,9 +53,8 @@ st.markdown(
 st.markdown("### Activity Summary (required)")
 st.markdown(
     "- Required columns: Activity ID, Activity Name, Activity Status, BL Project Finish, "
-    "Finish, Units % Complete, Variance - BL Project Finish Date"
+    "Finish, Units % Complete, Variance - BL Project Finish Date, Budgeted Labor Units"
 )
-st.markdown("- Optional columns: Budgeted Labor Units")
 st.markdown(
     "- **Hierarchy**: use leading spaces in Activity ID to define levels (2 spaces per level)."
 )
@@ -66,13 +65,13 @@ st.markdown(
 st.markdown("Example (Activity ID indentation shown with leading spaces):")
 st.markdown(
     """
-| Activity ID | Activity Name    | Activity Status | BL Project Finish | Finish      | Units % Complete | Variance - BL Project Finish Date |
-|------------|------------------|-----------------|------------------|-------------|------------------|-----------------------------------|
-| A-100      |                  |                 | 2025-01-10       | 2025-01-12  | 100%             | 2                                 |
-| &nbsp;&nbsp;A-110 |                  |                 | 2025-01-05       | 2025-01-07  | 100%             | 2                                 |
-| &nbsp;&nbsp;&nbsp;&nbsp;A-111 | Mobilize crew    | Completed       | 2025-01-06       | 2025-01-07  | 100%             | 1                                 |
-| &nbsp;&nbsp;&nbsp;&nbsp;A-112 | Temporary works  | In Progress     | 2025-01-08       | 2025-01-12  | 90%              | 4                                 |
-| &nbsp;&nbsp;A-120 | Foundations     | Not Started     | 2025-02-05       | 2025-02-11  | 72%              | 6                                 |
+| Activity ID | Activity Name    | Activity Status | BL Project Finish | Finish      | Units % Complete | Variance - BL Project Finish Date | Budgeted Labor Units |
+|------------|------------------|-----------------|------------------|-------------|------------------|-----------------------------------|----------------------|
+| A-100      |                  |                 | 2025-01-10       | 2025-01-12  | 100%             | 2                                 | 1000                 |
+| &nbsp;&nbsp;A-110 |                  |                 | 2025-01-05       | 2025-01-07  | 100%             | 2                                 | 600                  |
+| &nbsp;&nbsp;&nbsp;&nbsp;A-111 | Mobilize crew    | Completed       | 2025-01-06       | 2025-01-07  | 100%             | 1                                 | 300                  |
+| &nbsp;&nbsp;&nbsp;&nbsp;A-112 | Temporary works  | In Progress     | 2025-01-08       | 2025-01-12  | 90%              | 4                                 | 300                  |
+| &nbsp;&nbsp;A-120 | Foundations     | Not Started     | 2025-02-05       | 2025-02-11  | 72%              | 6                                 | 400                  |
 """,
     unsafe_allow_html=False,
 )

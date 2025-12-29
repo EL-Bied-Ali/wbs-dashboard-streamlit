@@ -97,7 +97,7 @@ def _render_excel_format_help():
                     "**Expected structure**",
                     "- Two tables: Activity Summary + Resource Assignments (any sheets).",
                     "- Activity IDs must match across both tables, including indentation.",
-                    "- Activity Summary required: Activity ID, Activity Name, Activity Status, BL Project Finish (or Planned Finish), Finish (or Forecast Finish), Units % Complete, Variance - BL Project Finish Date.",
+                    "- Activity Summary required: Activity ID, Activity Name, Activity Status, BL Project Finish (or Planned Finish), Finish (or Forecast Finish), Units % Complete, Variance - BL Project Finish Date, Budgeted Labor Units.",
                     "- Leaf rule: Activity Name only for leaf activities; when Activity Name is filled, Activity Status must be filled.",
                     "- Resource Assignments required: Activity ID, Budgeted Units, Spreadsheet Field (optional Start/Finish).",
                     "- Spreadsheet Field values: Cum Budgeted Units, Cum Actual Units, Cum Remaining Early Units.",
