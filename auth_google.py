@@ -996,6 +996,9 @@ def require_login() -> dict[str, Any]:
     code = _query_value(params, "code")
     state = _query_value(params, "state")
     if code:
+        if st.session_state.get("_oauth_flow_handled"):
+            _clear_query_params()
+            _rerun()
         user = _exchange_code_for_user(cfg, code, state, cookies)
         _clear_query_params()
         st.session_state.pop(STATE_KEY, None)

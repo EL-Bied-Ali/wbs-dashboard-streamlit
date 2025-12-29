@@ -52,6 +52,8 @@ if pending_code:
     if not user:
         user = get_current_user()
     if user:
+        st.session_state["_oauth_flow_handled"] = True
+        _clear_query_params()
         st.session_state[SESSION_KEY] = user
         _store_user_cookie(cookies, cfg, user, save=False)
         _save_cookies(cookies)
