@@ -20,6 +20,12 @@ cookies = _get_cookie_manager(refresh=True)
 auth_url = _build_login_url(cfg, cookies)
 user = get_current_user()
 
+if user:
+    try:
+        st.switch_page("app.py")  # type: ignore[attr-defined]
+    except Exception:
+        st.experimental_rerun()
+
 _render_home_screen(auth_url, user=user)
 
 if st.secrets.get("AUTH_DEBUG", "").lower() == "true":
