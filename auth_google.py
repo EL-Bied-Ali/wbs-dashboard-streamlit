@@ -202,14 +202,29 @@ def _is_localhost_host(host: str | None) -> bool:
     return base in {"localhost", "127.0.0.1", "::1"}
 
 
-def _request_host() -> str | None:
+def _request_headers() -> dict[str, str]:
     try:
         from streamlit.runtime.scriptrunner import get_script_run_ctx
         ctx = get_script_run_ctx()
         req = getattr(ctx, "request", None) if ctx else None
         headers = getattr(req, "headers", None) if req else None
         if headers:
-            return headers.get("host") or headers.get("Host")
+            return dict(headers)
+    except Exception:
+        pass
+    return {}
+
+
+def _request_host() -> str | None:
+    try:
+        headers = _request_headers()
+        if headers:
+            return (
+                headers.get("x-forwarded-host")
+                or headers.get("X-Forwarded-Host")
+                or headers.get("host")
+                or headers.get("Host")
+            )
     except Exception:
         pass
     try:
@@ -218,14 +233,23 @@ def _request_host() -> str | None:
         return None
 
 
+def _request_scheme(host: str | None) -> str:
+    headers = _request_headers()
+    if headers:
+        proto = headers.get("x-forwarded-proto") or headers.get("X-Forwarded-Proto")
+        if proto:
+            return proto.split(",")[0].strip()
+    if _is_localhost_host(host or ""):
+        return "http"
+    return "https"
+
+
 def _resolve_redirect_uri() -> str:
     configured = (_get_setting("AUTH_REDIRECT_URI", "http://localhost:8501") or "").strip()
     host = _request_host()
-    if host and _is_localhost_host(host):
-        port = "8501"
-        if ":" in host:
-            port = host.rsplit(":", 1)[-1] or port
-        return f"http://localhost:{port}"
+    if host:
+        scheme = _request_scheme(host)
+        return f"{scheme}://{host}"
     return configured or "http://localhost:8501"
 
 
