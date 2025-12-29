@@ -2,7 +2,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from auth_google import _load_config, get_current_user, _render_home_screen, _build_start_oauth_url
+from auth_google import _build_login_url, _get_cookie_manager, _load_config, get_current_user, _render_home_screen
 
 _icon_path = Path(__file__).resolve().parents[1] / "chronoplan_logo.png"
 st.set_page_config(
@@ -16,7 +16,8 @@ st.markdown(
 )
 
 cfg = _load_config()
-auth_url = _build_start_oauth_url(cfg)
+cookies = _get_cookie_manager(refresh=True)
+auth_url = _build_login_url(cfg, cookies)
 user = get_current_user()
 
 _render_home_screen(auth_url, user=user)
