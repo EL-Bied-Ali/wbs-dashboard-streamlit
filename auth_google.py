@@ -817,7 +817,9 @@ def _render_home_screen(
     </div>
     """
 
-    st.markdown(textwrap.dedent(page_html).strip(), unsafe_allow_html=True)
+    clean_html = textwrap.dedent(page_html).strip()
+    clean_html = "\n".join(line.lstrip() for line in clean_html.splitlines())
+    st.markdown(clean_html, unsafe_allow_html=True)
 
 
 def _render_login_screen(auth_url: str) -> None:
