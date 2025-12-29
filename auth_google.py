@@ -416,7 +416,9 @@ def _app_url() -> str:
 
 
 def _build_start_oauth_url(cfg: dict[str, Any], app_url: str | None = None) -> str:
-    base = (app_url or cfg.get("redirect_uri") or "/").strip() or "/"
+    base = (app_url or _app_url() or "/").strip() or "/"
+    if not base.startswith(("http://", "https://", "/")):
+        base = f"/{base}"
     joiner = "&" if "?" in base else "?"
     return f"{base}{joiner}start_oauth=1"
 
