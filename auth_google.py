@@ -223,12 +223,13 @@ def _request_headers() -> dict[str, str]:
     return {}
 
 
-def _request_scheme() -> str:
+def _request_scheme(host: str | None = None) -> str:
     headers = _request_headers()
     raw = headers.get("x-forwarded-proto") or headers.get("X-Forwarded-Proto")
     if raw:
         return raw.split(",")[0].strip().lower()
-    host = _request_host()
+    if host is None:
+        host = _request_host()
     return "http" if _is_localhost_host(host) else "https"
 
 
@@ -299,17 +300,6 @@ def _request_host() -> str | None:
         return st.get_option("server.address")
     except Exception:
         return None
-
-
-def _request_scheme(host: str | None) -> str:
-    headers = _request_headers()
-    if headers:
-        proto = headers.get("x-forwarded-proto") or headers.get("X-Forwarded-Proto")
-        if proto:
-            return proto.split(",")[0].strip()
-    if _is_localhost_host(host or ""):
-        return "http"
-    return "https"
 
 
 def _normalize_redirect_uri(uri: str) -> str:
@@ -1305,6 +1295,12 @@ def require_login() -> dict[str, Any]:
         _auth_log("require_login code failed -> login screen")
         st.stop()
 
+    request_user = _load_user_from_request_cookie(cfg)
+    if request_user:
+        st.session_state[SESSION_KEY] = request_user
+        _auth_log("require_login request cookie user")
+        return request_user
+
     cookies = _get_cookie_manager(refresh=True)
     _flush_pending_cookie(cookies, cfg)
     _ensure_auth_debug(cookies, cfg)
@@ -1312,23 +1308,8 @@ def require_login() -> dict[str, Any]:
     user = _load_user_from_cookie(cookies, cfg)
     if user:
         st.session_state[SESSION_KEY] = user
-        st.session_state.pop("_auth_cookie_wait_until", None)
         _auth_log("require_login cookie user")
         return user
-    if not _cookies_ready(cookies):
-        host = _request_host()
-        if _is_localhost_host(host):
-            now = time.time()
-            wait_until = st.session_state.get("_auth_cookie_wait_until")
-            if not isinstance(wait_until, (int, float)):
-                wait_until = now + 1.5
-                st.session_state["_auth_cookie_wait_until"] = wait_until
-            if now < wait_until:
-                st.info("Loading session...")
-                st.stop()
-            st.session_state.pop("_auth_cookie_wait_until", None)
-        else:
-            st.session_state.pop("_auth_cookie_wait_until", None)
 
     auth_url = _build_login_url(cfg, cookies)
     _render_login_screen(auth_url)
