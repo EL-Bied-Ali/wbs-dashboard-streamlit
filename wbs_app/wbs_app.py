@@ -40,7 +40,7 @@ from theme import inject_theme
 
 _icon_path = ROOT / "chronoplan_logo.png"
 st.set_page_config(
-    page_title="Wibis",
+    page_title="ChronoPlan",
     page_icon=str(_icon_path) if _icon_path.exists() else "🧭",
     layout="wide",
     initial_sidebar_state="expanded",
