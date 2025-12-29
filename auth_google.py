@@ -5,6 +5,7 @@ import html
 import os
 import secrets
 import textwrap
+import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -269,6 +270,19 @@ def _serializer(secret: str) -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(secret, salt="streamlit-google-oauth")
 
 
+def _state_serializer(secret: str) -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(secret, salt="streamlit-google-oauth-state")
+
+
+def _decode_state(cfg: dict[str, Any], state: str | None, max_age_seconds: int = 900) -> dict[str, Any] | None:
+    if not state:
+        return None
+    try:
+        return _state_serializer(cfg["cookie_secret"]).loads(state, max_age=max_age_seconds)
+    except Exception:
+        return None
+
+
 def _save_cookies(cookies: CookieManager) -> None:
     try:
         if not cookies.ready():
@@ -354,8 +368,9 @@ def _build_login_url(cfg: dict[str, Any], cookies: CookieManager) -> str:
         scope=SCOPES,
         redirect_uri=cfg["redirect_uri"],
     )
-    state = secrets.token_urlsafe(16)
     nonce = secrets.token_urlsafe(16)
+    state_payload = {"nonce": nonce, "ts": int(time.time())}
+    state = _state_serializer(cfg["cookie_secret"]).dumps(state_payload)
     url, returned_state = oauth.create_authorization_url(
         AUTHORIZATION_ENDPOINT,
         state=state,
@@ -381,6 +396,7 @@ def _exchange_code_for_user(
     state: str | None,
     cookies: CookieManager,
 ) -> dict[str, Any] | None:
+    state_payload = _decode_state(cfg, state)
     expected_state = st.session_state.get(STATE_KEY)
     if not expected_state:
         try:
@@ -388,7 +404,10 @@ def _exchange_code_for_user(
                 expected_state = cookies.get(STATE_COOKIE)
         except Exception:
             expected_state = None
-    if not expected_state or state != expected_state:
+    state_ok = bool(expected_state and state == expected_state)
+    if not state_ok and state_payload:
+        state_ok = True
+    if not state_ok:
         st.error("Invalid login state. Please try again.")
         return None
 
@@ -424,6 +443,8 @@ def _exchange_code_for_user(
                 expected_nonce = cookies.get(NONCE_COOKIE)
         except Exception:
             expected_nonce = None
+    if not expected_nonce and state_payload:
+        expected_nonce = state_payload.get("nonce")
     if expected_nonce and idinfo.get("nonce") != expected_nonce:
         st.error("Login failed: invalid nonce.")
         return None
