@@ -133,6 +133,7 @@ def main() -> None:
     parser.add_argument("--out", default="artifacts", help="Output directory.")
     parser.add_argument("--show", action="store_true", help="Run with a visible browser.")
     parser.add_argument("--summary", action="store_true", help="Write a DOM summary JSON.")
+    parser.add_argument("--profile", help="Optional Playwright user data dir for persistent auth.")
     parser.add_argument("--upload", help="Optional file to upload into the first file input.")
     parser.add_argument("--click", action="append", default=[], help="Text to click (can be repeated).")
     parser.add_argument("--click-selector", action="append", default=[], help="CSS selector to click (can be repeated).")
@@ -142,8 +143,15 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=not args.show)
-        page = browser.new_page(viewport={"width": 1440, "height": 900})
+        if args.profile:
+            context = p.chromium.launch_persistent_context(
+                args.profile,
+                headless=not args.show,
+            )
+            page = context.new_page()
+        else:
+            browser = p.chromium.launch(headless=not args.show)
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
         page.goto(args.url, wait_until="networkidle")
 
         if args.page:
@@ -214,7 +222,10 @@ def main() -> None:
         if not args.no_screenshot:
             page.screenshot(path=str(out_dir / "screen.png"), full_page=True)
 
-        browser.close()
+        if args.profile:
+            context.close()
+        else:
+            browser.close()
 
 
 if __name__ == "__main__":

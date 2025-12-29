@@ -740,6 +740,37 @@ section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
 section[data-testid="stSidebar"] > div{
   background: transparent !important;
 }
+section[data-testid="stSidebar"] [data-testid="stSidebarContent"]{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"]{
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div{
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"]{
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+section[data-testid="stSidebar"] .sidebar-spacer{
+  flex: 1 1 auto;
+  min-height: 24px;
+}
+section[data-testid="stSidebar"] div[data-testid="stLayoutWrapper"]:has(.st-key-brand_card),
+section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-brand_card),
+section[data-testid="stSidebar"] .st-key-brand_card{
+  order: 999;
+  margin-top: auto !important;
+}
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"]{
   display: none !important;
 }
@@ -783,6 +814,36 @@ section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] [data-testid
   line-height: 1.1;
   margin: 0 !important;
 }
+div.st-key-brand_logo_row_scurve > div[data-testid="stHorizontalBlock"],
+div.st-key-brand_logo_row_wbs > div[data-testid="stHorizontalBlock"]{
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+div[class*="st-key-brand_logo_item_"]{
+  position: relative;
+  width: 288px;
+  height: 288px;
+  display: grid;
+  grid-template-areas: "stack";
+  align-items: center;
+  justify-items: center;
+}
+div[class*="st-key-brand_logo_item_"] > div{
+  grid-area: stack;
+}
+div[class*="st-key-brand_logo_item_"] .stButton{
+  align-self: center;
+  justify-self: center;
+  z-index: 5;
+  pointer-events: auto;
+  margin: 0 !important;
+}
+div[class*="st-key-brand_logo_item_"] .brand-pill{
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
 section[data-testid="stSidebar"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
   margin: 0 !important;
   padding: 0 !important;
@@ -796,6 +857,29 @@ section[data-testid="stSidebar"] div.st-key-auth_card{
   border: 1px solid rgba(148,163,184,.18);
   box-shadow: 0 12px 26px rgba(0,0,0,.28);
   position: relative;
+}
+section[data-testid="stSidebar"] div.st-key-brand_card{
+  margin: 18px 0 0 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
+  border: 1px solid rgba(148,163,184,.18);
+  box-shadow: 0 12px 26px rgba(0,0,0,.28);
+  margin-top: auto;
+}
+section[data-testid="stSidebar"] .brand-title{
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(157,168,198,.85);
+  margin-bottom: 10px;
+}
+section[data-testid="stSidebar"] .brand-label{
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(157,168,198,.85);
+  margin: 2px 0 6px 0;
 }
 section[data-testid="stSidebar"] div.st-key-auth_card [data-testid="column"]{
   display: flex;
@@ -1036,10 +1120,10 @@ body::before, body::after,
   gap:8px;
 }
 .brand-pill{
-  height:56px;
-  min-width:56px;
-  padding:8px 16px;
-  border-radius:12px;
+  height:216px;
+  min-width:216px;
+  padding:6px 8px;
+  border-radius:28px;
   border:1px solid rgba(148,163,184,.18);
   background: rgba(15,23,42,.55);
   box-shadow: 0 12px 26px rgba(0,0,0,.25);
