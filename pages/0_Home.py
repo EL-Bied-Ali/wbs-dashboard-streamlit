@@ -11,6 +11,7 @@ from auth_google import (
     _get_query_params,
     _load_config,
     _query_value,
+    _rerun,
     _render_home_screen,
     _save_cookies,
     _store_user_cookie,
@@ -44,7 +45,7 @@ if code:
         try:
             st.switch_page("app.py")  # type: ignore[attr-defined]
         except Exception:
-            st.experimental_rerun()
+            _rerun()
         st.stop()
     _save_cookies(cookies)
 
@@ -53,7 +54,7 @@ if user:
     try:
         st.switch_page("app.py")  # type: ignore[attr-defined]
     except Exception:
-        st.experimental_rerun()
+        _rerun()
     st.stop()
 
 auth_url = _build_login_url(cfg, cookies)
