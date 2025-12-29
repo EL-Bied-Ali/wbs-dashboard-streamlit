@@ -248,12 +248,8 @@ def _rerun() -> None:
 def _get_cookie_manager(refresh: bool = False) -> CookieManager:
     cached = st.session_state.get("_auth_cookie_manager")
     if isinstance(cached, CookieManager):
-        if not cached.ready():
-            st.stop()
         return cached
     cookies = CookieManager()
-    if not cookies.ready():
-        st.stop()
     st.session_state["_auth_cookie_manager"] = cookies
     return cookies
 
@@ -275,6 +271,11 @@ def _serializer(secret: str) -> URLSafeTimedSerializer:
 
 def _save_cookies(cookies: CookieManager) -> None:
     try:
+        if not cookies.ready():
+            return
+    except Exception:
+        return
+    try:
         cookies.save()
     except StreamlitDuplicateElementKey:
         # Avoid duplicate component key errors if save() is called twice in one run.
@@ -285,10 +286,15 @@ def _ensure_auth_debug(cookies: CookieManager, cfg: dict[str, Any]) -> dict[str,
     debug = st.session_state.get("_auth_debug")
     if not isinstance(debug, dict):
         debug = {}
+    try:
+        cookies_ready = cookies.ready()
+    except Exception:
+        cookies_ready = False
     debug.update(
         {
             "cookie_name": cfg.get("cookie_name"),
-            "cookie_present": bool(cookies.get(cfg.get("cookie_name", ""))),
+            "cookie_ready": cookies_ready,
+            "cookie_present": bool(cookies.get(cfg.get("cookie_name", ""))) if cookies_ready else False,
             "cookie_error": None,
         }
     )
@@ -298,6 +304,13 @@ def _ensure_auth_debug(cookies: CookieManager, cfg: dict[str, Any]) -> dict[str,
 
 def _load_user_from_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> dict[str, Any] | None:
     debug = _ensure_auth_debug(cookies, cfg)
+    try:
+        if not cookies.ready():
+            debug["cookie_error"] = "not_ready"
+            return None
+    except Exception:
+        debug["cookie_error"] = "not_ready"
+        return None
     token = cookies.get(cfg["cookie_name"])
     if not token:
         debug["cookie_error"] = "missing"
@@ -352,9 +365,13 @@ def _build_login_url(cfg: dict[str, Any], cookies: CookieManager) -> str:
     resolved_state = returned_state or state
     st.session_state[STATE_KEY] = resolved_state
     st.session_state[NONCE_KEY] = nonce
-    cookies[STATE_COOKIE] = resolved_state
-    cookies[NONCE_COOKIE] = nonce
-    _save_cookies(cookies)
+    try:
+        if cookies.ready():
+            cookies[STATE_COOKIE] = resolved_state
+            cookies[NONCE_COOKIE] = nonce
+            _save_cookies(cookies)
+    except Exception:
+        pass
     return url
 
 
@@ -366,7 +383,11 @@ def _exchange_code_for_user(
 ) -> dict[str, Any] | None:
     expected_state = st.session_state.get(STATE_KEY)
     if not expected_state:
-        expected_state = cookies.get(STATE_COOKIE)
+        try:
+            if cookies.ready():
+                expected_state = cookies.get(STATE_COOKIE)
+        except Exception:
+            expected_state = None
     if not expected_state or state != expected_state:
         st.error("Invalid login state. Please try again.")
         return None
@@ -398,7 +419,11 @@ def _exchange_code_for_user(
 
     expected_nonce = st.session_state.get(NONCE_KEY)
     if not expected_nonce:
-        expected_nonce = cookies.get(NONCE_COOKIE)
+        try:
+            if cookies.ready():
+                expected_nonce = cookies.get(NONCE_COOKIE)
+        except Exception:
+            expected_nonce = None
     if expected_nonce and idinfo.get("nonce") != expected_nonce:
         st.error("Login failed: invalid nonce.")
         return None
