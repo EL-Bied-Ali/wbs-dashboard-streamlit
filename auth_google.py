@@ -215,6 +215,22 @@ def _request_host() -> str | None:
         return None
 
 
+def _request_origin() -> str | None:
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        ctx = get_script_run_ctx()
+        req = getattr(ctx, "request", None) if ctx else None
+        headers = getattr(req, "headers", None) if req else None
+        if headers:
+            host = headers.get("host") or headers.get("Host")
+            proto = headers.get("x-forwarded-proto") or headers.get("X-Forwarded-Proto")
+            if host and proto:
+                return f"{proto}://{host}"
+    except Exception:
+        pass
+    return None
+
+
 def _bypass_user_for_localhost() -> dict[str, Any] | None:
     raw = (_get_setting("AUTH_BYPASS_LOCALHOST") or "").strip().lower()
     if raw in {"1", "true", "yes"}:
@@ -419,6 +435,10 @@ def _build_start_oauth_url(cfg: dict[str, Any], app_url: str | None = None) -> s
     base = (app_url or _app_url() or "/").strip() or "/"
     if not base.startswith(("http://", "https://", "/")):
         base = f"/{base}"
+    if base.startswith("/"):
+        origin = _request_origin()
+        if origin:
+            base = f"{origin}{base}"
     joiner = "&" if "?" in base else "?"
     return f"{base}{joiner}start_oauth=1"
 
