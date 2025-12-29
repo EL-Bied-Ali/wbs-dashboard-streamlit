@@ -10,11 +10,13 @@ from auth_google import (
     _flush_pending_cookie,
     _get_cookie_manager,
     _get_query_params,
+    _is_code_used,
     _load_config,
     _query_value,
     _rerun,
     _render_home_screen,
     _save_cookies,
+    _mark_code_used,
     _store_user_cookie,
     get_current_user,
 )
@@ -42,7 +44,10 @@ if code:
     if processed_code == code:
         _clear_query_params()
     else:
-        st.session_state["_oauth_processed_code"] = code
+        if _is_code_used(code):
+            _clear_query_params()
+        else:
+            st.session_state["_oauth_processed_code"] = code
         user = _exchange_code_for_user(cfg, code, state, cookies)
         _clear_query_params()
         if not user:
@@ -50,6 +55,7 @@ if code:
         if user:
             st.session_state["_oauth_flow_handled"] = True
             st.session_state[SESSION_KEY] = user
+            _mark_code_used(code)
             _store_user_cookie(cookies, cfg, user, save=False)
             _save_cookies(cookies)
             try:

@@ -29,6 +29,8 @@ STATE_KEY = "oauth_state"
 NONCE_KEY = "oauth_nonce"
 STATE_COOKIE = "oauth_state"
 NONCE_COOKIE = "oauth_nonce"
+_USED_CODES: dict[str, float] = {}
+_CODE_TTL_SECONDS = 300
 
 
 @lru_cache(maxsize=1)
@@ -315,6 +317,18 @@ def _load_config() -> dict[str, Any]:
 
 def _serializer(secret: str) -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(secret, salt="streamlit-google-oauth")
+
+
+def _is_code_used(code: str) -> bool:
+    now = time.time()
+    expired = [key for key, ts in _USED_CODES.items() if now - ts > _CODE_TTL_SECONDS]
+    for key in expired:
+        _USED_CODES.pop(key, None)
+    return code in _USED_CODES
+
+
+def _mark_code_used(code: str) -> None:
+    _USED_CODES[code] = time.time()
 
 
 def _state_serializer(secret: str) -> URLSafeTimedSerializer:
@@ -997,8 +1011,12 @@ def require_login() -> dict[str, Any]:
     state = _query_value(params, "state")
     if code:
         processed_code = st.session_state.get("_oauth_processed_code")
-        if st.session_state.get("_oauth_flow_handled") or processed_code == code:
+        if st.session_state.get("_oauth_flow_handled") or processed_code == code or _is_code_used(code):
             _clear_query_params()
+            user = _load_user_from_cookie(cookies, cfg)
+            if user:
+                st.session_state[SESSION_KEY] = user
+                return user
             _rerun()
         st.session_state["_oauth_processed_code"] = code
         user = _exchange_code_for_user(cfg, code, state, cookies)
@@ -1010,6 +1028,7 @@ def require_login() -> dict[str, Any]:
         if cookies.get(NONCE_COOKIE):
             del cookies[NONCE_COOKIE]
         if user:
+            _mark_code_used(code)
             st.session_state[SESSION_KEY] = user
             _store_user_cookie(cookies, cfg, user, save=False)
             _save_cookies(cookies)
