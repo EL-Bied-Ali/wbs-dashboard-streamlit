@@ -215,22 +215,6 @@ def _request_host() -> str | None:
         return None
 
 
-def _request_origin() -> str | None:
-    try:
-        from streamlit.runtime.scriptrunner import get_script_run_ctx
-        ctx = get_script_run_ctx()
-        req = getattr(ctx, "request", None) if ctx else None
-        headers = getattr(req, "headers", None) if req else None
-        if headers:
-            host = headers.get("host") or headers.get("Host")
-            proto = headers.get("x-forwarded-proto") or headers.get("X-Forwarded-Proto")
-            if host and proto:
-                return f"{proto}://{host}"
-    except Exception:
-        pass
-    return None
-
-
 def _bypass_user_for_localhost() -> dict[str, Any] | None:
     raw = (_get_setting("AUTH_BYPASS_LOCALHOST") or "").strip().lower()
     if raw in {"1", "true", "yes"}:
@@ -429,31 +413,6 @@ def _exchange_code_for_user(
 
 def _app_url() -> str:
     return (_get_setting("APP_URL", "/") or "/").strip()
-
-
-def _build_start_oauth_url(cfg: dict[str, Any], app_url: str | None = None) -> str:
-    base = (app_url or _app_url() or "/").strip() or "/"
-    if not base.startswith(("http://", "https://", "/")):
-        base = f"/{base}"
-    if base.startswith("/"):
-        origin = _request_origin()
-        if origin:
-            base = f"{origin}{base}"
-    joiner = "&" if "?" in base else "?"
-    return f"{base}{joiner}start_oauth=1"
-
-
-def _render_oauth_redirect(auth_url: str) -> None:
-    safe_url = html.escape(auth_url, quote=True)
-    st.html(
-        f"""
-        <script>
-        window.top.location.href = "{safe_url}";
-        </script>
-        <p>Redirecting to Google...</p>
-        <p><a href="{safe_url}">Continue</a></p>
-        """
-    )  # type: ignore[attr-defined]
 
 
 def get_current_user() -> dict[str, Any] | None:
@@ -895,11 +854,6 @@ def require_login() -> dict[str, Any]:
         return user
 
     params = _get_query_params()
-    start_oauth = (_query_value(params, "start_oauth") or "").strip().lower()
-    if start_oauth in {"1", "true", "yes"}:
-        auth_url = _build_login_url(cfg, cookies)
-        _render_oauth_redirect(auth_url)
-        st.stop()
     code = _query_value(params, "code")
     state = _query_value(params, "state")
     if code:
@@ -917,12 +871,12 @@ def require_login() -> dict[str, Any]:
             _save_cookies(cookies)
             _rerun()
         _save_cookies(cookies)
-        start_url = _build_start_oauth_url(cfg)
-        _render_login_screen(start_url)
+        auth_url = _build_login_url(cfg, cookies)
+        _render_login_screen(auth_url)
         st.stop()
 
-    start_url = _build_start_oauth_url(cfg)
-    _render_login_screen(start_url)
+    auth_url = _build_login_url(cfg, cookies)
+    _render_login_screen(auth_url)
     st.stop()
 
 
