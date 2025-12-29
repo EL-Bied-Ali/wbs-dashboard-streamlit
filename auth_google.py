@@ -13,6 +13,7 @@ from typing import Any
 import streamlit as st
 from streamlit.errors import StreamlitDuplicateElementKey
 from authlib.integrations.requests_client import OAuth2Session
+from authlib.integrations.base_client.errors import OAuthError
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -217,6 +218,17 @@ def _request_host() -> str | None:
         return None
 
 
+def _resolve_redirect_uri() -> str:
+    configured = (_get_setting("AUTH_REDIRECT_URI", "http://localhost:8501") or "").strip()
+    host = _request_host()
+    if host and _is_localhost_host(host):
+        port = "8501"
+        if ":" in host:
+            port = host.rsplit(":", 1)[-1] or port
+        return f"http://localhost:{port}"
+    return configured or "http://localhost:8501"
+
+
 def _bypass_user_for_localhost() -> dict[str, Any] | None:
     raw = (_get_setting("AUTH_BYPASS_LOCALHOST") or "").strip().lower()
     if raw in {"1", "true", "yes"}:
@@ -259,7 +271,7 @@ def _load_config() -> dict[str, Any]:
     return {
         "client_id": _require_setting("GOOGLE_CLIENT_ID"),
         "client_secret": _require_setting("GOOGLE_CLIENT_SECRET"),
-        "redirect_uri": (_get_setting("AUTH_REDIRECT_URI", "http://localhost:8501") or "").strip(),
+        "redirect_uri": _resolve_redirect_uri(),
         "cookie_secret": _require_setting("AUTH_COOKIE_SECRET"),
         "cookie_name": _get_setting("AUTH_COOKIE_NAME", "nabil_auth"),
         "cookie_ttl_seconds": max(1, _int_setting("AUTH_COOKIE_TTL_DAYS", 7)) * 86400,
@@ -439,11 +451,18 @@ def _exchange_code_for_user(
         scope=SCOPES,
         redirect_uri=cfg["redirect_uri"],
     )
-    token = oauth.fetch_token(
-        TOKEN_ENDPOINT,
-        code=code,
-        redirect_uri=cfg["redirect_uri"],
-    )
+    try:
+        token = oauth.fetch_token(
+            TOKEN_ENDPOINT,
+            code=code,
+            redirect_uri=cfg["redirect_uri"],
+        )
+    except OAuthError as exc:
+        st.error(f"Login failed: {exc}. Check the redirect URI.")
+        return None
+    except Exception as exc:
+        st.error(f"Login failed: {exc}")
+        return None
     raw_id_token = token.get("id_token")
     if not raw_id_token:
         st.error("Login failed: missing id_token.")
