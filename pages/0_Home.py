@@ -37,9 +37,18 @@ _flush_pending_cookie(cookies, cfg)
 params = _get_query_params()
 code = _query_value(params, "code")
 state = _query_value(params, "state")
-if code:
-    user = _exchange_code_for_user(cfg, code, state, cookies)
+pending_code = st.session_state.get("_oauth_code")
+pending_state = st.session_state.get("_oauth_state")
+if code and not pending_code:
+    st.session_state["_oauth_code"] = code
+    st.session_state["_oauth_state"] = state
     _clear_query_params()
+    _rerun()
+
+if pending_code:
+    st.session_state.pop("_oauth_code", None)
+    st.session_state.pop("_oauth_state", None)
+    user = _exchange_code_for_user(cfg, pending_code, pending_state, cookies)
     if user:
         st.session_state[SESSION_KEY] = user
         _store_user_cookie(cookies, cfg, user, save=False)

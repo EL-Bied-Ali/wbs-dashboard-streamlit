@@ -501,7 +501,8 @@ def _exchange_code_for_user(
             redirect_uri=redirect_uri,
         )
     except OAuthError as exc:
-        st.error(f"Login failed: {exc}. Check the redirect URI.")
+        detail = getattr(exc, "description", "") or getattr(exc, "error", "") or str(exc)
+        st.error(f"Login failed: {detail}. Check the redirect URI.")
         return None
     except Exception as exc:
         st.error(f"Login failed: {exc}")
