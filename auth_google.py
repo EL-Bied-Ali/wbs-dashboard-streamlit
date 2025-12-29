@@ -6,6 +6,7 @@ import os
 import secrets
 import textwrap
 import time
+from urllib.parse import urlparse, urlunparse
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -244,13 +245,23 @@ def _request_scheme(host: str | None) -> str:
     return "https"
 
 
+def _normalize_redirect_uri(uri: str) -> str:
+    parsed = urlparse(uri)
+    if not parsed.scheme or not parsed.netloc:
+        return uri
+    path = parsed.path or "/"
+    if path in {"", "/"}:
+        path = "/"
+    return urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
+
+
 def _resolve_redirect_uri() -> str:
     configured = (_get_setting("AUTH_REDIRECT_URI", "http://localhost:8501") or "").strip()
     host = _request_host()
     if host:
         scheme = _request_scheme(host)
-        return f"{scheme}://{host}"
-    return configured or "http://localhost:8501"
+        return _normalize_redirect_uri(f"{scheme}://{host}")
+    return _normalize_redirect_uri(configured or "http://localhost:8501/")
 
 
 def _bypass_user_for_localhost() -> dict[str, Any] | None:
