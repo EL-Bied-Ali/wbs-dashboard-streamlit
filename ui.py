@@ -787,7 +787,7 @@ def inject_theme():
         padding-bottom: 2px;
       }
       div.st-key-activity_select [data-baseweb="select"] [value]{
-        font-size: 17px;
+        font-size: 16px;
         line-height: 1;
         transform: translateY(-3px);
       }
