@@ -44,7 +44,7 @@ from shared_excel import (
 )
 
 
-print("AUTH_DEBUG is", os.environ.get("AUTH_DEBUG"))
+print("=== AUTH_DEBUG IS ENABLED ===" if os.environ.get("AUTH_DEBUG") else "=== AUTH_DEBUG IS DISABLED ===")
 page_override = st.session_state.get("_page_override")
 page_source = st.session_state.get("_page_source")
 if page_override and page_source != "S-Curve":
