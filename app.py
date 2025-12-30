@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from time import perf_counter
+import os
 from pathlib import Path
 from typing import Any
 import html
@@ -43,6 +44,7 @@ from shared_excel import (
 )
 
 
+print("AUTH_DEBUG is", os.environ.get("AUTH_DEBUG"))
 page_override = st.session_state.get("_page_override")
 page_source = st.session_state.get("_page_source")
 if page_override and page_source != "S-Curve":
