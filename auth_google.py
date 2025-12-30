@@ -289,40 +289,59 @@ def _parse_cookie_header(raw_cookie: str) -> dict[str, str]:
     return cookies
 
 
+def _cookie_header_values(raw_cookie: str, name: str) -> list[str]:
+    values: list[str] = []
+    for part in raw_cookie.split(";"):
+        part = part.strip()
+        if not part or "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        if key.strip() == name:
+            values.append(value.strip())
+    return values
+
+
 def _load_user_from_request_cookie(cfg: dict[str, Any]) -> dict[str, Any] | None:
     ignore_until = st.session_state.get("_logout_ignore_until")
     if isinstance(ignore_until, (int, float)):
         if time.time() < ignore_until:
             return None
         st.session_state.pop("_logout_ignore_until", None)
-    token = None
+    tokens: list[str] = []
     try:
         ctx = getattr(st, "context", None)
         cookies = getattr(ctx, "cookies", None) if ctx else None
         if cookies:
             raw_token = cookies.get(cfg["cookie_name"])
             if raw_token:
-                token = str(raw_token)
+                tokens.append(str(raw_token))
     except Exception:
-        token = None
+        pass
 
-    if not token:
-        headers = _request_headers()
-        raw_cookie = headers.get("cookie") or headers.get("Cookie") or ""
-        if raw_cookie:
-            cookie_map = _parse_cookie_header(raw_cookie)
-            token = cookie_map.get(cfg["cookie_name"])
+    headers = _request_headers()
+    raw_cookie = headers.get("cookie") or headers.get("Cookie") or ""
+    if raw_cookie:
+        for value in _cookie_header_values(raw_cookie, cfg["cookie_name"]):
+            if value not in tokens:
+                tokens.append(value)
 
-    if not token:
+    if not tokens:
         return None
-    token = unquote(token)
     serializer = _serializer(cfg["cookie_secret"])
-    try:
-        data = serializer.loads(token, max_age=cfg["cookie_ttl_seconds"])
-    except Exception:
-        return None
-    if isinstance(data, dict) and data.get("email"):
-        return data
+    if len(tokens) > 1:
+        _auth_log(f"cookie_load header candidates={len(tokens)}")
+    for token in tokens:
+        token = unquote(token)
+        try:
+            data = serializer.loads(token, max_age=cfg["cookie_ttl_seconds"])
+        except SignatureExpired:
+            continue
+        except BadSignature:
+            continue
+        except Exception:
+            continue
+        if isinstance(data, dict) and data.get("email"):
+            return data
     return None
 
 
