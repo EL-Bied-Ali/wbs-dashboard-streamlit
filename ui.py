@@ -579,7 +579,7 @@ def inject_theme():
         background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
         border: 1px solid rgba(148,163,184,.18);
         box-shadow: 0 12px 26px rgba(0,0,0,.28);
-        margin-top: auto;
+        margin-top: 18px;
       }
       section[data-testid="stSidebar"] .brand-title{
         font-size: 12px;
@@ -599,6 +599,14 @@ def inject_theme():
         font-weight: 700;
         color: var(--muted);
         margin: 2px 0 6px 0;
+      }
+      section[data-testid="stSidebar"] div.st-key-contact_card{
+        margin: 12px 0 0 0;
+        padding: 12px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
+        border: 1px solid rgba(148,163,184,.18);
+        box-shadow: 0 12px 26px rgba(0,0,0,.28);
       }
       section[data-testid="stSidebarContent"]{
         display: flex;
@@ -629,7 +637,45 @@ def inject_theme():
       section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-brand_card),
       section[data-testid="stSidebar"] .st-key-brand_card{
         order: 999;
-        margin-top: auto !important;
+        margin-top: 18px !important;
+      }
+      section[data-testid="stSidebar"] div[data-testid="stLayoutWrapper"]:has(.st-key-contact_card),
+      section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-contact_card),
+      section[data-testid="stSidebar"] .st-key-contact_card{
+        order: 1001;
+        margin-top: 12px !important;
+      }
+      section[data-testid="stSidebar"] .contact-title{
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(157,168,198,.85);
+        margin-bottom: 8px;
+      }
+      section[data-testid="stSidebar"] .contact-note{
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
+      section[data-testid="stSidebar"] .contact-link{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,.2);
+        background: rgba(15,23,42,.55);
+        color: var(--text);
+        font-weight: 700;
+        text-decoration: none;
+        transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+      }
+      section[data-testid="stSidebar"] .contact-link:hover{
+        border-color: rgba(96,165,250,.6);
+        background: rgba(30,41,59,.75);
+        box-shadow: 0 10px 22px rgba(0,0,0,.25);
       }
       section[data-testid="stSidebar"] .brand-preview{
         width: 100%;
