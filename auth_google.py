@@ -1464,6 +1464,7 @@ def require_login() -> dict[str, Any]:
         st.session_state[SESSION_KEY] = user
         _auth_log("require_login cookie user")
         return user
+    session_user = st.session_state.get(SESSION_KEY)
     if not _cookies_ready(cookies):
         awaiting = st.session_state.get("_await_auth_cookie")
         has_pending = isinstance(awaiting, (int, float)) or isinstance(
@@ -1481,6 +1482,9 @@ def require_login() -> dict[str, Any]:
         st.session_state.pop("_pending_user_cookie", None)
         st.session_state.pop("_pending_user_cookie_token", None)
         st.session_state.pop("_auth_cookie_waits", None)
+        if isinstance(session_user, dict) and session_user.get("email"):
+            _auth_log("require_login fallback to session user")
+            return session_user
 
     auth_url = _build_login_url(cfg, cookies)
     _render_login_screen(auth_url)
