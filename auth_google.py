@@ -1466,13 +1466,14 @@ def require_login() -> dict[str, Any]:
         return user
     if not _cookies_ready(cookies):
         awaits = st.session_state.get("_await_auth_cookie")
-        waits = st.session_state.get("_auth_cookie_waits", 0)
-        max_waits = 18 if isinstance(awaits, (int, float)) and time.time() - awaits < 12 else 6
-        if waits < max_waits:
-            st.session_state["_auth_cookie_waits"] = waits + 1
-            st.info("Loading session...")
-            time.sleep(0.25)
-            _rerun()
+        if isinstance(awaits, (int, float)):
+            waits = st.session_state.get("_auth_cookie_waits", 0)
+            max_waits = 18 if time.time() - awaits < 12 else 6
+            if waits < max_waits:
+                st.session_state["_auth_cookie_waits"] = waits + 1
+                st.info("Loading session...")
+                time.sleep(0.25)
+                _rerun()
         st.session_state.pop("_auth_cookie_waits", None)
 
     auth_url = _build_login_url(cfg, cookies)
