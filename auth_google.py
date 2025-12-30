@@ -1475,6 +1475,9 @@ def require_login() -> dict[str, Any]:
             st.info("Finalizing sign-in...")
             time.sleep(0.25)
             _rerun()
+        else:
+            st.session_state.pop("_await_auth_cookie", None)
+            st.session_state.pop("_auth_cookie_waits", None)
 
     auth_url = _build_login_url(cfg, cookies)
     _render_login_screen(auth_url)
