@@ -7,7 +7,7 @@ import os
 import secrets
 import textwrap
 import time
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, unquote
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -274,6 +274,7 @@ def _load_user_from_request_cookie(cfg: dict[str, Any]) -> dict[str, Any] | None
     token = cookie_map.get(cfg["cookie_name"])
     if not token:
         return None
+    token = unquote(token)
     serializer = _serializer(cfg["cookie_secret"])
     try:
         data = serializer.loads(token, max_age=cfg["cookie_ttl_seconds"])
