@@ -782,10 +782,10 @@ def inject_theme():
         transform: none;
       }
       div[role="listbox"][aria-label*="Select activity"]{
-        font-size: 18px;
+        font-size: 20px;
       }
       div[role="listbox"][aria-label*="Select activity"] [role="option"]{
-        font-size: 18px;
+        font-size: 20px;
         line-height: 1.2;
       }
       @media (max-width: 900px){
@@ -934,11 +934,11 @@ def inject_theme():
         margin: 0 0 6px 0;
       }
       div[class*="st-key-activity_select"] [data-baseweb="select"] div[value]{
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 800;
         color: var(--text);
         line-height: 1;
-        max-width: calc(100% - 40px);
+        max-width: calc(100% - 0px);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -947,7 +947,7 @@ def inject_theme():
         font-size: 18px;
         font-weight: 800;
         color: var(--text);
-        min-width: 40px;
+        min-width: 0px;
         line-height: 1;
         padding-left: 2px;
         text-align: left;

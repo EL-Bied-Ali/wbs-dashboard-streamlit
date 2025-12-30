@@ -233,6 +233,13 @@ def _request_scheme(host: str | None = None) -> str:
     return "http" if _is_localhost_host(host) else "https"
 
 
+def _render_component_html(script: str, key: str) -> None:
+    try:
+        components.v1.html(script, height=0, key=key)
+    except TypeError:
+        components.v1.html(script, height=0)
+
+
 def _inject_cookie_js(name: str, token: str, max_age: int, key: str = "auth_cookie_js") -> None:
     secure = _request_scheme(_request_host()) == "https"
     name_js = json.dumps(name)
@@ -251,10 +258,24 @@ def _inject_cookie_js(name: str, token: str, max_age: int, key: str = "auth_cook
     }})();
     </script>
     """
-    try:
-        components.v1.html(script, height=0, key=key)
-    except TypeError:
-        components.v1.html(script, height=0)
+    _render_component_html(script, key=key)
+
+
+def _expire_cookie_js(name: str, key: str) -> None:
+    _inject_cookie_js(name, "", 0, key=key)
+
+
+def _redirect_js(url: str, key: str) -> None:
+    target_js = json.dumps(url)
+    script = f"""
+    <script>
+    (function() {{
+      const target = {target_js};
+      setTimeout(() => window.location.replace(target), 80);
+    }})();
+    </script>
+    """
+    _render_component_html(script, key=key)
 
 
 def _parse_cookie_header(raw_cookie: str) -> dict[str, str]:
@@ -269,12 +290,29 @@ def _parse_cookie_header(raw_cookie: str) -> dict[str, str]:
 
 
 def _load_user_from_request_cookie(cfg: dict[str, Any]) -> dict[str, Any] | None:
-    headers = _request_headers()
-    raw_cookie = headers.get("cookie") or headers.get("Cookie") or ""
-    if not raw_cookie:
-        return None
-    cookie_map = _parse_cookie_header(raw_cookie)
-    token = cookie_map.get(cfg["cookie_name"])
+    ignore_until = st.session_state.get("_logout_ignore_until")
+    if isinstance(ignore_until, (int, float)):
+        if time.time() < ignore_until:
+            return None
+        st.session_state.pop("_logout_ignore_until", None)
+    token = None
+    try:
+        ctx = getattr(st, "context", None)
+        cookies = getattr(ctx, "cookies", None) if ctx else None
+        if cookies:
+            raw_token = cookies.get(cfg["cookie_name"])
+            if raw_token:
+                token = str(raw_token)
+    except Exception:
+        token = None
+
+    if not token:
+        headers = _request_headers()
+        raw_cookie = headers.get("cookie") or headers.get("Cookie") or ""
+        if raw_cookie:
+            cookie_map = _parse_cookie_header(raw_cookie)
+            token = cookie_map.get(cfg["cookie_name"])
+
     if not token:
         return None
     token = unquote(token)
@@ -1350,18 +1388,26 @@ def require_login() -> dict[str, Any]:
 def logout() -> None:
     cfg = _load_config()
     cookies = _get_cookie_manager()
-    if cookies.get(cfg["cookie_name"]):
-        del cookies[cfg["cookie_name"]]
-    if cookies.get(STATE_COOKIE):
-        del cookies[STATE_COOKIE]
-    if cookies.get(NONCE_COOKIE):
-        del cookies[NONCE_COOKIE]
-    _save_cookies(cookies)
+    if _cookies_ready(cookies):
+        if cookies.get(cfg["cookie_name"]):
+            del cookies[cfg["cookie_name"]]
+        if cookies.get(STATE_COOKIE):
+            del cookies[STATE_COOKIE]
+        if cookies.get(NONCE_COOKIE):
+            del cookies[NONCE_COOKIE]
+        _save_cookies(cookies)
+    else:
+        _expire_cookie_js(cfg["cookie_name"], key="auth_cookie_js_logout")
+        _expire_cookie_js(STATE_COOKIE, key="auth_cookie_js_logout_state")
+        _expire_cookie_js(NONCE_COOKIE, key="auth_cookie_js_logout_nonce")
+        _redirect_js("/Home", key="auth_cookie_js_logout_redirect")
+        st.session_state["_logout_ignore_until"] = time.time() + 5
     st.session_state.pop(SESSION_KEY, None)
     st.session_state.pop(STATE_KEY, None)
     st.session_state.pop(NONCE_KEY, None)
     st.session_state["_force_home"] = True
     _clear_query_params()
+    st.stop()
 
 
 def render_auth_sidebar(
@@ -1413,7 +1459,7 @@ def render_auth_sidebar(
             )
             if st.button("\u23fb", key="auth_logout_btn", help="Sign out"):
                 logout()
-                _rerun()
+                return
         if show_branding:
             company_logo = _custom_logo_data_uri("company")
             client_logo = _custom_logo_data_uri("client")
