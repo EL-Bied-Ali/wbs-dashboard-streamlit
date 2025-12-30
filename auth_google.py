@@ -1311,6 +1311,14 @@ def require_login() -> dict[str, Any]:
         st.session_state[SESSION_KEY] = user
         _auth_log("require_login cookie user")
         return user
+    if not _cookies_ready(cookies):
+        waits = st.session_state.get("_auth_cookie_waits", 0)
+        if waits < 2:
+            st.session_state["_auth_cookie_waits"] = waits + 1
+            st.info("Checking session...")
+            time.sleep(0.2)
+            _rerun()
+        st.session_state.pop("_auth_cookie_waits", None)
 
     auth_url = _build_login_url(cfg, cookies)
     _render_login_screen(auth_url)
