@@ -328,7 +328,12 @@ def _load_user_from_request_cookie(cfg: dict[str, Any]) -> dict[str, Any] | None
                 tokens.append((value, "header"))
 
     if not tokens:
+        _debug_log("cookie_load tokens none")
         return None
+    token_summary = ", ".join(
+        f"{source}:{_token_fingerprint(token)}" for token, source in tokens
+    )
+    _debug_log(f"cookie_load tokens {token_summary}")
     serializer = _serializer(cfg["cookie_secret"])
     if len(tokens) > 1:
         _debug_log(f"cookie_load candidates={len(tokens)}")
@@ -588,29 +593,34 @@ def _ensure_auth_debug(cookies: CookieManager, cfg: dict[str, Any]) -> dict[str,
         }
     )
     st.session_state["_auth_debug"] = debug
+    _debug_log(
+        f"auth_debug cookie_name={debug['cookie_name']} ready={debug['cookie_ready']} present={debug['cookie_present']}"
+    )
     return debug
 
 
 def _load_user_from_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> dict[str, Any] | None:
     debug = _ensure_auth_debug(cookies, cfg)
-    try:
-        if not cookies.ready():
-            header_user = _load_user_from_request_cookie(cfg)
-            if header_user:
-                debug["cookie_error"] = None
-                _auth_log("cookie_load header_ok")
-                return header_user
-            debug["cookie_error"] = "not_ready"
-            _auth_log("cookie_load not_ready")
-            return None
-    except Exception:
+    cookies_ready = bool(debug.get("cookie_ready"))
+    _debug_log(
+        f"cookie_load start ready={cookies_ready} present={debug.get('cookie_present')} error={debug.get('cookie_error')}"
+    )
+    if not cookies_ready:
+        header_user = _load_user_from_request_cookie(cfg)
+        if header_user:
+            debug["cookie_error"] = None
+            _auth_log("cookie_load header_ok")
+            _debug_log("cookie_load header_ok fallback")
+            return header_user
         debug["cookie_error"] = "not_ready"
-        _auth_log("cookie_load not_ready exception")
+        _auth_log("cookie_load not_ready")
+        _debug_log("cookie_load not_ready")
         return None
     token = cookies.get(cfg["cookie_name"])
     if not token:
         debug["cookie_error"] = "missing"
         _auth_log("cookie_load missing")
+        _debug_log("cookie_load missing")
         return None
     serializer = _serializer(cfg["cookie_secret"])
     try:
@@ -620,19 +630,23 @@ def _load_user_from_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> dict[
         _save_cookies(cookies)
         debug["cookie_error"] = "expired"
         _auth_log("cookie_load expired")
+        _debug_log(f"cookie_load expired fp={_token_fingerprint(token)}")
         return None
     except BadSignature:
         del cookies[cfg["cookie_name"]]
         _save_cookies(cookies)
         debug["cookie_error"] = "bad_signature"
         _auth_log("cookie_load bad_signature")
+        _debug_log(f"cookie_load bad_signature fp={_token_fingerprint(token)}")
         return None
     if isinstance(data, dict) and data.get("email"):
         debug["cookie_error"] = None
         _auth_log("cookie_load ok")
+        _debug_log(f"cookie_load ok fp={_token_fingerprint(token)}")
         return data
     debug["cookie_error"] = "invalid_payload"
     _auth_log("cookie_load invalid_payload")
+    _debug_log("cookie_load invalid_payload")
     return None
 
 
@@ -649,16 +663,19 @@ def _store_user_cookie(
             st.session_state["_pending_user_cookie"] = user
             st.session_state["_pending_user_cookie_token"] = token
             _auth_log("cookie_store pending (not ready)")
+            _debug_log("cookie_store pending (not ready)")
             return
     except Exception:
         st.session_state["_pending_user_cookie"] = user
         st.session_state["_pending_user_cookie_token"] = token
         _auth_log("cookie_store pending (exception)")
+        _debug_log("cookie_store pending (exception)")
         return
     cookies[cfg["cookie_name"]] = token
     if save:
         _save_cookies(cookies)
     _auth_log("cookie_store saved")
+    _debug_log("cookie_store saved")
 
 
 def _flush_pending_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> None:
@@ -676,6 +693,7 @@ def _flush_pending_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> None:
     st.session_state.pop("_pending_user_cookie", None)
     st.session_state.pop("_pending_user_cookie_token", None)
     _auth_log("cookie_store flushed")
+    _debug_log("cookie_store flushed")
 
 
 def _build_login_url(cfg: dict[str, Any], cookies: CookieManager) -> str:
