@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import html
 import json
 import os
@@ -307,14 +308,14 @@ def _load_user_from_request_cookie(cfg: dict[str, Any]) -> dict[str, Any] | None
         if time.time() < ignore_until:
             return None
         st.session_state.pop("_logout_ignore_until", None)
-    tokens: list[str] = []
+    tokens: list[tuple[str, str]] = []
     try:
         ctx = getattr(st, "context", None)
         cookies = getattr(ctx, "cookies", None) if ctx else None
         if cookies:
             raw_token = cookies.get(cfg["cookie_name"])
             if raw_token:
-                tokens.append(str(raw_token))
+                tokens.append((str(raw_token), "context"))
     except Exception:
         pass
 
@@ -322,26 +323,35 @@ def _load_user_from_request_cookie(cfg: dict[str, Any]) -> dict[str, Any] | None
     raw_cookie = headers.get("cookie") or headers.get("Cookie") or ""
     if raw_cookie:
         for value in _cookie_header_values(raw_cookie, cfg["cookie_name"]):
-            if value not in tokens:
-                tokens.append(value)
+            if not any(value == token for token, _ in tokens):
+                tokens.append((value, "header"))
 
     if not tokens:
         return None
     serializer = _serializer(cfg["cookie_secret"])
     if len(tokens) > 1:
-        _auth_log(f"cookie_load header candidates={len(tokens)}")
-    for token in tokens:
+        _debug_log(f"cookie_load candidates={len(tokens)}")
+    errors: list[str] = []
+    for token, source in tokens:
         token = unquote(token)
+        fp = _token_fingerprint(token)
         try:
             data = serializer.loads(token, max_age=cfg["cookie_ttl_seconds"])
         except SignatureExpired:
+            errors.append(f"{source}:{fp}:expired")
             continue
         except BadSignature:
+            errors.append(f"{source}:{fp}:bad_signature")
             continue
-        except Exception:
+        except Exception as exc:
+            errors.append(f"{source}:{fp}:{type(exc).__name__}")
             continue
         if isinstance(data, dict) and data.get("email"):
+            _debug_log(f"cookie_load ok source={source} fp={fp}")
             return data
+    if errors:
+        st.session_state["_auth_cookie_last_error"] = errors[-1]
+        _debug_log("cookie_load failed " + ";".join(errors))
     return None
 
 
@@ -474,6 +484,24 @@ def _auth_log(message: str) -> None:
             handle.write(f"{timestamp} {message}\n")
     except Exception:
         pass
+
+
+def _debug_enabled() -> bool:
+    raw = (_get_setting("AUTH_DEBUG") or "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _debug_log(message: str) -> None:
+    if _debug_enabled():
+        print(message)
+    _auth_log(message)
+
+
+def _token_fingerprint(token: str) -> str:
+    try:
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()[:10]
+    except Exception:
+        return "unknown"
 
 
 def _is_code_used(code: str) -> bool:
