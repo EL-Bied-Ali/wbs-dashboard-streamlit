@@ -1469,7 +1469,9 @@ def require_login() -> dict[str, Any]:
         has_pending = isinstance(awaiting, (int, float)) or isinstance(
             st.session_state.get("_pending_user_cookie"), dict
         )
-        if has_pending:
+        waits = st.session_state.get("_auth_cookie_waits", 0)
+        if has_pending and waits < 10:
+            st.session_state["_auth_cookie_waits"] = waits + 1
             if not isinstance(awaiting, (int, float)):
                 st.session_state["_await_auth_cookie"] = time.time()
             st.info("Finalizing sign-in...")
