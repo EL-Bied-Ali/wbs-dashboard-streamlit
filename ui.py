@@ -781,20 +781,6 @@ def inject_theme():
         line-height: normal;
         transform: none;
       }
-      /* Activity select (main content) */
-      div.st-key-activity_select [data-baseweb="select"]{
-        padding-top: 2px;
-        padding-bottom: 2px;
-      }
-      div.st-key-activity_select [data-baseweb="select"] [value]{
-        font-size: 25px;
-        line-height: 1;
-        transform: translateY(-3px);
-      }
-      div.st-key-activity_select [data-baseweb="select"] input{
-        line-height: 1;
-        transform: translateY(-3px);
-      }
       div[role="listbox"][aria-label*="Select activity"]{
         font-size: 14px;
       }
@@ -948,15 +934,23 @@ def inject_theme():
         margin: 0 0 6px 0;
       }
       div[class*="st-key-activity_select"] [data-baseweb="select"] div[value]{
-        font-size: 26px;
+        font-size: 16px;
         font-weight: 800;
         color: var(--text);
-        line-height: 1.1;
+        line-height: 1;
+        max-width: calc(100% - 120px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       div[class*="st-key-activity_select"] [data-baseweb="select"] input{
-        font-size: 26px;
+        font-size: 16px;
         font-weight: 800;
         color: var(--text);
+        min-width: 120px;
+        line-height: 1;
+        padding-left: 2px;
+        text-align: left;
       }
       div[data-testid="stVerticalBlock"]:has(.scurve-hero-title){
         position: relative;
@@ -1144,8 +1138,6 @@ def kpi_chip_row(items):
         html += kpi_chip(it["label"], str(it["value"]), it.get("sub",""))
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
-
-
 
 
 
