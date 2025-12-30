@@ -608,6 +608,17 @@ def _load_user_from_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> dict[
         f"cookie_load start ready={cookies_ready} present={debug.get('cookie_present')} error={debug.get('cookie_error')}"
     )
     if not cookies_ready:
+        for attempt in range(8):
+            time.sleep(0.25)
+            try:
+                if cookies.ready():
+                    cookies_ready = True
+                    debug["cookie_ready"] = True
+                    _debug_log("cookie_load ready after wait")
+                    break
+            except Exception:
+                pass
+    if not cookies_ready:
         header_user = _load_user_from_request_cookie(cfg)
         if header_user:
             debug["cookie_error"] = None
