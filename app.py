@@ -1,6 +1,5 @@
 from datetime import datetime, date
 from time import perf_counter
-import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -44,16 +43,6 @@ from shared_excel import (
 )
 
 
-APP_LOGGER = logging.getLogger("chronoplan.app")
-if not APP_LOGGER.handlers:
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(asctime)s [app] %(levelname)s: %(message)s"))
-    APP_LOGGER.addHandler(handler)
-APP_LOGGER.setLevel(logging.INFO)
-APP_LOGGER.info("=== APP STARTUP: Streamlit app.py executing ===")
-APP_LOGGER.info(
-    "=== AUTH_DEBUG IS ENABLED ===" if os.environ.get("AUTH_DEBUG") else "=== AUTH_DEBUG IS DISABLED ==="
-)
 page_override = st.session_state.get("_page_override")
 page_source = st.session_state.get("_page_source")
 if page_override and page_source != "S-Curve":
