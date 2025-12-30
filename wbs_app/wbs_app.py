@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from auth_google import require_login, render_auth_sidebar
+from auth_google import require_login, render_auth_sidebar, render_contact_sidebar
 from activity_filters import build_activity_filter_sidebar, ROOT_ACTIVITY_ALL
 from shared_excel import (
     persist_shared_excel_state,
@@ -121,6 +121,21 @@ def _render_excel_format_help():
             )
         else:
             st.caption("Template file not found in artifacts/ or project root.")
+
+# ---------- Shared Excel upload ----------
+_render_excel_format_help()
+restore_shared_excel_state()
+shared_upload = st.sidebar.file_uploader(
+    "Upload project Excel (.xlsx)",
+    type=["xlsx", "xlsm"],
+    key="excel_upload_shared",
+    label_visibility="collapsed",
+)
+shared_path = _store_shared_upload(shared_upload)
+if shared_path is None:
+    shared_path = set_default_excel_if_missing()
+if shared_path and st.session_state.get("shared_excel_name"):
+    st.sidebar.caption(f"Current file: {st.session_state['shared_excel_name']}")
 
 def _init_column_mapping_state() -> dict:
     mapping = st.session_state.get("column_mapping")
@@ -854,26 +869,12 @@ def render_all(
                 )
     st.divider()
 
-# ===== Sidebar: importer (unchanged) =====
+# ===== Sidebar: navigation & controls =====
 st.sidebar.markdown('<div class="sidebar-nav-title">Navigation</div>', unsafe_allow_html=True)
 st.sidebar.page_link("app.py", label="Project Progress")
 st.sidebar.page_link("pages/3_S_Curve.py", label="S-Curve")
 st.sidebar.page_link("pages/2_WBS.py", label="WBS")
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)
-
-_render_excel_format_help()
-restore_shared_excel_state()
-shared_upload = st.sidebar.file_uploader(
-    "Upload project Excel (.xlsx)",
-    type=["xlsx", "xlsm"],
-    key="excel_upload_shared",
-    label_visibility="collapsed",
-)
-shared_path = _store_shared_upload(shared_upload)
-if shared_path is None:
-    shared_path = set_default_excel_if_missing()
-if shared_path and st.session_state.get("shared_excel_name"):
-    st.sidebar.caption(f"Current file: {st.session_state['shared_excel_name']}")
 
 with st.sidebar:
     if PREVIEW_ENABLED:
@@ -974,6 +975,7 @@ st.sidebar.checkbox(
     key="wbs_no_truncate",
 )
 truncate_labels = not st.session_state.get("wbs_no_truncate", False)
+render_contact_sidebar()
 if preview_mode:
     st.markdown("### Preview (mapping checks)")
     st.markdown("Source for hierarchy: Activity summary table (Activity ID indentation).")

@@ -26,6 +26,7 @@ import streamlit as st
 from auth_google import (
     require_login,
     render_auth_sidebar,
+    render_contact_sidebar,
     brand_strip_html,
     _custom_logo_data_uri,
     _remove_custom_logo,
@@ -200,6 +201,23 @@ def _render_excel_format_help():
             )
         else:
             st.caption("Template file not found in artifacts/ or project root.")
+
+# ---------- Shared Excel upload ----------
+_render_excel_format_help()
+restore_shared_excel_state()
+shared_upload = st.sidebar.file_uploader(
+    "Upload project Excel (.xlsx)",
+    type=["xlsx", "xlsm"],
+    key="excel_upload_shared",
+    label_visibility="collapsed",
+)
+shared_path = _store_shared_upload(shared_upload)
+if shared_path is None:
+    shared_path = set_default_excel_if_missing()
+if shared_path and st.session_state.get("shared_excel_name"):
+    st.sidebar.caption(f"Current file: {st.session_state['shared_excel_name']}")
+file_cache_key = _file_cache_key(shared_path)
+today_cache_key = date.today().isoformat()
 
 def _init_column_mapping_state() -> dict:
     mapping = st.session_state.get("column_mapping")
@@ -1109,23 +1127,6 @@ st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 # ---------- Sidebar selection ----------
 page = "S-Curve" if page_override == "S-Curve" else "Dashboard"
 
-# ---------- Shared Excel upload ----------
-_render_excel_format_help()
-restore_shared_excel_state()
-shared_upload = st.sidebar.file_uploader(
-    "Upload project Excel (.xlsx)",
-    type=["xlsx", "xlsm"],
-    key="excel_upload_shared",
-    label_visibility="collapsed",
-)
-shared_path = _store_shared_upload(shared_upload)
-if shared_path is None:
-    shared_path = set_default_excel_if_missing()
-if shared_path and st.session_state.get("shared_excel_name"):
-    st.sidebar.caption(f"Current file: {st.session_state['shared_excel_name']}")
-file_cache_key = _file_cache_key(shared_path)
-today_cache_key = date.today().isoformat()
-
 # Apply theme for both local pages
 inject_theme()
 perf_stats: dict[str, float] = {}
@@ -1176,6 +1177,8 @@ if shared_path:
 
 if activity_rows:
     activity_filter = build_activity_filter_sidebar(activity_rows)
+
+render_contact_sidebar()
 
 def compute_dashboard_metrics_from_activity(row: dict, sched_lu: dict):
     if not row:

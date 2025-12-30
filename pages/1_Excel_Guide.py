@@ -2,7 +2,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from auth_google import require_login, render_auth_sidebar
+from auth_google import require_login, render_auth_sidebar, render_contact_sidebar
 from ui import inject_theme
 
 
@@ -26,6 +26,7 @@ st.sidebar.page_link("app.py", label="Project Progress")
 st.sidebar.page_link("pages/3_S_Curve.py", label="S-Curve")
 st.sidebar.page_link("pages/2_WBS.py", label="WBS")
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)
+render_contact_sidebar()
 
 
 def _excel_template_bytes():

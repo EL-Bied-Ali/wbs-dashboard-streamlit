@@ -579,7 +579,7 @@ def inject_theme():
         background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
         border: 1px solid rgba(148,163,184,.18);
         box-shadow: 0 12px 26px rgba(0,0,0,.28);
-        margin-top: auto;
+        margin-top: 18px;
       }
       section[data-testid="stSidebar"] .brand-title{
         font-size: 12px;
@@ -599,6 +599,14 @@ def inject_theme():
         font-weight: 700;
         color: var(--muted);
         margin: 2px 0 6px 0;
+      }
+      section[data-testid="stSidebar"] div.st-key-contact_card{
+        margin: 12px 0 0 0;
+        padding: 12px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
+        border: 1px solid rgba(148,163,184,.18);
+        box-shadow: 0 12px 26px rgba(0,0,0,.28);
       }
       section[data-testid="stSidebarContent"]{
         display: flex;
@@ -629,7 +637,45 @@ def inject_theme():
       section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-brand_card),
       section[data-testid="stSidebar"] .st-key-brand_card{
         order: 999;
-        margin-top: auto !important;
+        margin-top: 18px !important;
+      }
+      section[data-testid="stSidebar"] div[data-testid="stLayoutWrapper"]:has(.st-key-contact_card),
+      section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-contact_card),
+      section[data-testid="stSidebar"] .st-key-contact_card{
+        order: 1001;
+        margin-top: 12px !important;
+      }
+      section[data-testid="stSidebar"] .contact-title{
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(157,168,198,.85);
+        margin-bottom: 8px;
+      }
+      section[data-testid="stSidebar"] .contact-note{
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
+      section[data-testid="stSidebar"] .contact-link{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,.2);
+        background: rgba(15,23,42,.55);
+        color: var(--text);
+        font-weight: 700;
+        text-decoration: none;
+        transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+      }
+      section[data-testid="stSidebar"] .contact-link:hover{
+        border-color: rgba(96,165,250,.6);
+        background: rgba(30,41,59,.75);
+        box-shadow: 0 10px 22px rgba(0,0,0,.25);
       }
       section[data-testid="stSidebar"] .brand-preview{
         width: 100%;
@@ -730,6 +776,17 @@ def inject_theme():
         font-size: 16px;
         font-weight: 700;
         color: var(--text);
+      }
+      section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] input{
+        line-height: normal;
+        transform: none;
+      }
+      div[role="listbox"][aria-label*="Select activity"]{
+        font-size: 18px;
+      }
+      div[role="listbox"][aria-label*="Select activity"] [role="option"]{
+        font-size: 18px;
+        line-height: 1.2;
       }
       @media (max-width: 900px){
         div[data-testid="stColumn"]{
@@ -877,15 +934,23 @@ def inject_theme():
         margin: 0 0 6px 0;
       }
       div[class*="st-key-activity_select"] [data-baseweb="select"] div[value]{
-        font-size: 26px;
+        font-size: 18px;
         font-weight: 800;
         color: var(--text);
-        line-height: 1.1;
+        line-height: 1;
+        max-width: calc(100% - 40px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       div[class*="st-key-activity_select"] [data-baseweb="select"] input{
-        font-size: 26px;
+        font-size: 18px;
         font-weight: 800;
         color: var(--text);
+        min-width: 40px;
+        line-height: 1;
+        padding-left: 2px;
+        text-align: left;
       }
       div[data-testid="stVerticalBlock"]:has(.scurve-hero-title){
         position: relative;
@@ -1073,10 +1138,6 @@ def kpi_chip_row(items):
         html += kpi_chip(it["label"], str(it["value"]), it.get("sub",""))
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
-
-
-
-
 
 
 

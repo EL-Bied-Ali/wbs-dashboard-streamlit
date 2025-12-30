@@ -234,7 +234,7 @@ def _request_scheme(host: str | None = None) -> str:
 
 
 def _inject_cookie_js(name: str, token: str, max_age: int, key: str = "auth_cookie_js") -> None:
-    secure = _request_scheme() == "https"
+    secure = _request_scheme(_request_host()) == "https"
     name_js = json.dumps(name)
     token_js = json.dumps(token)
     secure_js = "true" if secure else "false"
@@ -251,7 +251,10 @@ def _inject_cookie_js(name: str, token: str, max_age: int, key: str = "auth_cook
     }})();
     </script>
     """
-    components.v1.html(script, height=0, key=key)
+    try:
+        components.v1.html(script, height=0, key=key)
+    except TypeError:
+        components.v1.html(script, height=0)
 
 
 def _parse_cookie_header(raw_cookie: str) -> dict[str, str]:
@@ -1331,8 +1334,9 @@ def require_login() -> dict[str, Any]:
         return user
     if not _cookies_ready(cookies):
         waits = st.session_state.get("_auth_cookie_waits", 0)
-        if waits < 3:
+        if waits < 6:
             st.session_state["_auth_cookie_waits"] = waits + 1
+            st.info("Loading session...")
             time.sleep(0.2)
             _rerun()
         st.session_state.pop("_auth_cookie_waits", None)
@@ -1449,3 +1453,21 @@ def render_auth_sidebar(
                                     _save_custom_logo(role, uploaded)
                                     st.session_state[state_key] = file_key
                                     _rerun()
+
+
+def render_contact_sidebar() -> None:
+    with st.sidebar:
+        st.markdown('<div class="sidebar-spacer"></div>', unsafe_allow_html=True)
+        with st.container(key="contact_card"):
+            st.markdown(
+                """
+                <div class="contact-title">Need help or feedback?</div>
+                <div class="contact-note">
+                  Reach the ChronoPlan developer on Discord.
+                </div>
+                <a class="contact-link" href="https://discord.gg/N7v8WwdRP8" target="_blank" rel="noopener noreferrer">
+                  Join the ChronoPlan Discord
+                </a>
+                """,
+                unsafe_allow_html=True,
+            )
