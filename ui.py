@@ -758,7 +758,7 @@ def inject_theme():
         background: rgba(15,23,42,.45);
         border: 1px solid rgba(148,163,184,.16);
         border-radius: 12px;
-        padding: 8px 10px;
+        padding: 6px 10px;
         box-shadow: 0 10px 22px rgba(0,0,0,.25);
       }
       section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-testid="stWidgetLabel"] p{
@@ -773,15 +773,29 @@ def inject_theme():
         background: transparent;
       }
       section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] [value]{
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 700;
         color: var(--text);
-        line-height: 1.1;
-        transform: translateY(-1px);
+        line-height: 1;
+        transform: translateY(-2px);
       }
       section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] input{
-        line-height: 1.1;
-        transform: translateY(-1px);
+        line-height: 1;
+        transform: translateY(-2px);
+      }
+      /* Activity select (main content) */
+      div.st-key-activity_select [data-baseweb="select"]{
+        padding-top: 2px;
+        padding-bottom: 2px;
+      }
+      div.st-key-activity_select [data-baseweb="select"] [value]{
+        font-size: 18px;
+        line-height: 1;
+        transform: translateY(-2px);
+      }
+      div.st-key-activity_select [data-baseweb="select"] input{
+        line-height: 1;
+        transform: translateY(-2px);
       }
       @media (max-width: 900px){
         div[data-testid="stColumn"]{
