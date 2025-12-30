@@ -1505,6 +1505,8 @@ def logout() -> None:
     st.session_state["_force_home"] = True
     st.session_state.pop("_await_auth_cookie", None)
     st.session_state.pop("_auth_cookie_waits", None)
+    st.session_state.pop("_pending_user_cookie", None)
+    st.session_state.pop("_pending_user_cookie_token", None)
     _clear_query_params()
     st.stop()
 
