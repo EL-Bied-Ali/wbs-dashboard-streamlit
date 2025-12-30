@@ -4,6 +4,7 @@ import base64
 import hashlib
 import html
 import json
+import logging
 import os
 import secrets
 import textwrap
@@ -486,14 +487,27 @@ def _auth_log(message: str) -> None:
         pass
 
 
+AUTH_LOGGER = logging.getLogger("auth_google")
+
+
 def _debug_enabled() -> bool:
     raw = (_get_setting("AUTH_DEBUG") or "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
 
 
+def _ensure_logger() -> None:
+    if not AUTH_LOGGER.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s [auth_google] %(levelname)s: %(message)s")
+        )
+        AUTH_LOGGER.addHandler(handler)
+    AUTH_LOGGER.setLevel(logging.DEBUG if _debug_enabled() else logging.INFO)
+
+
 def _debug_log(message: str) -> None:
-    if _debug_enabled():
-        print(message)
+    _ensure_logger()
+    AUTH_LOGGER.debug(message)
     _auth_log(message)
 
 
