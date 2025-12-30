@@ -773,9 +773,15 @@ def inject_theme():
         background: transparent;
       }
       section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] [value]{
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 700;
         color: var(--text);
+        line-height: 1.1;
+        transform: translateY(-1px);
+      }
+      section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] input{
+        line-height: 1.1;
+        transform: translateY(-1px);
       }
       @media (max-width: 900px){
         div[data-testid="stColumn"]{

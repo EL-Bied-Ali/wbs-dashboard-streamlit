@@ -1060,9 +1060,15 @@ section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="sele
   background: transparent;
 }
 section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] [value]{
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text);
+  line-height: 1.1;
+  transform: translateY(-1px);
+}
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] input{
+  line-height: 1.1;
+  transform: translateY(-1px);
 }
 /* Disable transitions on radios to avoid flicker when Streamlit rerenders */
 
