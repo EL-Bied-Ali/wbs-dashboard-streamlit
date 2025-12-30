@@ -1203,6 +1203,23 @@ def require_login() -> dict[str, Any]:
     code = _query_value(params, "code")
     state = _query_value(params, "state")
 
+    await_cookie = st.session_state.get("_await_auth_cookie")
+    if isinstance(await_cookie, (int, float)):
+        cookies = _get_cookie_manager(refresh=True)
+        user = _load_user_from_request_cookie(cfg)
+        if not user:
+            user = _load_user_from_cookie(cookies, cfg) if _cookies_ready(cookies) else None
+        if user:
+            st.session_state[SESSION_KEY] = user
+            st.session_state.pop("_await_auth_cookie", None)
+            _auth_log("require_login awaited cookie user")
+            return user
+        if time.time() - await_cookie < 4:
+            st.info("Finalizing sign-in...")
+            time.sleep(0.25)
+            _rerun()
+        st.session_state.pop("_await_auth_cookie", None)
+
     inflight = st.session_state.get("_oauth_in_flight")
     if isinstance(inflight, (int, float)):
         if time.time() - inflight < 8:
@@ -1284,6 +1301,7 @@ def require_login() -> dict[str, Any]:
                     )
                 except Exception as exc:
                     _auth_log(f"cookie_js set failed={exc}")
+                st.session_state["_await_auth_cookie"] = time.time()
                 try:
                     _clear_query_params()
                 except Exception:
@@ -1313,9 +1331,8 @@ def require_login() -> dict[str, Any]:
         return user
     if not _cookies_ready(cookies):
         waits = st.session_state.get("_auth_cookie_waits", 0)
-        if waits < 2:
+        if waits < 3:
             st.session_state["_auth_cookie_waits"] = waits + 1
-            st.info("Checking session...")
             time.sleep(0.2)
             _rerun()
         st.session_state.pop("_auth_cookie_waits", None)
