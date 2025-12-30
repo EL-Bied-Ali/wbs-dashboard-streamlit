@@ -1464,8 +1464,8 @@ def require_login() -> dict[str, Any]:
         st.session_state[SESSION_KEY] = user
         _auth_log("require_login cookie user")
         return user
-    session_user = st.session_state.get(SESSION_KEY)
     if not _cookies_ready(cookies):
+        session_user = st.session_state.get(SESSION_KEY)
         awaiting = st.session_state.get("_await_auth_cookie")
         has_pending = isinstance(awaiting, (int, float)) or isinstance(
             st.session_state.get("_pending_user_cookie"), dict
