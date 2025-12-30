@@ -1475,6 +1475,10 @@ def require_login() -> dict[str, Any]:
             st.info("Finalizing sign-in...")
             time.sleep(0.25)
             _rerun()
+        st.session_state.pop("_await_auth_cookie", None)
+        st.session_state.pop("_pending_user_cookie", None)
+        st.session_state.pop("_pending_user_cookie_token", None)
+        st.session_state.pop("_auth_cookie_waits", None)
         else:
             st.session_state.pop("_await_auth_cookie", None)
             st.session_state.pop("_auth_cookie_waits", None)
