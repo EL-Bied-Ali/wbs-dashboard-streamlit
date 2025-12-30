@@ -570,7 +570,9 @@ def _save_cookies(cookies: CookieManager) -> None:
     except Exception:
         return
     try:
+        _debug_log("save_cookies start")
         cookies.save()
+        _debug_log("save_cookies saved")
     except StreamlitDuplicateElementKey:
         # Avoid duplicate component key errors if save() is called twice in one run.
         return
@@ -658,6 +660,7 @@ def _store_user_cookie(
 ) -> None:
     serializer = _serializer(cfg["cookie_secret"])
     token = serializer.dumps(user)
+    _debug_log("cookie_store attempt")
     try:
         if not cookies.ready():
             st.session_state["_pending_user_cookie"] = user
@@ -679,6 +682,7 @@ def _store_user_cookie(
 
 
 def _flush_pending_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> None:
+    _debug_log("flush_pending_cookie start")
     pending = st.session_state.get("_pending_user_cookie")
     if not isinstance(pending, dict):
         return
