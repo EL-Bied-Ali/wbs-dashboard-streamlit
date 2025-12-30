@@ -787,13 +787,20 @@ def inject_theme():
         padding-bottom: 2px;
       }
       div.st-key-activity_select [data-baseweb="select"] [value]{
-        font-size: 16px;
+        font-size: 25px;
         line-height: 1;
         transform: translateY(-3px);
       }
       div.st-key-activity_select [data-baseweb="select"] input{
         line-height: 1;
         transform: translateY(-3px);
+      }
+      div[role="listbox"][aria-label*="Select activity"]{
+        font-size: 14px;
+      }
+      div[role="listbox"][aria-label*="Select activity"] [role="option"]{
+        font-size: 14px;
+        line-height: 1.1;
       }
       @media (max-width: 900px){
         div[data-testid="stColumn"]{
@@ -1137,7 +1144,6 @@ def kpi_chip_row(items):
         html += kpi_chip(it["label"], str(it["value"]), it.get("sub",""))
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
-
 
 
 

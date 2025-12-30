@@ -1068,6 +1068,13 @@ section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="sele
   line-height: normal;
   transform: none;
 }
+div[role="listbox"][aria-label*="Select activity"]{
+  font-size: 14px;
+}
+div[role="listbox"][aria-label*="Select activity"] [role="option"]{
+  font-size: 14px;
+  line-height: 1.1;
+}
 /* Disable transitions on radios to avoid flicker when Streamlit rerenders */
 
 /* === Glass frame on main content (wraps hero + N2/N3) === */
