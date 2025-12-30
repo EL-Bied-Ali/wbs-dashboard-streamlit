@@ -1175,7 +1175,55 @@ def _render_home_screen(
 
 
 def _render_login_screen(auth_url: str) -> None:
-    _render_home_screen(auth_url, user=None)
+    st.markdown(
+        "<style>[data-testid='stSidebarNav']{display:none !important;}</style>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        <style>
+        .login-wrap {
+          max-width: 540px;
+          margin: 10vh auto 0;
+          padding: 2.4rem;
+          border-radius: 18px;
+          background: rgba(15, 20, 40, 0.86);
+          border: 1px solid rgba(255,255,255,0.08);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+          color: #eef2ff;
+          text-align: center;
+        }
+        .login-wrap h1 {
+          font-size: 1.8rem;
+          margin: 0 0 0.8rem;
+        }
+        .login-wrap p {
+          color: #b7c1e1;
+          margin: 0 0 1.6rem;
+        }
+        .login-btn {
+          display: inline-block;
+          padding: 0.9rem 1.6rem;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #3fe5c2, #62d4ff);
+          color: #0b1127;
+          font-weight: 700;
+          text-decoration: none;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+        <div class="login-wrap">
+          <h1>ChronoPlan</h1>
+          <p>Sign in to continue.</p>
+          <a class="login-btn" href="{auth_url}">Continue with Google</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def require_login() -> dict[str, Any]:
