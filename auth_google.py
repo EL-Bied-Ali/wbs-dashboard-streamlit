@@ -38,6 +38,8 @@ _USED_CODES: dict[str, float] = {}
 _CODE_TTL_SECONDS = 300
 _CODE_USERS: dict[str, tuple[float, dict[str, Any]]] = {}
 _AUTH_LOG_PATH = Path(__file__).resolve().parent / "artifacts" / "auth_debug.log"
+_SESSION_STORE_PATH = Path(__file__).resolve().parent / "artifacts" / "auth_sessions.json"
+_SESSION_TTL_SECONDS = 7 * 24 * 3600
 
 
 @lru_cache(maxsize=1)
@@ -521,6 +523,79 @@ def _token_fingerprint(token: str) -> str:
         return hashlib.sha256(token.encode("utf-8")).hexdigest()[:10]
     except Exception:
         return "unknown"
+
+
+def _session_token_from_headers() -> str | None:
+    headers = _request_headers()
+    raw_cookie = headers.get("cookie") or headers.get("Cookie") or ""
+    for value in _cookie_header_values(raw_cookie, "streamlit_session"):
+        if value:
+            return value
+    return None
+
+
+def _session_token() -> str | None:
+    token = _session_token_from_headers()
+    if token:
+        return token
+    token = st.session_state.get("_session_token")
+    if isinstance(token, str) and token:
+        return token
+    return None
+
+
+def _load_session_store() -> dict[str, tuple[float, dict[str, Any]]]:
+    try:
+        if _SESSION_STORE_PATH.exists():
+            data = json.loads(_SESSION_STORE_PATH.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return {k: (v[0], v[1]) for k, v in data.items() if isinstance(v, list) and len(v) == 2}
+    except Exception:
+        pass
+    return {}
+
+
+def _save_session_store(store: dict[str, tuple[float, dict[str, Any]]]) -> None:
+    try:
+        _SESSION_STORE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        serializable = {k: [v[0], v[1]] for k, v in store.items()}
+        _SESSION_STORE_PATH.write_text(json.dumps(serializable), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _session_store_cleanup(store: dict[str, tuple[float, dict[str, Any]]]) -> dict[str, tuple[float, dict[str, Any]]]:
+    now = time.time()
+    return {k: v for k, v in store.items() if now - v[0] <= _SESSION_TTL_SECONDS}
+
+
+def _session_store_get(token: str | None) -> dict[str, Any] | None:
+    if not token:
+        return None
+    store = _session_store_cleanup(_load_session_store())
+    entry = store.get(token)
+    if entry and isinstance(entry, tuple) and len(entry) == 2:
+        ts, user = entry
+        if isinstance(user, dict):
+            return user
+    return None
+
+
+def _session_store_set(token: str | None, user: dict[str, Any]) -> None:
+    if not token or not isinstance(user, dict):
+        return
+    store = _session_store_cleanup(_load_session_store())
+    store[token] = (time.time(), user)
+    _save_session_store(store)
+
+
+def _session_store_delete(token: str | None) -> None:
+    if not token:
+        return
+    store = _session_store_cleanup(_load_session_store())
+    if token in store:
+        store.pop(token, None)
+        _save_session_store(store)
 
 
 def _is_code_used(code: str) -> bool:
@@ -1326,14 +1401,23 @@ def require_login() -> dict[str, Any]:
         _auth_log("require_login bypass localhost")
         return localhost_user
 
+    session_token = _session_token()
+    store_user = _session_store_get(session_token)
+    if store_user:
+        st.session_state[SESSION_KEY] = store_user
+        _auth_log("require_login session store user")
+        return store_user
+
     session_user = st.session_state.get(SESSION_KEY)
     if isinstance(session_user, dict) and session_user.get("email"):
         _auth_log("require_login session user (early)")
+        _session_store_set(session_token, session_user)
         return session_user
     header_user = _load_user_from_request_cookie(cfg)
     if header_user:
         st.session_state[SESSION_KEY] = header_user
         _auth_log("require_login request cookie user (early)")
+        _session_store_set(session_token, header_user)
         return header_user
 
     if st.session_state.pop("_force_home", False):
@@ -1428,6 +1512,7 @@ def require_login() -> dict[str, Any]:
             if user:
                 _mark_code_used(code)
                 st.session_state[SESSION_KEY] = user
+                _session_store_set(session_token, user)
                 try:
                     cookies = _get_cookie_manager(refresh=True)
                     _flush_pending_cookie(cookies, cfg)
@@ -1473,6 +1558,7 @@ def require_login() -> dict[str, Any]:
     if user:
         st.session_state[SESSION_KEY] = user
         _auth_log("require_login cookie user")
+        _session_store_set(session_token, user)
         return user
     if not _cookies_ready(cookies):
         request_user = _load_user_from_request_cookie(cfg)
@@ -1499,6 +1585,7 @@ def require_login() -> dict[str, Any]:
         st.session_state.pop("_auth_cookie_waits", None)
         if isinstance(session_user, dict) and session_user.get("email"):
             _auth_log("require_login fallback to session user")
+            _session_store_set(session_token, session_user)
             return session_user
 
     auth_url = _build_login_url(cfg, cookies)
@@ -1510,6 +1597,7 @@ def require_login() -> dict[str, Any]:
 def logout() -> None:
     cfg = _load_config()
     cookies = _get_cookie_manager()
+    session_token = _session_token()
     if _cookies_ready(cookies):
         if cookies.get(cfg["cookie_name"]):
             del cookies[cfg["cookie_name"]]
@@ -1532,6 +1620,7 @@ def logout() -> None:
     st.session_state.pop("_auth_cookie_waits", None)
     st.session_state.pop("_pending_user_cookie", None)
     st.session_state.pop("_pending_user_cookie_token", None)
+    _session_store_delete(session_token)
     _clear_query_params()
     st.stop()
 
