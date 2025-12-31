@@ -1408,18 +1408,6 @@ def require_login() -> dict[str, Any]:
         _auth_log("require_login session store user")
         return store_user
 
-    session_user = st.session_state.get(SESSION_KEY)
-    if isinstance(session_user, dict) and session_user.get("email"):
-        _auth_log("require_login session user (early)")
-        _session_store_set(session_token, session_user)
-        return session_user
-    header_user = _load_user_from_request_cookie(cfg)
-    if header_user:
-        st.session_state[SESSION_KEY] = header_user
-        _auth_log("require_login request cookie user (early)")
-        _session_store_set(session_token, header_user)
-        return header_user
-
     if st.session_state.pop("_force_home", False):
         try:
             st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
@@ -1596,6 +1584,17 @@ def require_login() -> dict[str, Any]:
 
 def logout() -> None:
     cfg = _load_config()
+    session_user = st.session_state.get(SESSION_KEY)
+    if isinstance(session_user, dict) and session_user.get("email"):
+        _auth_log("require_login session user (early)")
+        _session_store_set(session_token, session_user)
+        return session_user
+    header_user = _load_user_from_request_cookie(cfg)
+    if header_user:
+        st.session_state[SESSION_KEY] = header_user
+        _auth_log("require_login request cookie user (early)")
+        _session_store_set(session_token, header_user)
+        return header_user
     cookies = _get_cookie_manager()
     session_token = _session_token()
     if _cookies_ready(cookies):
