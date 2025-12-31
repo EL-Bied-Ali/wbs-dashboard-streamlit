@@ -1470,6 +1470,11 @@ def require_login() -> dict[str, Any]:
         _auth_log("require_login cookie user")
         return user
     if not _cookies_ready(cookies):
+        request_user = _load_user_from_request_cookie(cfg)
+        if request_user:
+            st.session_state[SESSION_KEY] = request_user
+            _auth_log("require_login request cookie user (not ready manager)")
+            return request_user
         session_user = st.session_state.get(SESSION_KEY)
         awaiting = st.session_state.get("_await_auth_cookie")
         has_pending = isinstance(awaiting, (int, float)) or isinstance(
