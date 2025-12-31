@@ -530,6 +530,7 @@ def _session_token_from_headers() -> str | None:
     raw_cookie = headers.get("cookie") or headers.get("Cookie") or ""
     for value in _cookie_header_values(raw_cookie, "streamlit_session"):
         if value:
+            _auth_log(f"session_token header={_token_fingerprint(value)}")
             return value
     return None
 
@@ -537,9 +538,11 @@ def _session_token_from_headers() -> str | None:
 def _session_token() -> str | None:
     token = _session_token_from_headers()
     if token:
+        _auth_log(f"session_token resolved={_token_fingerprint(token)}")
         return token
     token = st.session_state.get("_session_token")
     if isinstance(token, str) and token:
+        _auth_log(f"session_token session_state={_token_fingerprint(token)}")
         return token
     return None
 
@@ -577,7 +580,9 @@ def _session_store_get(token: str | None) -> dict[str, Any] | None:
     if entry and isinstance(entry, tuple) and len(entry) == 2:
         ts, user = entry
         if isinstance(user, dict):
+            _auth_log(f"session_store hit token={_token_fingerprint(token)} age={int(time.time()-ts)}s")
             return user
+    _auth_log(f"session_store miss token={_token_fingerprint(token)}")
     return None
 
 
@@ -587,6 +592,7 @@ def _session_store_set(token: str | None, user: dict[str, Any]) -> None:
     store = _session_store_cleanup(_load_session_store())
     store[token] = (time.time(), user)
     _save_session_store(store)
+    _auth_log(f"session_store set token={_token_fingerprint(token)}")
 
 
 def _session_store_delete(token: str | None) -> None:
