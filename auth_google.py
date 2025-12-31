@@ -1402,6 +1402,10 @@ def require_login() -> dict[str, Any]:
         return localhost_user
 
     session_token = _session_token()
+    # Persist any existing session user into the store to make refreshes resilient.
+    _existing = st.session_state.get(SESSION_KEY)
+    if isinstance(_existing, dict) and _existing.get("email"):
+        _session_store_set(session_token, _existing)
     store_user = _session_store_get(session_token)
     if store_user:
         st.session_state[SESSION_KEY] = store_user
