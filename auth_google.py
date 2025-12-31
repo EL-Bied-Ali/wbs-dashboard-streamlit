@@ -1330,6 +1330,11 @@ def require_login() -> dict[str, Any]:
     if isinstance(session_user, dict) and session_user.get("email"):
         _auth_log("require_login session user (early)")
         return session_user
+    header_user = _load_user_from_request_cookie(cfg)
+    if header_user:
+        st.session_state[SESSION_KEY] = header_user
+        _auth_log("require_login request cookie user (early)")
+        return header_user
 
     if st.session_state.pop("_force_home", False):
         try:
