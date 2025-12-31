@@ -1326,6 +1326,11 @@ def require_login() -> dict[str, Any]:
         _auth_log("require_login bypass localhost")
         return localhost_user
 
+    session_user = st.session_state.get(SESSION_KEY)
+    if isinstance(session_user, dict) and session_user.get("email"):
+        _auth_log("require_login session user (early)")
+        return session_user
+
     if st.session_state.pop("_force_home", False):
         try:
             st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
