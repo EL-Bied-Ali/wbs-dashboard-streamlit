@@ -34,6 +34,7 @@ STATE_KEY = "oauth_state"
 NONCE_KEY = "oauth_nonce"
 STATE_COOKIE = "oauth_state"
 NONCE_COOKIE = "oauth_nonce"
+AUTH_SESSION_COOKIE = "auth_session_id"
 _USED_CODES: dict[str, float] = {}
 _CODE_TTL_SECONDS = 300
 _CODE_USERS: dict[str, tuple[float, dict[str, Any]]] = {}
@@ -528,9 +529,13 @@ def _token_fingerprint(token: str) -> str:
 def _session_token_from_headers() -> str | None:
     headers = _request_headers()
     raw_cookie = headers.get("cookie") or headers.get("Cookie") or ""
+    for value in _cookie_header_values(raw_cookie, AUTH_SESSION_COOKIE):
+        if value:
+            _debug_log(f"session_token header auth_session_id={_token_fingerprint(value)}")
+            return value
     for value in _cookie_header_values(raw_cookie, "streamlit_session"):
         if value:
-            _auth_log(f"session_token header={_token_fingerprint(value)}")
+            _debug_log(f"session_token header streamlit_session={_token_fingerprint(value)}")
             return value
     return None
 
@@ -538,13 +543,32 @@ def _session_token_from_headers() -> str | None:
 def _session_token() -> str | None:
     token = _session_token_from_headers()
     if token:
-        _auth_log(f"session_token resolved={_token_fingerprint(token)}")
+        _debug_log(f"session_token resolved={_token_fingerprint(token)}")
         return token
     token = st.session_state.get("_session_token")
     if isinstance(token, str) and token:
-        _auth_log(f"session_token session_state={_token_fingerprint(token)}")
+        _debug_log(f"session_token session_state={_token_fingerprint(token)}")
         return token
     return None
+
+
+def _ensure_session_token(cfg: dict[str, Any]) -> str | None:
+    token = _session_token()
+    if token:
+        return token
+    token = secrets.token_urlsafe(24)
+    st.session_state["_session_token"] = token
+    try:
+        _inject_cookie_js(
+            AUTH_SESSION_COOKIE,
+            token,
+            _SESSION_TTL_SECONDS,
+            key="auth_session_id_js",
+        )
+        _debug_log(f"session_token issued={_token_fingerprint(token)}")
+    except Exception as exc:
+        _debug_log(f"session_token issue failed={type(exc).__name__}")
+    return token
 
 
 def _load_session_store() -> dict[str, tuple[float, dict[str, Any]]]:
@@ -580,9 +604,11 @@ def _session_store_get(token: str | None) -> dict[str, Any] | None:
     if entry and isinstance(entry, tuple) and len(entry) == 2:
         ts, user = entry
         if isinstance(user, dict):
-            _auth_log(f"session_store hit token={_token_fingerprint(token)} age={int(time.time()-ts)}s")
+            _debug_log(
+                f"session_store hit token={_token_fingerprint(token)} age={int(time.time()-ts)}s"
+            )
             return user
-    _auth_log(f"session_store miss token={_token_fingerprint(token)}")
+    _debug_log(f"session_store miss token={_token_fingerprint(token)}")
     return None
 
 
@@ -592,7 +618,7 @@ def _session_store_set(token: str | None, user: dict[str, Any]) -> None:
     store = _session_store_cleanup(_load_session_store())
     store[token] = (time.time(), user)
     _save_session_store(store)
-    _auth_log(f"session_store set token={_token_fingerprint(token)}")
+    _debug_log(f"session_store set token={_token_fingerprint(token)}")
 
 
 def _session_store_delete(token: str | None) -> None:
@@ -602,6 +628,7 @@ def _session_store_delete(token: str | None) -> None:
     if token in store:
         store.pop(token, None)
         _save_session_store(store)
+        _debug_log(f"session_store delete token={_token_fingerprint(token)}")
 
 
 def _is_code_used(code: str) -> bool:
@@ -1407,7 +1434,15 @@ def require_login() -> dict[str, Any]:
         _auth_log("require_login bypass localhost")
         return localhost_user
 
-    session_token = _session_token()
+    if st.session_state.pop("_force_home", False):
+        try:
+            st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
+        except Exception:
+            _rerun()
+        st.stop()
+
+    cfg = _load_config()
+    session_token = _ensure_session_token(cfg)
     # Persist any existing session user into the store to make refreshes resilient.
     _existing = st.session_state.get(SESSION_KEY)
     if isinstance(_existing, dict) and _existing.get("email"):
@@ -1418,14 +1453,6 @@ def require_login() -> dict[str, Any]:
         _auth_log("require_login session store user")
         return store_user
 
-    if st.session_state.pop("_force_home", False):
-        try:
-            st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
-        except Exception:
-            _rerun()
-        st.stop()
-
-    cfg = _load_config()
     params = _get_query_params()
     code = _query_value(params, "code")
     state = _query_value(params, "state")
