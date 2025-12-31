@@ -1453,6 +1453,18 @@ def require_login() -> dict[str, Any]:
         _auth_log("require_login session store user")
         return store_user
 
+    session_user = st.session_state.get(SESSION_KEY)
+    if isinstance(session_user, dict) and session_user.get("email"):
+        _auth_log("require_login session user (early)")
+        _session_store_set(session_token, session_user)
+        return session_user
+    header_user = _load_user_from_request_cookie(cfg)
+    if header_user:
+        st.session_state[SESSION_KEY] = header_user
+        _auth_log("require_login request cookie user (early)")
+        _session_store_set(session_token, header_user)
+        return header_user
+
     params = _get_query_params()
     code = _query_value(params, "code")
     state = _query_value(params, "state")
