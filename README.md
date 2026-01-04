@@ -37,3 +37,26 @@ Notes:
 ## Repo notes
 - `.gitignore` excludes virtualenvs, caches, Excel exports, and large videos so the repo stays light.
 - Everything else can be committed normally; keep the two apps independent so each retains its theme.
+
+## Paddle webhooks (billing sync)
+To keep `plan_status`/`plan_end` in sync after checkout, run the lightweight webhook server:
+
+```bash
+python scripts/paddle_webhook_server.py
+```
+
+Configure secrets (env vars or `.streamlit/secrets.toml`):
+```
+PADDLE_WEBHOOK_SECRET = "your-webhook-secret"
+PADDLE_WEBHOOK_PORT = "8001"
+PADDLE_WEBHOOK_PATH = "/webhook/paddle"
+```
+
+Then set the webhook URL in Paddle to:
+```
+http://YOUR_HOST:8001/webhook/paddle
+```
+
+The handler maps Paddle subscription events to:
+- `plan_status = active|trialing`
+- `plan_end` from the current billing period end date

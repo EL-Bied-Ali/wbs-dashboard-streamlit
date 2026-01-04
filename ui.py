@@ -445,7 +445,28 @@ def inject_theme():
         text-transform: uppercase;
         letter-spacing: 0.14em;
         color: rgba(157,168,198,.85);
-        margin: 6px 0 10px 0;
+        margin: 6px 0 8px 0;
+      }
+      section[data-testid="stSidebar"] div.st-key-back_to_projects_link{
+        margin: 6px 0 14px 0;
+      }
+      section[data-testid="stSidebar"] div.st-key-back_to_projects_link [data-testid="stPageLink-NavLink"]{
+        padding: 6px 0 !important;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        font-size: 14px !important;
+        color: rgba(157,168,198,.9);
+      }
+      section[data-testid="stSidebar"] div.st-key-back_to_projects_link [data-testid="stPageLink-NavLink"]::before{
+        content: "← ";
+        color: rgba(157,168,198,.8);
+      }
+      section[data-testid="stSidebar"] div.st-key-back_to_projects_link [data-testid="stPageLink-NavLink"]:hover{
+        background: rgba(15,23,42,.45);
+        border: 1px solid rgba(148,163,184,.2);
+        padding: 6px 10px !important;
       }
       section[data-testid="stSidebar"] [data-testid="stPageLink"]{
         margin: 6px 0 !important;
@@ -485,7 +506,7 @@ def inject_theme():
       }
       /* Sidebar auth card */
       section[data-testid="stSidebar"] div.st-key-auth_card{
-        margin: 6px 0 18px 0;
+        margin: 6px 0 12px 0;
         padding: 12px 54px 18px 12px;
         border-radius: 14px;
         background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
@@ -541,6 +562,39 @@ def inject_theme():
         font-size: 12px;
         color: var(--muted);
         word-break: break-word;
+      }
+      section[data-testid="stSidebar"] .auth-plan-badge{
+        align-self: flex-start;
+        margin-top: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,.25);
+        background: rgba(15,23,42,.5);
+        color: var(--text);
+      }
+      section[data-testid="stSidebar"] .auth-plan-badge.premium{
+        border-color: rgba(34,197,94,.35);
+        background: rgba(34,197,94,.12);
+        color: #22c55e;
+      }
+      section[data-testid="stSidebar"] .auth-plan-badge.trial{
+        border-color: rgba(251,191,36,.35);
+        background: rgba(251,191,36,.12);
+        color: #fbbf24;
+      }
+      section[data-testid="stSidebar"] .auth-plan-badge.locked{
+        border-color: rgba(248,113,113,.35);
+        background: rgba(248,113,113,.12);
+        color: #f87171;
+      }
+      section[data-testid="stSidebar"] .auth-plan-meta{
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
       }
       section[data-testid="stSidebar"] div.st-key-auth_card div.st-key-auth_logout_btn{
         position: absolute;
@@ -977,14 +1031,83 @@ def inject_theme():
         font-size: 26px;
         font-weight: 800;
         color: var(--text);
-        margin: 0 0 4px 0;
+        margin: 0;
         font-family:'Space Grotesk','DM Sans',sans-serif;
         letter-spacing:0.2px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .project-hero-row{
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .project-hero-title{
+        font-size: clamp(34px, 3.8vw, 46px);
+        font-weight: 900;
+        margin: 0;
+        padding-left: 14px;
+        font-family:'Space Grotesk','DM Sans',sans-serif;
+        letter-spacing: 0.35px;
+        color: var(--text);
+        position: relative;
+      }
+      .project-hero-title::before{
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 8%;
+        bottom: 8%;
+        width: 4px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #7dd3fc, #a78bfa);
+        box-shadow: 0 0 12px rgba(125,211,252,0.45);
+      }
+      .project-name-badge{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,.4);
+        background: rgba(15,23,42,.6);
+        color: rgba(157,168,198,.95);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
       }
       .scurve-hero-sub{
         font-size: 14px;
         color: var(--muted);
         margin: 0 0 8px 0;
+      }
+      .project-chip{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,.35);
+        background: rgba(15,23,42,.6);
+        color: rgba(157,168,198,.95);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .project-chip--name{
+        height: 26px;
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: none;
       }
       .pulse-hero{
         position: relative;
@@ -1011,6 +1134,35 @@ def inject_theme():
       .pulse-hero > *{
         position: relative;
         z-index: 1;
+      }
+      .pulse-hero-row{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .pulse-hero-right{
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .pulse-hero-divider{
+        height: 1px;
+        margin: 6px 0 8px 0;
+        background: linear-gradient(
+          90deg,
+          rgba(148,163,184,0.15),
+          rgba(148,163,184,0.45),
+          rgba(148,163,184,0.15)
+        );
+        opacity: 0.7;
+      }
+      .status-dot{
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #2fc192;
+        box-shadow: 0 0 0 4px rgba(47,193,146,0.15);
       }
       div[data-testid="stVerticalBlock"]:has(.pulse-hero){
         background: transparent;

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 import html
 
-import tempfile
 from wbs_app.extract_wbs_json import (
     build_schedule_lookup,
     build_preview_rows,
@@ -31,15 +30,22 @@ from auth_google import (
     _custom_logo_data_uri,
     _remove_custom_logo,
 )
+from billing_store import access_status, get_account_by_email
 from charts import s_curve
 from data import demo_series, load_from_excel, sample_dashboard_data
 from services_kpis import compute_kpis, extract_dates_labels
 from ui import inject_theme
 from activity_filters import build_activity_filter_sidebar
 from shared_excel import (
-    persist_shared_excel_state,
-    restore_shared_excel_state,
     set_default_excel_if_missing,
+)
+from projects import (
+    apply_project_to_session,
+    get_project,
+    owner_id_from_user,
+    persist_project_mapping,
+    project_mapping_key,
+    store_project_upload,
 )
 
 
@@ -61,30 +67,135 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+def _get_query_params() -> dict:
+    try:
+        return st.query_params  # type: ignore[attr-defined]
+    except AttributeError:
+        return st.experimental_get_query_params()
+
+
+def _query_value(params: dict, key: str) -> str | None:
+    val = params.get(key)
+    if isinstance(val, list):
+        return val[0] if val else None
+    return val
+
+
+def _set_query_params(values: dict[str, str]) -> None:
+    try:
+        st.query_params.clear()  # type: ignore[attr-defined]
+        st.query_params.update(values)  # type: ignore[attr-defined]
+    except AttributeError:
+        st.experimental_set_query_params(**values)
+
+params = _get_query_params()
+ptxn = _query_value(params, "_ptxn")
+if ptxn:
+    st.session_state["checkout_returned"] = True
+    st.session_state["checkout_txn"] = ptxn
+    _set_query_params({})
+    st.switch_page("pages/4_Billing.py")
+    st.stop()
+
+
+def _render_access_gate(state: dict[str, Any]) -> None:
+    trial_end = state.get("trial_end")
+    days_left = state.get("days_left")
+    plan_end = state.get("plan_end")
+    status = state.get("status") or "trialing"
+    if status == "trialing":
+        title = "Trial ended"
+        subtitle = "Your trial has ended. Start a subscription to unlock uploads and dashboards."
+    elif status == "active":
+        title = "Subscription ended"
+        subtitle = "Your subscription has ended. Renew to unlock uploads and dashboards."
+    else:
+        title = "Subscription required"
+        subtitle = "This workspace is locked. Start a subscription to continue."
+    trial_line = ""
+    if status == "active" and plan_end:
+        trial_line = f"Subscription end: {plan_end.strftime('%b %d, %Y')}"
+    elif trial_end:
+        trial_line = f"Trial end: {trial_end.strftime('%b %d, %Y')}"
+    elif days_left is not None:
+        trial_line = f"Trial days left: {days_left}"
+    st.markdown(
+        """
+        <style>
+        .access-gate {
+          margin: 48px auto 0;
+          max-width: 780px;
+          padding: 28px 32px;
+          border-radius: 18px;
+          border: 1px solid rgba(148,163,184,0.2);
+          background: linear-gradient(180deg, rgba(15,23,42,.8), rgba(11,18,36,.88));
+          box-shadow: 0 18px 36px rgba(0,0,0,0.35);
+          color: #e8eefc;
+        }
+        .access-gate h2 {
+          margin: 0 0 8px;
+          font-size: 28px;
+          font-weight: 700;
+        }
+        .access-gate p {
+          margin: 0 0 12px;
+          color: #9da8c6;
+          font-size: 16px;
+        }
+        .access-gate .access-meta {
+          font-size: 13px;
+          color: #94a3b8;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+        <div class="access-gate">
+          <h2>{title}</h2>
+          <p>{subtitle}</p>
+          <div class="access-meta">{trial_line}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    cta_label = "Start subscription"
+    if status == "active":
+        cta_label = "Renew subscription"
+    if st.button(cta_label, key="start_subscription_btn"):
+        st.switch_page("pages/4_Billing.py")
+
+
 user = require_login()
+owner_id = owner_id_from_user(user)
+params = _get_query_params()
+project_param = _query_value(params, "project")
+if not st.session_state.get("active_project_id") and project_param:
+    st.session_state["active_project_id"] = project_param
+if not st.session_state.get("active_project_id"):
+    st.switch_page("pages/0_Projects.py")
+if st.session_state.get("active_project_id") and project_param != st.session_state.get("active_project_id"):
+    _set_query_params({"project": st.session_state["active_project_id"]})
+    st.rerun()
+with st.sidebar:
+    with st.container(key="back_to_projects_link"):
+        st.page_link("pages/0_Projects.py", label="Back to projects")
 render_auth_sidebar(user)
 
-def _store_shared_upload(uploaded):
-    if uploaded is None:
-        return st.session_state.get("shared_excel_path")
-    file_key = f"{uploaded.name}:{uploaded.size}"
-    if st.session_state.get("shared_excel_key") != file_key:
-        old_path = st.session_state.get("shared_excel_path")
-        if old_path and os.path.exists(old_path):
-            try:
-                os.unlink(old_path)
-            except OSError:
-                pass
-        data = uploaded.getvalue()
-        suffix = Path(uploaded.name).suffix or ".xlsx"
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-        tmp.write(data)
-        tmp.close()
-        st.session_state["shared_excel_path"] = tmp.name
-        st.session_state["shared_excel_key"] = file_key
-        st.session_state["shared_excel_name"] = uploaded.name
-        persist_shared_excel_state(tmp.name, uploaded.name, file_key)
-    return st.session_state.get("shared_excel_path")
+project = get_project(st.session_state.get("active_project_id"), owner_id=owner_id)
+if not project:
+    st.switch_page("pages/0_Projects.py")
+account = get_account_by_email(user.get("email", ""))
+gate = access_status(account)
+if not gate.get("allowed", True):
+    _render_access_gate(gate)
+    st.stop()
+apply_project_to_session(project)
+
+
+def _store_project_upload(project_info, uploaded):
+    return store_project_upload(project_info, uploaded)
 
 def _excel_template_bytes():
     candidates = [
@@ -204,16 +315,15 @@ def _render_excel_format_help():
 
 # ---------- Shared Excel upload ----------
 _render_excel_format_help()
-restore_shared_excel_state()
 shared_upload = st.sidebar.file_uploader(
     "Upload project Excel (.xlsx)",
     type=["xlsx", "xlsm"],
     key="excel_upload_shared",
     label_visibility="collapsed",
 )
-shared_path = _store_shared_upload(shared_upload)
+shared_path = _store_project_upload(project, shared_upload)
 if shared_path is None:
-    shared_path = set_default_excel_if_missing()
+    shared_path = set_default_excel_if_missing(persist=False)
 if shared_path and st.session_state.get("shared_excel_name"):
     st.sidebar.caption(f"Current file: {st.session_state['shared_excel_name']}")
 file_cache_key = _file_cache_key(shared_path)
@@ -232,12 +342,13 @@ def _init_column_mapping_state() -> dict:
 
 def _sync_mapping_for_upload() -> None:
     excel_key = st.session_state.get("shared_excel_key")
-    if st.session_state.get("mapping_source_key") != excel_key:
+    source_key = project_mapping_key(st.session_state.get("active_project_id"), excel_key)
+    if st.session_state.get("mapping_source_key") != source_key:
         st.session_state["column_mapping"] = {
             "activity_summary": {},
             "resource_assignments": {},
         }
-        st.session_state["mapping_source_key"] = excel_key
+        st.session_state["mapping_source_key"] = source_key
         st.session_state["mapping_open"] = False
         st.session_state["mapping_skipped"] = False
 
@@ -396,6 +507,16 @@ def _render_mapping_dialog_body(
     with col1:
         if st.button("Apply mapping"):
             st.session_state["column_mapping"] = new_mapping
+            mapping_key = project_mapping_key(
+                st.session_state.get("active_project_id"),
+                st.session_state.get("shared_excel_key"),
+            )
+            st.session_state["mapping_source_key"] = mapping_key
+            persist_project_mapping(
+                st.session_state.get("active_project_id"),
+                new_mapping,
+                mapping_key,
+            )
             st.session_state["mapping_open"] = False
             st.session_state["mapping_skipped"] = False
             st.rerun()
@@ -496,8 +617,13 @@ def gauge_fig(title: str, value: float, color: str, subtitle: str | None = None,
             value=v,
             number={"suffix": "", "font": {"size": 1}, "valueformat": ".1f"},
             gauge={
-                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#4b5878", "tickfont": {"size": 15}},
-                "bar": {"color": color, "thickness": 0.38},
+                "axis": {
+                    "range": [0, 100],
+                    "tickwidth": 1,
+                    "tickcolor": "rgba(157,168,198,0.35)",
+                    "tickfont": {"size": 13, "color": "rgba(157,168,198,0.55)"},
+                },
+                "bar": {"color": color, "thickness": 0.32},
                 "bgcolor": "rgba(255,255,255,0.04)",
                 "borderwidth": 0,
                 "steps": [
@@ -510,7 +636,7 @@ def gauge_fig(title: str, value: float, color: str, subtitle: str | None = None,
     )
     fig.add_annotation(
         x=0.46,
-        y=0.56,
+        y=0.50,
         xref="paper",
         yref="paper",
         text=(
@@ -527,7 +653,7 @@ def gauge_fig(title: str, value: float, color: str, subtitle: str | None = None,
     )
     fig.add_annotation(
         x=0.46,
-        y=0.34,
+        y=0.36,
         xref="paper",
         yref="paper",
         text=f"{v:.1f} %",
@@ -1424,10 +1550,16 @@ def render_dashboard():
                             st.session_state.pop(f"_logo_upload_{role}_key", None)
                             st.rerun()
 
+    project_name = project.get("name") if project else ""
+    project_name_html = html.escape(project_name) if project_name else "Untitled project"
     st.markdown(
-        """
+        f"""
         <div class="pulse-hero">
-          <div class="scurve-hero-title">▸ Progress Pulse</div>
+          <div class="project-hero-row">
+            <div class="project-hero-title">{project_name_html}</div>
+            <span class="project-name-badge">Project</span>
+          </div>
+          <div class="pulse-hero-divider" aria-hidden="true"></div>
           <div class="scurve-hero-sub">Planned vs actual status and schedule health</div>
         </div>
         """,
@@ -1598,8 +1730,16 @@ def render_s_curve_page():
 
         weekly_series = []
         weekly_info = {}
+        local_current_week = None
+        current_week_date = None
         planned_hover = None
         actual_hover = None
+        weekly_planned = None
+        weekly_actual = None
+        weekly_forecast = None
+        weekly_planned_hover = None
+        weekly_actual_hover = None
+        weekly_forecast_hover = None
         selected_row = None
         if activity_filter:
             selected_row = activity_filter["activity_rows_map"].get(selected_key)
@@ -1614,9 +1754,21 @@ def render_s_curve_page():
                 today_key=today_cache_key,
             )
             perf_stats["weekly_progress_scurve"] = ms
+            local_current_week = (
+                weekly_info.get("current_week_date")
+                or weekly_info.get("week_date")
+                or weekly_info.get("current_week_label")
+            )
 
         if weekly_series:
             x = [row.get("week_date") for row in weekly_series]
+            current_week_date = _parse_week_date(local_current_week)
+            weekly_planned = []
+            weekly_actual = []
+            weekly_forecast = []
+            weekly_planned_hover = []
+            weekly_actual_hover = []
+            weekly_forecast_hover = []
             planned_hover = []
             planned_curve = []
             last_known = None
@@ -1641,6 +1793,16 @@ def render_s_curve_page():
                         planned_hover.append(
                             _hover_with_tip(display, row.get("planned_cum_tip"))
                         )
+                p_val = row.get("planned")
+                p_display = row.get("planned_display")
+                p_tip = row.get("planned_tip")
+                if isinstance(p_val, (int, float)):
+                    weekly_planned.append(p_val)
+                    p_text = p_display or f"{p_val:.2f}%"
+                else:
+                    weekly_planned.append(0)
+                    p_text = p_display or "?"
+                weekly_planned_hover.append(_hover_with_tip(p_text, p_tip))
 
             n = len(x)
             actual_curve = []
@@ -1679,14 +1841,30 @@ def render_s_curve_page():
                     else:
                         actual_curve.append(None)
                         actual_hover.append(_hover_with_tip(display, None))
-            weekly_actual = [
-                round(actual_curve[i] - actual_curve[i - 1], 2)
-                if i > 0
-                and isinstance(actual_curve[i], (int, float))
-                and isinstance(actual_curve[i - 1], (int, float))
-                else (actual_curve[i] if isinstance(actual_curve[i], (int, float)) else None)
-                for i in range(n)
-            ]
+
+            for row in weekly_series:
+                week_date = row.get("week_date")
+                is_future = False
+                if isinstance(week_date, date) and current_week_date:
+                    is_future = week_date > current_week_date
+                a_val = row.get("actual")
+                a_display = row.get("actual_display")
+                a_tip = row.get("actual_tip")
+                a_text = a_display or (f"{a_val:.2f}%" if isinstance(a_val, (int, float)) else "?")
+                if is_future:
+                    f_tip = (a_tip or "").replace("Actual %", "Forecast %").replace(
+                        "Actual unavailable",
+                        "Forecast unavailable",
+                    )
+                    weekly_forecast.append(a_val if isinstance(a_val, (int, float)) else None)
+                    weekly_forecast_hover.append(_hover_with_tip(a_text, f_tip))
+                    weekly_actual.append(None)
+                    weekly_actual_hover.append("")
+                else:
+                    weekly_actual.append(a_val if isinstance(a_val, (int, float)) else None)
+                    weekly_actual_hover.append(_hover_with_tip(a_text, a_tip))
+                    weekly_forecast.append(None)
+                    weekly_forecast_hover.append("")
 
             forecast_curve = [None] * n
             forecast_hover = ["" for _ in range(n)]
@@ -1733,115 +1911,79 @@ def render_s_curve_page():
                     last_actual_idx = idx
                     last_actual_val = min(100.0, val)
 
-            first_forecast_idx = None
-            if last_actual_idx is not None:
-                for idx in range(last_actual_idx, n):
-                    if isinstance(third_vals[idx], (int, float)):
-                        first_forecast_idx = idx
-                        break
-
-            case1 = False
-            case2 = False
-            if last_actual_idx is not None and first_forecast_idx is not None:
-                last_date = weekly_series[last_actual_idx].get("week_date")
-                first_date = weekly_series[first_forecast_idx].get("week_date")
-                if isinstance(last_date, date) and isinstance(first_date, date):
-                    gap_days = (first_date - last_date).days
-                    case1 = gap_days == 7
-                    case2 = gap_days == 0
-
-            if case2 and isinstance(last_actual_val, (int, float)):
+            # Build forecast curve: start at last actual, then follow forecast cumulative %
+            if isinstance(last_actual_idx, int) and isinstance(last_actual_val, (int, float)):
                 forecast_curve[last_actual_idx] = last_actual_val
                 forecast_hover[last_actual_idx] = _hover_with_tip(
                     f"{last_actual_val:.2f}%",
-                    _forecast_tip(weekly_series[last_actual_idx]) or
-                    "Forecast starts at last actual.",
-                )
-                prev_forecast = last_actual_val
-                next_idx = last_actual_idx + 1
-                if next_idx < n:
-                    v0 = third_vals[first_forecast_idx]
-                    v1 = third_vals[next_idx]
-                    if isinstance(v0, (int, float)) and isinstance(v1, (int, float)):
-                        prev_forecast = min(100.0, prev_forecast + v0 + v1)
-                        forecast_curve[next_idx] = prev_forecast
-                        forecast_hover[next_idx] = _hover_with_tip(
-                            f"{prev_forecast:.2f}%",
-                            _forecast_tip(weekly_series[next_idx]),
-                        )
-                    else:
-                        forecast_curve[next_idx] = None
-                        forecast_hover[next_idx] = ""
-                for idx in range(last_actual_idx + 2, n):
-                    prev_third = third_vals[idx - 1]
-                    curr_third = third_vals[idx]
-                    if not isinstance(prev_third, (int, float)) or not isinstance(curr_third, (int, float)):
-                        forecast_curve[idx] = None
-                        forecast_hover[idx] = ""
-                        continue
-                    delta = curr_third - prev_third
-                    prev_forecast = min(100.0, prev_forecast + delta)
-                    forecast_curve[idx] = prev_forecast
-                    forecast_hover[idx] = _hover_with_tip(
-                        f"{prev_forecast:.2f}%",
-                        _forecast_tip(weekly_series[idx]),
-                    )
-            elif case1 and isinstance(last_actual_val, (int, float)):
-                forecast_curve[last_actual_idx] = last_actual_val
-                forecast_hover[last_actual_idx] = _hover_with_tip(
-                    f"{last_actual_val:.2f}%",
-                    _forecast_tip(weekly_series[last_actual_idx]) or
-                    "Forecast starts at last actual.",
+                    _forecast_tip(weekly_series[last_actual_idx]) or "Forecast starts at last actual.",
                 )
                 prev_forecast = last_actual_val
                 for idx in range(last_actual_idx + 1, n):
-                    prev_third = third_vals[idx]
-                    if prev_third is None:
-                        forecast_curve[idx] = None
-                        forecast_hover[idx] = ""
-                        continue
-                    if idx == first_forecast_idx:
-                        delta = prev_third
+                    v = third_vals[idx]
+                    if isinstance(v, (int, float)):
+                        val = min(100.0, v)
+                        if isinstance(prev_forecast, (int, float)):
+                            val = max(prev_forecast, val)
+                        forecast_curve[idx] = val
+                        prev_forecast = val
+                        forecast_hover[idx] = _hover_with_tip(
+                            f"{val:.2f}%",
+                            _forecast_tip(weekly_series[idx]),
+                        )
                     else:
-                        prev_prev_third = third_vals[idx - 1]
-                        if prev_prev_third is None:
+                        if isinstance(prev_forecast, (int, float)):
+                            forecast_curve[idx] = prev_forecast
+                            forecast_hover[idx] = _hover_with_tip(
+                                f"{prev_forecast:.2f}%",
+                                _forecast_tip(weekly_series[idx]),
+                            )
+                        else:
                             forecast_curve[idx] = None
                             forecast_hover[idx] = ""
-                            continue
-                        delta = prev_third - prev_prev_third
-                    prev_forecast = min(100.0, prev_forecast + delta)
-                    forecast_curve[idx] = prev_forecast
-                    forecast_hover[idx] = _hover_with_tip(
-                        f"{prev_forecast:.2f}%",
-                        _forecast_tip(weekly_series[idx]),
-                    )
             else:
-                planned_last = None
-                for v in reversed(planned_curve):
+                prev_forecast = None
+                for idx in range(n):
+                    v = third_vals[idx]
                     if isinstance(v, (int, float)):
-                        planned_last = v
-                        break
-                if isinstance(planned_last, (int, float)) or isinstance(last_actual, (int, float)):
-                    base = max([v for v in [planned_last, last_actual] if isinstance(v, (int, float))])
-                    forecast_target = min(100.0, base + 5.0)
-                    if n > 1:
-                        forecast_curve = [round(forecast_target * (i / (n - 1)), 2) for i in range(n)]
-                    else:
-                        forecast_curve = [forecast_target]
+                        val = min(100.0, v)
+                        if isinstance(prev_forecast, (int, float)):
+                            val = max(prev_forecast, val)
+                        forecast_curve[idx] = val
+                        forecast_hover[idx] = _hover_with_tip(
+                            f"{val:.2f}%",
+                            _forecast_tip(weekly_series[idx]),
+                        )
+                        prev_forecast = val
         else:
-            x, weekly_actual, actual_curve, planned_curve, forecast_curve = demo_series()
+            (
+                x,
+                weekly_planned,
+                weekly_actual,
+                weekly_forecast,
+                actual_curve,
+                planned_curve,
+                forecast_curve,
+            ) = demo_series()
             forecast_hover = None
             actual_hover = None
+            planned_hover = None
 
         fig = s_curve(
             x,
-            weekly_actual,
             actual_curve,
             planned_curve,
             forecast_curve,
+            weekly_planned=weekly_planned,
+            weekly_actual=weekly_actual,
+            weekly_forecast=weekly_forecast,
             planned_hover=planned_hover,
             actual_hover=actual_hover,
             forecast_hover=forecast_hover,
+            weekly_planned_hover=weekly_planned_hover,
+            weekly_actual_hover=weekly_actual_hover,
+            weekly_forecast_hover=weekly_forecast_hover,
+            current_week=current_week_date,
         )
         fig.update_layout(title_text="")
 

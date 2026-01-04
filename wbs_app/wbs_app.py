@@ -2,7 +2,6 @@
 import os
 import math
 import sys
-import tempfile
 import html
 from pathlib import Path
 from typing import Any
@@ -17,10 +16,17 @@ if str(ROOT) not in sys.path:
 from auth_google import require_login, render_auth_sidebar, render_contact_sidebar
 from activity_filters import build_activity_filter_sidebar, ROOT_ACTIVITY_ALL
 from shared_excel import (
-    persist_shared_excel_state,
-    restore_shared_excel_state,
     set_default_excel_if_missing,
 )
+from projects import (
+    apply_project_to_session,
+    get_project,
+    owner_id_from_user,
+    persist_project_mapping,
+    project_mapping_key,
+    store_project_upload,
+)
+from billing_store import access_status, get_account_by_email
 from extract_wbs_json import (
     extract_all_wbs,
     detect_expected_tables,
@@ -49,32 +55,128 @@ st.markdown(
     "<style>[data-testid='stSidebarNav']{display:none !important;}</style>",
     unsafe_allow_html=True,
 )
+
+def _get_query_params() -> dict:
+    try:
+        return st.query_params  # type: ignore[attr-defined]
+    except AttributeError:
+        return st.experimental_get_query_params()
+
+
+def _query_value(params: dict, key: str) -> str | None:
+    val = params.get(key)
+    if isinstance(val, list):
+        return val[0] if val else None
+    return val
+
+
+def _set_query_params(values: dict[str, str]) -> None:
+    try:
+        st.query_params.clear()  # type: ignore[attr-defined]
+        st.query_params.update(values)  # type: ignore[attr-defined]
+    except AttributeError:
+        st.experimental_set_query_params(**values)
+
+
+def _render_access_gate(state: dict[str, Any]) -> None:
+    trial_end = state.get("trial_end")
+    days_left = state.get("days_left")
+    plan_end = state.get("plan_end")
+    status = state.get("status") or "trialing"
+    if status == "trialing":
+        title = "Trial ended"
+        subtitle = "Your trial has ended. Start a subscription to unlock uploads and dashboards."
+    elif status == "active":
+        title = "Subscription ended"
+        subtitle = "Your subscription has ended. Renew to unlock uploads and dashboards."
+    else:
+        title = "Subscription required"
+        subtitle = "This workspace is locked. Start a subscription to continue."
+    trial_line = ""
+    if status == "active" and plan_end:
+        trial_line = f"Subscription end: {plan_end.strftime('%b %d, %Y')}"
+    elif trial_end:
+        trial_line = f"Trial end: {trial_end.strftime('%b %d, %Y')}"
+    elif days_left is not None:
+        trial_line = f"Trial days left: {days_left}"
+    st.markdown(
+        """
+        <style>
+        .access-gate {
+          margin: 48px auto 0;
+          max-width: 780px;
+          padding: 28px 32px;
+          border-radius: 18px;
+          border: 1px solid rgba(148,163,184,0.2);
+          background: linear-gradient(180deg, rgba(15,23,42,.8), rgba(11,18,36,.88));
+          box-shadow: 0 18px 36px rgba(0,0,0,0.35);
+          color: #e8eefc;
+        }
+        .access-gate h2 {
+          margin: 0 0 8px;
+          font-size: 28px;
+          font-weight: 700;
+        }
+        .access-gate p {
+          margin: 0 0 12px;
+          color: #9da8c6;
+          font-size: 16px;
+        }
+        .access-gate .access-meta {
+          font-size: 13px;
+          color: #94a3b8;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+        <div class="access-gate">
+          <h2>{title}</h2>
+          <p>{subtitle}</p>
+          <div class="access-meta">{trial_line}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    cta_label = "Start subscription"
+    if status == "active":
+        cta_label = "Renew subscription"
+    if st.button(cta_label, key="start_subscription_btn"):
+        st.switch_page("pages/4_Billing.py")
+
 user = require_login()
+owner_id = owner_id_from_user(user)
+params = _get_query_params()
+project_param = _query_value(params, "project")
+if not st.session_state.get("active_project_id") and project_param:
+    st.session_state["active_project_id"] = project_param
+if not st.session_state.get("active_project_id"):
+    st.switch_page("pages/0_Projects.py")
+if st.session_state.get("active_project_id") and project_param != st.session_state.get("active_project_id"):
+    _set_query_params({"project": st.session_state["active_project_id"]})
+    st.rerun()
+with st.sidebar:
+    with st.container(key="back_to_projects_link"):
+        st.page_link("pages/0_Projects.py", label="Back to projects")
 render_auth_sidebar(user, show_branding=False)
 inject_theme()
 PREVIEW_ENABLED = os.getenv("PREVIEW_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
 
-def _store_shared_upload(uploaded):
-    if uploaded is None:
-        return st.session_state.get("shared_excel_path")
-    file_key = f"{uploaded.name}:{uploaded.size}"
-    if st.session_state.get("shared_excel_key") != file_key:
-        old_path = st.session_state.get("shared_excel_path")
-        if old_path and os.path.exists(old_path):
-            try:
-                os.unlink(old_path)
-            except OSError:
-                pass
-        data = uploaded.getvalue()
-        suffix = Path(uploaded.name).suffix or ".xlsx"
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-        tmp.write(data)
-        tmp.close()
-        st.session_state["shared_excel_path"] = tmp.name
-        st.session_state["shared_excel_key"] = file_key
-        st.session_state["shared_excel_name"] = uploaded.name
-        persist_shared_excel_state(tmp.name, uploaded.name, file_key)
-    return st.session_state.get("shared_excel_path")
+project = get_project(st.session_state.get("active_project_id"), owner_id=owner_id)
+if not project:
+    st.switch_page("pages/0_Projects.py")
+account = get_account_by_email(user.get("email", ""))
+gate = access_status(account)
+if not gate.get("allowed", True):
+    _render_access_gate(gate)
+    st.stop()
+apply_project_to_session(project)
+
+
+def _store_project_upload(project_info, uploaded):
+    return store_project_upload(project_info, uploaded)
 
 def _excel_template_bytes():
     candidates = [
@@ -124,16 +226,15 @@ def _render_excel_format_help():
 
 # ---------- Shared Excel upload ----------
 _render_excel_format_help()
-restore_shared_excel_state()
 shared_upload = st.sidebar.file_uploader(
     "Upload project Excel (.xlsx)",
     type=["xlsx", "xlsm"],
     key="excel_upload_shared",
     label_visibility="collapsed",
 )
-shared_path = _store_shared_upload(shared_upload)
+shared_path = _store_project_upload(project, shared_upload)
 if shared_path is None:
-    shared_path = set_default_excel_if_missing()
+    shared_path = set_default_excel_if_missing(persist=False)
 if shared_path and st.session_state.get("shared_excel_name"):
     st.sidebar.caption(f"Current file: {st.session_state['shared_excel_name']}")
 
@@ -150,12 +251,13 @@ def _init_column_mapping_state() -> dict:
 
 def _sync_mapping_for_upload() -> None:
     excel_key = st.session_state.get("shared_excel_key")
-    if st.session_state.get("mapping_source_key") != excel_key:
+    source_key = project_mapping_key(st.session_state.get("active_project_id"), excel_key)
+    if st.session_state.get("mapping_source_key") != source_key:
         st.session_state["column_mapping"] = {
             "activity_summary": {},
             "resource_assignments": {},
         }
-        st.session_state["mapping_source_key"] = excel_key
+        st.session_state["mapping_source_key"] = source_key
         st.session_state["mapping_open"] = False
         st.session_state["mapping_skipped"] = False
 
@@ -259,6 +361,16 @@ def _render_mapping_dialog_body(
     with col1:
         if st.button("Apply mapping"):
             st.session_state["column_mapping"] = new_mapping
+            mapping_key = project_mapping_key(
+                st.session_state.get("active_project_id"),
+                st.session_state.get("shared_excel_key"),
+            )
+            st.session_state["mapping_source_key"] = mapping_key
+            persist_project_mapping(
+                st.session_state.get("active_project_id"),
+                new_mapping,
+                mapping_key,
+            )
             st.session_state["mapping_open"] = False
             st.session_state["mapping_skipped"] = False
             st.rerun()

@@ -57,7 +57,7 @@ def persist_shared_excel_state(path: str, name: str | None, key: str | None) -> 
     _MANIFEST_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
-def set_default_excel_if_missing() -> str | None:
+def set_default_excel_if_missing(persist: bool = True) -> str | None:
     if st.session_state.get("shared_excel_path"):
         return st.session_state.get("shared_excel_path")
     for path in _DEFAULT_CANDIDATES:
@@ -82,6 +82,7 @@ def set_default_excel_if_missing() -> str | None:
             st.session_state["shared_excel_path"] = str(temp_path)
             st.session_state["shared_excel_key"] = file_key
             st.session_state["shared_excel_name"] = path.name
-            persist_shared_excel_state(str(temp_path), path.name, file_key)
+            if persist:
+                persist_shared_excel_state(str(temp_path), path.name, file_key)
             return str(temp_path)
     return None

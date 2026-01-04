@@ -183,8 +183,10 @@ def demo_series():
     planned_curve  = [min(100, i*2.3) for i in range(len(x))]
     actual_curve   = [min(100, max(0, (i-6)*2.0)) for i in range(len(x))]
     forecast_curve = [min(100, max(actual_curve[i], planned_curve[i]-5)) for i in range(len(x))]
-    weekly_actual  = [max(0, actual_curve[i]-actual_curve[i-1]) if i>0 else 0 for i in range(len(x))]
-    return x, weekly_actual, actual_curve, planned_curve, forecast_curve
+    weekly_planned = [max(0, planned_curve[i]-planned_curve[i-1]) if i>0 else planned_curve[0] for i in range(len(x))]
+    weekly_actual  = [max(0, actual_curve[i]-actual_curve[i-1]) if i>0 else actual_curve[0] for i in range(len(x))]
+    weekly_forecast = [None for _ in range(len(x))]
+    return x, weekly_planned, weekly_actual, weekly_forecast, actual_curve, planned_curve, forecast_curve
 
 def compute_kpis_from_series(cum_planned_last, cum_actual_last):
     planned = float(cum_planned_last or 0)

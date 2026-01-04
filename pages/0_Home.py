@@ -20,8 +20,4 @@ st.session_state.pop("_force_home", None)
 user = require_login()
 
 if user:
-    st.markdown(
-        "<script>window.location.replace('/');</script>",
-        unsafe_allow_html=True,
-    )
-    st.stop()
+    st.switch_page("pages/0_Projects.py")

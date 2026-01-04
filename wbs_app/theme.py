@@ -976,6 +976,39 @@ section[data-testid="stSidebar"] .auth-email{
   color: var(--muted);
   word-break: break-word;
 }
+section[data-testid="stSidebar"] .auth-plan-badge{
+  align-self: flex-start;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.25);
+  background: rgba(15,23,42,.5);
+  color: var(--text);
+}
+section[data-testid="stSidebar"] .auth-plan-badge.premium{
+  border-color: rgba(34,197,94,.35);
+  background: rgba(34,197,94,.12);
+  color: #22c55e;
+}
+section[data-testid="stSidebar"] .auth-plan-badge.trial{
+  border-color: rgba(251,191,36,.35);
+  background: rgba(251,191,36,.12);
+  color: #fbbf24;
+}
+section[data-testid="stSidebar"] .auth-plan-badge.locked{
+  border-color: rgba(248,113,113,.35);
+  background: rgba(248,113,113,.12);
+  color: #f87171;
+}
+section[data-testid="stSidebar"] .auth-plan-meta{
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
 section[data-testid="stSidebar"] div.st-key-auth_card div.st-key-auth_logout_btn{
   position: absolute;
   top: 10px;

@@ -24,6 +24,7 @@ from google.auth.transport import requests as google_requests
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from streamlit_cookies_manager import CookieManager
 from streamlit import components
+from billing_store import ensure_account, get_account_by_email, record_event, delete_account_by_email, access_status
 
 AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
@@ -35,12 +36,113 @@ NONCE_KEY = "oauth_nonce"
 STATE_COOKIE = "oauth_state"
 NONCE_COOKIE = "oauth_nonce"
 AUTH_SESSION_COOKIE = "auth_session_id"
+REFERRAL_COOKIE = "referral_code"
 _USED_CODES: dict[str, float] = {}
 _CODE_TTL_SECONDS = 300
 _CODE_USERS: dict[str, tuple[float, dict[str, Any]]] = {}
 _AUTH_LOG_PATH = Path(__file__).resolve().parent / "artifacts" / "auth_debug.log"
 _SESSION_STORE_PATH = Path(__file__).resolve().parent / "artifacts" / "auth_sessions.json"
 _SESSION_TTL_SECONDS = 7 * 24 * 3600
+_DEV_USERS_PATH = Path(__file__).resolve().parent / "artifacts" / "dev_users.json"
+_DEV_USERS_LIMIT = 20
+
+
+def _load_dev_users() -> list[dict[str, str]]:
+    path = _DEV_USERS_PATH
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    if not isinstance(data, list):
+        return []
+    cleaned: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for entry in data:
+        if not isinstance(entry, dict):
+            continue
+        email = str(entry.get("email") or "").strip()
+        if not email:
+            continue
+        key = email.lower()
+        if key in seen:
+            continue
+        name = str(entry.get("name") or "").strip()
+        cleaned.append({"email": email, "name": name})
+        seen.add(key)
+    return cleaned
+
+
+def _save_dev_users(users: list[dict[str, str]]) -> None:
+    try:
+        _DEV_USERS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps(users, indent=2)
+        _DEV_USERS_PATH.write_text(payload, encoding="utf-8")
+    except Exception:
+        return
+
+
+def list_dev_users() -> list[dict[str, str]]:
+    return _load_dev_users()
+
+
+def remember_dev_user(email: str, name: str | None = None) -> None:
+    email_value = (email or "").strip()
+    if not email_value:
+        return
+    name_value = (name or "").strip()
+    users = _load_dev_users()
+    lower_email = email_value.lower()
+    if users and users[0].get("email", "").lower() == lower_email and users[0].get("name", "") == name_value:
+        return
+    filtered = [u for u in users if u.get("email", "").lower() != lower_email]
+    filtered.insert(0, {"email": email_value, "name": name_value})
+    _save_dev_users(filtered[:_DEV_USERS_LIMIT])
+
+
+def forget_dev_user(email: str) -> None:
+    email_value = (email or "").strip()
+    if not email_value:
+        return
+    lower_email = email_value.lower()
+    users = [u for u in _load_dev_users() if u.get("email", "").lower() != lower_email]
+    _save_dev_users(users)
+
+
+def switch_dev_user(email: str, name: str | None = None, ref_code: str | None = None) -> None:
+    email_value = (email or "").strip()
+    if not email_value:
+        return
+    name_value = (name or "").strip()
+    if not name_value:
+        local_part = email_value.split("@")[0].replace(".", " ").replace("_", " ").strip()
+        if local_part:
+            name_value = local_part.title()
+    params = _get_query_params()
+    ref_value = (ref_code or "").strip()
+    if not ref_value:
+        ref_value = (_query_value(params, "ref") or "").strip()
+    st.session_state[SESSION_KEY] = {
+        "email": email_value,
+        "name": name_value or "Local Dev",
+        "picture": "",
+        "bypass": True,
+    }
+    st.session_state.pop("_disable_bypass", None)
+    remember_dev_user(email_value, name_value)
+    try:
+        st.query_params.clear()  # type: ignore[attr-defined]
+        values = {"dev_user": email_value, "dev_name": name_value}
+        if ref_value:
+            values["ref"] = ref_value
+        st.query_params.update(values)  # type: ignore[attr-defined]
+    except AttributeError:
+        values = {"dev_user": email_value, "dev_name": name_value}
+        if ref_value:
+            values["ref"] = ref_value
+        st.experimental_set_query_params(**values)
+    _rerun()
 
 
 @lru_cache(maxsize=1)
@@ -199,11 +301,39 @@ def _query_value(params: dict[str, Any], key: str) -> str | None:
 
 
 def _bypass_user_from_env() -> dict[str, Any] | None:
-    raw = (_get_setting("AUTH_BYPASS") or "").strip().lower()
+    raw = (_get_setting("AUTH_BYPASS") or _get_setting("DEV_BYPASS") or "").strip().lower()
     if raw not in {"1", "true", "yes"}:
         return None
     email = _get_setting("AUTH_BYPASS_EMAIL", "local@dev") or "local@dev"
     name = _get_setting("AUTH_BYPASS_NAME", "Local Dev") or "Local Dev"
+    picture = _get_setting("AUTH_BYPASS_PICTURE", "") or ""
+    return {"email": email, "name": name, "picture": picture, "bypass": True}
+
+
+def _bypass_user_from_query() -> dict[str, Any] | None:
+    host = _request_host()
+    if not _is_localhost_host(host):
+        return None
+    params = _get_query_params()
+    dev_user = (
+        _query_value(params, "dev_user")
+        or _query_value(params, "dev_email")
+        or ""
+    ).strip()
+    dev_name = (_query_value(params, "dev_name") or "").strip()
+    raw = (
+        _query_value(params, "dev_bypass")
+        or _query_value(params, "dev")
+        or ""
+    ).strip().lower()
+    if not dev_user and raw not in {"1", "true", "yes"}:
+        return None
+    email = dev_user or (_get_setting("AUTH_BYPASS_EMAIL", "local@dev") or "local@dev")
+    name = dev_name or (_get_setting("AUTH_BYPASS_NAME", "Local Dev") or "Local Dev")
+    if dev_user and not dev_name:
+        local_part = dev_user.split("@")[0].replace(".", " ").replace("_", " ").strip()
+        if local_part:
+            name = local_part.title()
     picture = _get_setting("AUTH_BYPASS_PICTURE", "") or ""
     return {"email": email, "name": name, "picture": picture, "bypass": True}
 
@@ -468,6 +598,51 @@ def _cookies_ready(cookies: CookieManager) -> bool:
         return cookies.ready()
     except Exception:
         return False
+
+
+def _stash_referral_code(params: dict[str, Any]) -> None:
+    raw = _query_value(params, "ref")
+    code = (raw or "").strip()
+    if not code:
+        return
+    st.session_state["_pending_ref"] = code
+    cookies = _get_cookie_manager(refresh=True)
+    try:
+        if cookies.ready():
+            cookies[REFERRAL_COOKIE] = code
+            _save_cookies(cookies)
+    except Exception:
+        return
+
+
+def _consume_referral_code(params: dict[str, Any]) -> str | None:
+    ref_from_state = st.session_state.get("_oauth_ref")
+    raw = _query_value(params, "ref")
+    code = (raw or "").strip()
+    if not code and isinstance(ref_from_state, str):
+        code = ref_from_state.strip()
+    cookies = _get_cookie_manager(refresh=True)
+    if not code:
+        pending = st.session_state.get("_pending_ref")
+        code = (pending or "").strip() if isinstance(pending, str) else ""
+    if not code:
+        try:
+            if cookies.ready():
+                stored = cookies.get(REFERRAL_COOKIE)
+                code = (stored or "").strip()
+        except Exception:
+            code = code or ""
+    if code:
+        st.session_state.pop("_pending_ref", None)
+        st.session_state.pop("_oauth_ref", None)
+        try:
+            if cookies.ready() and cookies.get(REFERRAL_COOKIE):
+                del cookies[REFERRAL_COOKIE]
+                _save_cookies(cookies)
+        except Exception:
+            pass
+        return code
+    return None
 
 
 def _load_config() -> dict[str, Any]:
@@ -827,11 +1002,14 @@ def _build_login_url(cfg: dict[str, Any], cookies: CookieManager) -> str:
         redirect_uri=cfg["redirect_uri"],
     )
     nonce = secrets.token_urlsafe(16)
+    ref_code = st.session_state.get("_pending_ref")
     state_payload = {
         "nonce": nonce,
         "ts": int(time.time()),
         "redirect_uri": _normalize_redirect_uri(cfg["redirect_uri"]),
     }
+    if isinstance(ref_code, str) and ref_code.strip():
+        state_payload["ref"] = ref_code.strip()
     state = _state_serializer(cfg["cookie_secret"]).dumps(state_payload)
     url, returned_state = oauth.create_authorization_url(
         AUTHORIZATION_ENDPOINT,
@@ -880,6 +1058,9 @@ def _exchange_code_for_user(
     redirect_uri = _normalize_redirect_uri(cfg["redirect_uri"])
     if isinstance(state_payload, dict):
         redirect_uri = _normalize_redirect_uri(state_payload.get("redirect_uri") or redirect_uri)
+        ref_value = state_payload.get("ref")
+        if isinstance(ref_value, str) and ref_value.strip():
+            st.session_state["_oauth_ref"] = ref_value.strip()
 
     _auth_log(f"exchange code={code[:12]}... redirect_uri={redirect_uri}")
     oauth = OAuth2Session(
@@ -1072,54 +1253,28 @@ def _render_home_screen(
 
         .topbar {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 3rem;
-        }
-
-        .topbar-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 0.75rem;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.4px;
+            justify-content: center;
+            margin-bottom: 2rem;
+            padding-left: 0;
         }
 
         .brand-mark {
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--accent), #3a7cff);
-            box-shadow: 0 12px 24px rgba(64, 240, 199, 0.25);
-            margin-left: 6px;
+            width: 250px;
+            height: 250px;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+            border: none;
         }
 
         .brand-logo {
-            width: 62px;
-            height: 62px;
-            border-radius: 14px;
+            width: 250px;
+            height: 250px;
+            border-radius: 0;
             object-fit: contain;
-            box-shadow: 0 12px 24px rgba(64, 240, 199, 0.22);
-            margin-left: 6px;
+            box-shadow: none;
         }
 
-        .brand span { color: var(--accent); }
-
-        .status-pill {
-            padding: 0.35rem 0.9rem;
-            border-radius: 999px;
-            border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--muted);
-            font-size: 0.9rem;
-        }
 
         .brand-strip {
             display: flex;
@@ -1154,15 +1309,16 @@ def _render_home_screen(
         }
 
         .hero {
-            display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-            gap: 2.5rem;
+            display: flex;
+            flex-direction: column;
             align-items: center;
+            text-align: center;
+            gap: 1.8rem;
         }
 
         .hero h1 {
             font-family: "Fraunces", serif;
-            font-size: clamp(2.5rem, 4vw, 4.2rem);
+            font-size: clamp(2.7rem, 4.5vw, 4.4rem);
             margin: 0 0 1rem;
             line-height: 1.05;
         }
@@ -1170,7 +1326,8 @@ def _render_home_screen(
         .hero p {
             font-size: 1.1rem;
             color: var(--muted);
-            margin-bottom: 2rem;
+            margin-bottom: 1.2rem;
+            max-width: 620px;
         }
 
         .cta-row {
@@ -1178,6 +1335,7 @@ def _render_home_screen(
             flex-wrap: wrap;
             align-items: center;
             gap: 1rem;
+            justify-content: center;
         }
 
         .cta {
@@ -1186,11 +1344,21 @@ def _render_home_screen(
             gap: 0.6rem;
             padding: 0.85rem 1.5rem;
             border-radius: 14px;
-            background: linear-gradient(135deg, var(--accent), #5ce8ff);
+            background: linear-gradient(135deg, #6dd5ed, #b47cff);
             color: #081225;
             font-weight: 700;
+            font-size: 1rem;
             text-decoration: none;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 16px 34px rgba(109, 213, 237, 0.35);
+        }
+
+        .cta:link,
+        .cta:visited,
+        .cta:hover,
+        .cta:active {
+            text-decoration: none !important;
+            color: #081225;
         }
 
         .cta:hover {
@@ -1202,6 +1370,11 @@ def _render_home_screen(
             background: transparent;
             border: 1px solid var(--line);
             color: var(--text);
+        }
+
+        .hero-card {
+            max-width: 520px;
+            width: 100%;
         }
 
         .cta-note {
@@ -1255,40 +1428,6 @@ def _render_home_screen(
             color: var(--accent-2);
         }
 
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1rem;
-            margin-top: 3rem;
-        }
-
-        .feature {
-            padding: 1.2rem 1.3rem;
-            border-radius: 18px;
-            border: 1px solid var(--line);
-            background: rgba(12, 18, 40, 0.6);
-        }
-
-        .feature h3 {
-            margin: 0 0 0.5rem;
-            font-size: 1.1rem;
-        }
-
-        .feature p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
-
-        .marquee {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            margin-top: 2rem;
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
-
         @keyframes float {
             0%, 100% { transform: translate(0, 0); }
             50% { transform: translate(-14px, 10px); }
@@ -1296,11 +1435,8 @@ def _render_home_screen(
 
         @media (max-width: 980px) {
             .hero { grid-template-columns: 1fr; }
-            .feature-grid { grid-template-columns: 1fr; }
             .topbar {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
+                justify-content: center;
             }
         }
         </style>
@@ -1313,7 +1449,7 @@ def _render_home_screen(
 
     safe_url = html.escape(auth_url, quote=True)
     safe_app_url = html.escape(app_url or _app_url(), quote=True)
-    auth_link_attrs = ""
+    auth_link_attrs = ' target="_self"'
     logo_uri = _get_logo_data_uri()
     logo_html = (
         f'<img class="brand-logo" src="{logo_uri}" alt="Chronoplan logo" />'
@@ -1329,84 +1465,42 @@ def _render_home_screen(
         if email and email not in signed_in_note:
             signed_in_note += f" ({html.escape(email)})"
         signed_in_note = f'<div class="cta-note">{signed_in_note}</div>'
-    primary_cta = f'<a class="cta" href="{safe_app_url}">Open Project Progress</a>'
+    primary_cta = f'<a class="cta" href="{safe_app_url}">Open projects</a>'
     secondary_cta = f'<a class="cta secondary" href="{safe_url}"{auth_link_attrs}>Switch account</a>'
-    session_note = '<div class="cta-note">Session secured with signed cookies.</div>'
+    session_note = ""
     if not user:
-        primary_cta = f'<a class="cta" href="{safe_url}"{auth_link_attrs}>Continue with Google</a>'
+        primary_cta = f'<a class="cta" href="{safe_url}"{auth_link_attrs}>Sign in with Google</a>'
         secondary_cta = ""
         signed_in_note = ""
-        session_note = ""
 
     page_html = f"""
     <div class="home-shell">
       <div class="topbar">
-        <div class="brand">
-          {logo_html}
-          <div>Project Progress <span>Studio</span></div>
-        </div>
-        <div class="topbar-right">
-          <div class="status-pill">Secure access via Google OAuth</div>
-          {brand_strip}
-        </div>
+        {logo_html}
       </div>
 
       <div class="hero">
-        <div>
-          <h1>Clarity for every milestone, in one place.</h1>
-          <p>
-            Track S-curves, KPIs, and WBS progress with a view that is simple,
-            visual, and decision-ready. Upload your file, see the story.
-          </p>
-          <div class="cta-row">
-            {primary_cta}
-            {secondary_cta}
-            {signed_in_note}
-            {session_note}
-          </div>
-          <div class="marquee">
-            <span>Weekly progress</span>
-            <span>Earned value</span>
-            <span>Schedule variance</span>
-            <span>WBS drilldown</span>
-          </div>
+        <h1>Project progress, simplified.</h1>
+        <p>Upload a schedule once. Get a clean progress snapshot in minutes.</p>
+        <div class="cta-row">
+          {primary_cta}
+          {secondary_cta}
+          {signed_in_note}
+          {session_note}
         </div>
         <div class="hero-card">
           <h3>Live project pulse</h3>
-          <p>See early signals, reduce surprises, and keep stakeholders aligned.</p>
+          <p>Plan vs actual, without the noise.</p>
           <div class="kpi">
             <div class="kpi-card">
-              <h4>Completion</h4>
-              <strong>88%</strong>
+              <h4>Planned</h4>
+              <strong>65%</strong>
             </div>
             <div class="kpi-card">
-              <h4>Schedule</h4>
-              <strong>+3.1%</strong>
-            </div>
-            <div class="kpi-card">
-              <h4>Milestones</h4>
-              <strong>24</strong>
-            </div>
-            <div class="kpi-card">
-              <h4>Risk</h4>
-              <strong>Low</strong>
+              <h4>Actual</h4>
+              <strong>78%</strong>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="feature-grid">
-        <div class="feature">
-          <h3>Instant narrative</h3>
-          <p>Turn dense sheets into visuals that highlight what matters this week.</p>
-        </div>
-        <div class="feature">
-          <h3>WBS focus</h3>
-          <p>Zoom in by work package and compare planned vs actual outcomes.</p>
-        </div>
-        <div class="feature">
-          <h3>Stakeholder ready</h3>
-          <p>Clean visuals and exportable insights for reviews and reporting.</p>
         </div>
       </div>
     </div>
@@ -1421,18 +1515,60 @@ def _render_login_screen(auth_url: str) -> None:
     _render_home_screen(auth_url, user=None)
 
 
+def _post_login(user: dict[str, Any]) -> dict[str, Any]:
+    params = _get_query_params()
+    email = (user or {}).get("email") or ""
+    existing = get_account_by_email(email) if email else None
+    ref_code = None
+    if not existing:
+        ref_code = _consume_referral_code(params)
+    else:
+        st.session_state.pop("_oauth_ref", None)
+        st.session_state.pop("_pending_ref", None)
+    account = ensure_account(user, referrer_code=ref_code)
+    if account:
+        user["billing_account_id"] = account.get("id")
+        record_event(
+            account.get("id"),
+            "login",
+            {"email": user.get("email"), "ref": ref_code},
+        )
+    return user
+
+
 def require_login() -> dict[str, Any]:
     _auth_log("require_login start")
-    bypass_user = _bypass_user_from_env()
-    if bypass_user:
-        st.session_state[SESSION_KEY] = bypass_user
-        _auth_log("require_login bypass env")
-        return bypass_user
-    localhost_user = _bypass_user_for_localhost()
-    if localhost_user:
-        st.session_state[SESSION_KEY] = localhost_user
-        _auth_log("require_login bypass localhost")
-        return localhost_user
+    params = _get_query_params()
+    _stash_referral_code(params)
+    force_bypass = (
+        (_query_value(params, "dev_bypass") or _query_value(params, "dev") or "")
+        .strip()
+        .lower()
+        in {"1", "true", "yes"}
+    )
+    dev_user_override = bool(
+        (_query_value(params, "dev_user") or _query_value(params, "dev_email") or "").strip()
+    )
+    if force_bypass:
+        st.session_state.pop("_disable_bypass", None)
+    if dev_user_override:
+        st.session_state.pop("_disable_bypass", None)
+    if not st.session_state.get("_disable_bypass"):
+        bypass_user = _bypass_user_from_env()
+        if bypass_user:
+            st.session_state[SESSION_KEY] = bypass_user
+            _auth_log("require_login bypass env")
+            return _post_login(bypass_user)
+        query_bypass = _bypass_user_from_query()
+        if query_bypass:
+            st.session_state[SESSION_KEY] = query_bypass
+            _auth_log("require_login bypass query")
+            return _post_login(query_bypass)
+        localhost_user = _bypass_user_for_localhost()
+        if localhost_user:
+            st.session_state[SESSION_KEY] = localhost_user
+            _auth_log("require_login bypass localhost")
+            return _post_login(localhost_user)
 
     if st.session_state.pop("_force_home", False):
         try:
@@ -1451,21 +1587,20 @@ def require_login() -> dict[str, Any]:
     if store_user:
         st.session_state[SESSION_KEY] = store_user
         _auth_log("require_login session store user")
-        return store_user
+        return _post_login(store_user)
 
     session_user = st.session_state.get(SESSION_KEY)
     if isinstance(session_user, dict) and session_user.get("email"):
         _auth_log("require_login session user (early)")
         _session_store_set(session_token, session_user)
-        return session_user
+        return _post_login(session_user)
     header_user = _load_user_from_request_cookie(cfg)
     if header_user:
         st.session_state[SESSION_KEY] = header_user
         _auth_log("require_login request cookie user (early)")
         _session_store_set(session_token, header_user)
-        return header_user
+        return _post_login(header_user)
 
-    params = _get_query_params()
     code = _query_value(params, "code")
     state = _query_value(params, "state")
 
@@ -1479,7 +1614,7 @@ def require_login() -> dict[str, Any]:
             st.session_state[SESSION_KEY] = user
             st.session_state.pop("_await_auth_cookie", None)
             _auth_log("require_login awaited cookie user")
-            return user
+            return _post_login(user)
         if time.time() - await_cookie < 4:
             st.info("Finalizing sign-in...")
             time.sleep(0.25)
@@ -1517,7 +1652,7 @@ def require_login() -> dict[str, Any]:
             except Exception:
                 pass
         _auth_log("require_login session user")
-        return user
+        return _post_login(user)
 
     if code:
         processed_code = st.session_state.get("_oauth_processed_code")
@@ -1525,14 +1660,14 @@ def require_login() -> dict[str, Any]:
         if cached_user and _is_localhost_host(_request_host()):
             st.session_state[SESSION_KEY] = cached_user
             _auth_log("require_login code cached user")
-            return cached_user
+            return _post_login(cached_user)
         if st.session_state.get("_oauth_flow_handled") or processed_code == code or _is_code_used(code):
             _clear_query_params()
             user = _load_user_from_request_cookie(cfg)
             if user:
                 st.session_state[SESSION_KEY] = user
                 _auth_log("require_login code duplicate -> cookie user")
-                return user
+                return _post_login(user)
             _rerun()
         inflight = st.session_state.get("_oauth_in_flight")
         if isinstance(inflight, (int, float)) and time.time() - inflight < 8:
@@ -1573,7 +1708,7 @@ def require_login() -> dict[str, Any]:
                     _clear_query_params()
                 except Exception:
                     pass
-                return user
+                return _post_login(user)
         finally:
             st.session_state.pop("_oauth_in_flight", None)
         auth_url = _build_login_url(cfg, _get_cookie_manager(refresh=True))
@@ -1585,7 +1720,7 @@ def require_login() -> dict[str, Any]:
     if request_user:
         st.session_state[SESSION_KEY] = request_user
         _auth_log("require_login request cookie user")
-        return request_user
+        return _post_login(request_user)
 
     cookies = _get_cookie_manager(refresh=True)
     _flush_pending_cookie(cookies, cfg)
@@ -1596,13 +1731,13 @@ def require_login() -> dict[str, Any]:
         st.session_state[SESSION_KEY] = user
         _auth_log("require_login cookie user")
         _session_store_set(session_token, user)
-        return user
+        return _post_login(user)
     if not _cookies_ready(cookies):
         request_user = _load_user_from_request_cookie(cfg)
         if request_user:
             st.session_state[SESSION_KEY] = request_user
             _auth_log("require_login request cookie user (not ready manager)")
-            return request_user
+            return _post_login(request_user)
         session_user = st.session_state.get(SESSION_KEY)
         awaiting = st.session_state.get("_await_auth_cookie")
         has_pending = isinstance(awaiting, (int, float)) or isinstance(
@@ -1623,7 +1758,7 @@ def require_login() -> dict[str, Any]:
         if isinstance(session_user, dict) and session_user.get("email"):
             _auth_log("require_login fallback to session user")
             _session_store_set(session_token, session_user)
-            return session_user
+            return _post_login(session_user)
 
     auth_url = _build_login_url(cfg, cookies)
     _render_login_screen(auth_url)
@@ -1635,6 +1770,9 @@ def logout() -> None:
     cfg = _load_config()
     cookies = _get_cookie_manager()
     session_token = _session_token()
+    current_user = st.session_state.get(SESSION_KEY)
+    if isinstance(current_user, dict) and current_user.get("bypass"):
+        st.session_state["_disable_bypass"] = True
     if _cookies_ready(cookies):
         if cookies.get(cfg["cookie_name"]):
             del cookies[cfg["cookie_name"]]
@@ -1652,6 +1790,7 @@ def logout() -> None:
     st.session_state.pop(SESSION_KEY, None)
     st.session_state.pop(STATE_KEY, None)
     st.session_state.pop(NONCE_KEY, None)
+    st.session_state.pop("_pending_ref", None)
     st.session_state["_force_home"] = True
     st.session_state.pop("_await_auth_cookie", None)
     st.session_state.pop("_auth_cookie_waits", None)
@@ -1695,6 +1834,49 @@ def render_auth_sidebar(
         email_html = (
             f'<div class="auth-email">{html.escape(email)}</div>' if email else ""
         )
+        account = get_account_by_email(email or "")
+        plan_state = access_status(account)
+        plan_status = (plan_state.get("status") or "trialing").lower()
+        trial_end = plan_state.get("trial_end")
+        days_left = plan_state.get("days_left")
+        plan_end = plan_state.get("plan_end")
+        is_locked = not plan_state.get("allowed", True)
+        plan_label = "Premium"
+        plan_class = "premium"
+        plan_meta = ""
+        if plan_status == "active":
+            if is_locked:
+                plan_label = "Subscription ended"
+                plan_class = "locked"
+                if plan_end:
+                    plan_meta = f"Ended {plan_end.strftime('%b %d, %Y')}"
+                else:
+                    plan_meta = "Subscription required"
+            elif plan_end:
+                plan_meta = f"Ends {plan_end.strftime('%b %d, %Y')}"
+        elif plan_status == "trialing":
+            if is_locked:
+                plan_label = "Trial ended"
+                plan_class = "locked"
+                if trial_end:
+                    plan_meta = f"Ended {trial_end.strftime('%b %d, %Y')}"
+            else:
+                plan_label = "Trial"
+                plan_class = "trial"
+                if days_left is not None:
+                    plan_meta = f"{days_left} days left"
+                elif trial_end:
+                    plan_meta = f"Ends {trial_end.strftime('%b %d, %Y')}"
+        elif plan_status != "active":
+            if is_locked:
+                plan_label = "Locked"
+                plan_class = "locked"
+                plan_meta = "Subscription required"
+            else:
+                plan_label = "Trial"
+                plan_class = "trial"
+        plan_badge_html = f'<div class="auth-plan-badge {plan_class}">{html.escape(plan_label)}</div>'
+        plan_meta_html = f'<div class="auth-plan-meta">{html.escape(plan_meta)}</div>' if plan_meta else ""
         with st.container(key="auth_card"):
             st.markdown(
                 f"""
@@ -1704,6 +1886,8 @@ def render_auth_sidebar(
                   <div class="auth-meta">
                     <div class="auth-name">{html.escape(name)}</div>
                     {email_html}
+                    {plan_badge_html}
+                    {plan_meta_html}
                   </div>
                 </div>
                 """,
@@ -1712,6 +1896,69 @@ def render_auth_sidebar(
             if st.button("\u23fb", key="auth_logout_btn", help="Sign out"):
                 logout()
                 return
+        params = _get_query_params()
+        dev_user = _query_value(params, "dev_user") or _query_value(params, "dev_email") or ""
+        dev_name = _query_value(params, "dev_name") or ""
+        if _is_localhost_host(_request_host()):
+            with st.expander("Dev user switcher", expanded=False):
+                current_email = (user.get("email") or "").strip()
+                if current_email:
+                    remember_dev_user(current_email, user.get("name") or "")
+                email_input = st.text_input("Dev email", value=dev_user or "", key="auth_dev_email")
+                name_input = st.text_input("Dev name", value=dev_name or "", key="auth_dev_name")
+                ref_input = st.text_input(
+                    "Referral code (optional)",
+                    value=_query_value(params, "ref") or "",
+                    key="auth_dev_ref",
+                )
+                if st.button("Switch user", key="auth_dev_switch_btn"):
+                    if email_input.strip():
+                        switch_dev_user(email_input, name_input, ref_input)
+                    else:
+                        st.warning("Enter an email to switch.")
+                if st.button("Clear dev user", key="auth_dev_clear"):
+                    try:
+                        st.query_params.clear()  # type: ignore[attr-defined]
+                    except AttributeError:
+                        st.experimental_set_query_params()
+                    _rerun()
+                saved_users = list_dev_users()
+                if saved_users:
+                    st.markdown("**Saved accounts**")
+                    for idx, entry in enumerate(saved_users):
+                        email_value = entry.get("email", "")
+                        name_value = entry.get("name", "")
+                        label = name_value or email_value
+                        cols = st.columns([3, 1, 1], gap="small")
+                        if name_value:
+                            cols[0].markdown(f"**{label}**\n\n{email_value}")
+                        else:
+                            cols[0].markdown(f"**{label}**")
+                        if cols[1].button("Switch", key=f"auth_dev_saved_switch_{idx}"):
+                            switch_dev_user(email_value, name_value, ref_input)
+                        if cols[2].button("Forget", key=f"auth_dev_saved_forget_{idx}"):
+                            forget_dev_user(email_value)
+                            _rerun()
+                    with st.expander("Reset account data", expanded=False):
+                        options = [u.get("email", "") for u in saved_users if u.get("email")]
+                        target = st.selectbox(
+                            "Account email",
+                            options,
+                            key="auth_dev_reset_email",
+                        )
+                        confirm = st.checkbox(
+                            "I understand this deletes billing data for this email.",
+                            key="auth_dev_reset_confirm",
+                        )
+                        if st.button("Delete billing data", key="auth_dev_reset_btn"):
+                            if not confirm:
+                                st.warning("Confirm the delete first.")
+                            elif delete_account_by_email(target):
+                                st.success("Billing data deleted.")
+                            else:
+                                st.info("No billing account found for that email.")
+                else:
+                    st.caption("No saved accounts yet.")
         if show_branding:
             company_logo = _custom_logo_data_uri("company")
             client_logo = _custom_logo_data_uri("client")
