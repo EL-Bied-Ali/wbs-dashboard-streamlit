@@ -714,6 +714,13 @@ def _use_auth_cookies() -> bool:
     return True
 
 
+def _use_session_cookie() -> bool:
+    raw = (_get_setting("AUTH_SESSION_COOKIE_ENABLED") or "").strip().lower()
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    return True
+
+
 def _debug_ui_enabled() -> bool:
     raw = (_get_setting("AUTH_DEBUG_UI") or "").strip().lower()
     if raw in {"1", "true", "yes", "on"}:
@@ -796,7 +803,7 @@ def _ensure_session_token(cfg: dict[str, Any]) -> str | None:
     token = secrets.token_urlsafe(24)
     st.session_state["_session_token"] = token
     try:
-        if _use_auth_cookies():
+        if _use_session_cookie():
             _inject_cookie_js(
                 AUTH_SESSION_COOKIE,
                 token,
