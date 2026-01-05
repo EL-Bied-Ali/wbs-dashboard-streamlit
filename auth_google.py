@@ -1787,24 +1787,32 @@ def logout() -> None:
             del cookies[STATE_COOKIE]
         if cookies.get(NONCE_COOKIE):
             del cookies[NONCE_COOKIE]
+        if cookies.get(AUTH_SESSION_COOKIE):
+            del cookies[AUTH_SESSION_COOKIE]
         _save_cookies(cookies)
-    else:
-        _expire_cookie_js(cfg["cookie_name"], key="auth_cookie_js_logout")
-        _expire_cookie_js(STATE_COOKIE, key="auth_cookie_js_logout_state")
-        _expire_cookie_js(NONCE_COOKIE, key="auth_cookie_js_logout_nonce")
-        _redirect_js("/Home", key="auth_cookie_js_logout_redirect")
-        st.session_state["_logout_ignore_until"] = time.time() + 5
+    # Always attempt JS expiration for hosted environments where the cookie manager can lag.
+    _expire_cookie_js(cfg["cookie_name"], key="auth_cookie_js_logout")
+    _expire_cookie_js(STATE_COOKIE, key="auth_cookie_js_logout_state")
+    _expire_cookie_js(NONCE_COOKIE, key="auth_cookie_js_logout_nonce")
+    _expire_cookie_js(AUTH_SESSION_COOKIE, key="auth_cookie_js_logout_session")
+    _redirect_js("/Home", key="auth_cookie_js_logout_redirect")
+    st.session_state["_logout_ignore_until"] = time.time() + 5
     st.session_state.pop(SESSION_KEY, None)
     st.session_state.pop(STATE_KEY, None)
     st.session_state.pop(NONCE_KEY, None)
     st.session_state.pop("_pending_ref", None)
     st.session_state["_force_home"] = True
+    st.session_state.pop("_session_token", None)
     st.session_state.pop("_await_auth_cookie", None)
     st.session_state.pop("_auth_cookie_waits", None)
     st.session_state.pop("_pending_user_cookie", None)
     st.session_state.pop("_pending_user_cookie_token", None)
     _session_store_delete(session_token)
     _clear_query_params()
+    try:
+        st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
+    except Exception:
+        _rerun()
     st.stop()
 
 
