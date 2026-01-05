@@ -406,7 +406,16 @@ def _redirect_js(url: str, key: str) -> None:
     <script>
     (function() {{
       const target = {target_js};
-      setTimeout(() => window.location.replace(target), 80);
+      const go = () => {{
+        try {{
+          if (window.top) {{
+            window.top.location.replace(target);
+            return;
+          }}
+        }} catch (err) {{}}
+        window.location.replace(target);
+      }};
+      setTimeout(go, 80);
     }})();
     </script>
     """
