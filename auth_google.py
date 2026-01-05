@@ -527,8 +527,14 @@ def _resolve_redirect_uri() -> str:
     host = _request_host()
     if host:
         scheme = _request_scheme(host)
-        return _normalize_redirect_uri(f"{scheme}://{host}")
-    return _normalize_redirect_uri(configured or "http://localhost:8501/")
+        normalized = _normalize_redirect_uri(f"{scheme}://{host}")
+        _debug_log(
+            f"Resolved redirect by host: host={host} scheme={scheme} configured={configured} normalized={normalized}"
+        )
+        return normalized
+    resolved = _normalize_redirect_uri(configured or "http://localhost:8501/")
+    _debug_log(f"Resolved redirect from config: configured={configured} resolved={resolved}")
+    return resolved
 
 
 def _bypass_user_for_localhost() -> dict[str, Any] | None:
