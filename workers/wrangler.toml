@@ -1,0 +1,9 @@
+name = "chronoplan-billing"
+main = "paddle_webhook_worker.js"
+compatibility_date = "2024-01-01"
+
+kv_namespaces = [
+  { binding = "BILLING_KV", id = "33ee729d21464148b2c8f9f993dd53bb" }
+]
+
+vars = { PADDLE_ENV = "sandbox" }
