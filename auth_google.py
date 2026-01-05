@@ -1651,6 +1651,11 @@ def _post_login(user: dict[str, Any]) -> dict[str, Any]:
 
 def require_login() -> dict[str, Any]:
     _auth_log("require_login start")
+    current = st.session_state.get(SESSION_KEY)
+    if isinstance(current, dict) and current.get("email"):
+        _debug_log(f"require_login session_state user={current.get('email')}")
+    else:
+        _debug_log("require_login session_state empty")
     params = _get_query_params()
     _stash_referral_code(params)
     force_bypass = (
@@ -1670,16 +1675,19 @@ def require_login() -> dict[str, Any]:
         bypass_user = _bypass_user_from_env()
         if bypass_user:
             st.session_state[SESSION_KEY] = bypass_user
+            _debug_log(f"require_login bypass env user={bypass_user.get('email')}")
             _auth_log("require_login bypass env")
             return _post_login(bypass_user)
         query_bypass = _bypass_user_from_query()
         if query_bypass:
             st.session_state[SESSION_KEY] = query_bypass
+            _debug_log(f"require_login bypass query user={query_bypass.get('email')}")
             _auth_log("require_login bypass query")
             return _post_login(query_bypass)
         localhost_user = _bypass_user_for_localhost()
         if localhost_user:
             st.session_state[SESSION_KEY] = localhost_user
+            _debug_log(f"require_login bypass localhost user={localhost_user.get('email')}")
             _auth_log("require_login bypass localhost")
             return _post_login(localhost_user)
 
@@ -1699,17 +1707,20 @@ def require_login() -> dict[str, Any]:
     store_user = _session_store_get(session_token)
     if store_user:
         st.session_state[SESSION_KEY] = store_user
+        _debug_log(f"require_login session_store user={store_user.get('email')}")
         _auth_log("require_login session store user")
         return _post_login(store_user)
 
     session_user = st.session_state.get(SESSION_KEY)
     if isinstance(session_user, dict) and session_user.get("email"):
         _auth_log("require_login session user (early)")
+        _debug_log(f"require_login session_user early={session_user.get('email')}")
         _session_store_set(session_token, session_user)
         return _post_login(session_user)
     header_user = _load_user_from_request_cookie(cfg)
     if header_user:
         st.session_state[SESSION_KEY] = header_user
+        _debug_log(f"require_login request_cookie early={header_user.get('email')}")
         _auth_log("require_login request cookie user (early)")
         _session_store_set(session_token, header_user)
         return _post_login(header_user)
@@ -1726,6 +1737,7 @@ def require_login() -> dict[str, Any]:
         if user:
             st.session_state[SESSION_KEY] = user
             st.session_state.pop("_await_auth_cookie", None)
+            _debug_log(f"require_login awaited cookie user={user.get('email')}")
             _auth_log("require_login awaited cookie user")
             return _post_login(user)
         if time.time() - await_cookie < 4:
@@ -1764,6 +1776,7 @@ def require_login() -> dict[str, Any]:
                 _ensure_auth_debug(cookies, cfg)
             except Exception:
                 pass
+        _debug_log(f"require_login session_user late={user.get('email')}")
         _auth_log("require_login session user")
         return _post_login(user)
 
@@ -1772,6 +1785,7 @@ def require_login() -> dict[str, Any]:
         cached_user = _get_cached_code_user(code)
         if cached_user and _is_localhost_host(_request_host()):
             st.session_state[SESSION_KEY] = cached_user
+            _debug_log(f"require_login code cached user={cached_user.get('email')}")
             _auth_log("require_login code cached user")
             return _post_login(cached_user)
         if st.session_state.get("_oauth_flow_handled") or processed_code == code or _is_code_used(code):
@@ -1779,6 +1793,7 @@ def require_login() -> dict[str, Any]:
             user = _load_user_from_request_cookie(cfg)
             if user:
                 st.session_state[SESSION_KEY] = user
+                _debug_log(f"require_login code duplicate cookie user={user.get('email')}")
                 _auth_log("require_login code duplicate -> cookie user")
                 return _post_login(user)
             _rerun()
@@ -1821,6 +1836,7 @@ def require_login() -> dict[str, Any]:
                     _clear_query_params()
                 except Exception:
                     pass
+                _debug_log(f"require_login code user stored={user.get('email')}")
                 return _post_login(user)
         finally:
             st.session_state.pop("_oauth_in_flight", None)
@@ -1832,6 +1848,7 @@ def require_login() -> dict[str, Any]:
     request_user = _load_user_from_request_cookie(cfg)
     if request_user:
         st.session_state[SESSION_KEY] = request_user
+        _debug_log(f"require_login request_cookie user={request_user.get('email')}")
         _auth_log("require_login request cookie user")
         return _post_login(request_user)
 
@@ -1842,6 +1859,7 @@ def require_login() -> dict[str, Any]:
     user = _load_user_from_cookie(cookies, cfg)
     if user:
         st.session_state[SESSION_KEY] = user
+        _debug_log(f"require_login cookie user={user.get('email')}")
         _auth_log("require_login cookie user")
         _session_store_set(session_token, user)
         return _post_login(user)
@@ -1849,6 +1867,7 @@ def require_login() -> dict[str, Any]:
         request_user = _load_user_from_request_cookie(cfg)
         if request_user:
             st.session_state[SESSION_KEY] = request_user
+            _debug_log(f"require_login request_cookie not_ready={request_user.get('email')}")
             _auth_log("require_login request cookie user (not ready manager)")
             return _post_login(request_user)
         session_user = st.session_state.get(SESSION_KEY)
@@ -1870,6 +1889,7 @@ def require_login() -> dict[str, Any]:
         st.session_state.pop("_auth_cookie_waits", None)
         if isinstance(session_user, dict) and session_user.get("email"):
             _auth_log("require_login fallback to session user")
+            _debug_log(f"require_login fallback session_user={session_user.get('email')}")
             _session_store_set(session_token, session_user)
             return _post_login(session_user)
 
