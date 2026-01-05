@@ -1455,7 +1455,8 @@ def _render_home_screen(
 
     safe_url = html.escape(auth_url, quote=True)
     safe_app_url = html.escape(app_url or _app_url(), quote=True)
-    auth_link_attrs = ' target="_self"'
+    # OAuth must start in a top-level context, so open in a new tab.
+    auth_link_attrs = ' target="_blank" rel="noopener noreferrer"'
     logo_uri = _get_logo_data_uri()
     logo_html = (
         f'<img class="brand-logo" src="{logo_uri}" alt="Chronoplan logo" />'
