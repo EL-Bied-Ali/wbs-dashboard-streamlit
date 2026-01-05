@@ -446,6 +446,9 @@ def _cookie_header_values(raw_cookie: str, name: str) -> list[str]:
 
 
 def _load_user_from_request_cookie(cfg: dict[str, Any]) -> dict[str, Any] | None:
+    if not _use_auth_cookies():
+        _debug_log("cookie_load skipped (cookies disabled)")
+        return None
     ignore_until = st.session_state.get("_logout_ignore_until")
     if isinstance(ignore_until, (int, float)):
         if time.time() < ignore_until:
@@ -621,13 +624,14 @@ def _stash_referral_code(params: dict[str, Any]) -> None:
     if not code:
         return
     st.session_state["_pending_ref"] = code
-    cookies = _get_cookie_manager(refresh=True)
-    try:
-        if cookies.ready():
-            cookies[REFERRAL_COOKIE] = code
-            _save_cookies(cookies)
-    except Exception:
-        return
+    if _use_auth_cookies():
+        cookies = _get_cookie_manager(refresh=True)
+        try:
+            if cookies.ready():
+                cookies[REFERRAL_COOKIE] = code
+                _save_cookies(cookies)
+        except Exception:
+            return
 
 
 def _consume_referral_code(params: dict[str, Any]) -> str | None:
@@ -636,26 +640,28 @@ def _consume_referral_code(params: dict[str, Any]) -> str | None:
     code = (raw or "").strip()
     if not code and isinstance(ref_from_state, str):
         code = ref_from_state.strip()
-    cookies = _get_cookie_manager(refresh=True)
+    cookies = _get_cookie_manager(refresh=True) if _use_auth_cookies() else None
     if not code:
         pending = st.session_state.get("_pending_ref")
         code = (pending or "").strip() if isinstance(pending, str) else ""
     if not code:
-        try:
-            if cookies.ready():
-                stored = cookies.get(REFERRAL_COOKIE)
-                code = (stored or "").strip()
-        except Exception:
-            code = code or ""
+        if cookies is not None:
+            try:
+                if cookies.ready():
+                    stored = cookies.get(REFERRAL_COOKIE)
+                    code = (stored or "").strip()
+            except Exception:
+                code = code or ""
     if code:
         st.session_state.pop("_pending_ref", None)
         st.session_state.pop("_oauth_ref", None)
-        try:
-            if cookies.ready() and cookies.get(REFERRAL_COOKIE):
-                del cookies[REFERRAL_COOKIE]
-                _save_cookies(cookies)
-        except Exception:
-            pass
+        if cookies is not None:
+            try:
+                if cookies.ready() and cookies.get(REFERRAL_COOKIE):
+                    del cookies[REFERRAL_COOKIE]
+                    _save_cookies(cookies)
+            except Exception:
+                pass
         return code
     return None
 
@@ -691,6 +697,21 @@ AUTH_LOGGER = logging.getLogger("auth_google")
 def _debug_enabled() -> bool:
     raw = (_get_setting("AUTH_DEBUG") or "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
+
+
+def _use_auth_cookies() -> bool:
+    raw = (_get_setting("AUTH_USE_COOKIE") or "").strip().lower()
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    host = (_request_host() or "").lower()
+    app_url = (_get_setting("APP_URL") or "").lower()
+    if not host:
+        return False
+    if "streamlit.app" in host or "streamlit.app" in app_url:
+        return False
+    return True
 
 
 def _debug_ui_enabled() -> bool:
@@ -775,12 +796,13 @@ def _ensure_session_token(cfg: dict[str, Any]) -> str | None:
     token = secrets.token_urlsafe(24)
     st.session_state["_session_token"] = token
     try:
-        _inject_cookie_js(
-            AUTH_SESSION_COOKIE,
-            token,
-            _SESSION_TTL_SECONDS,
-            key="auth_session_id_js",
-        )
+        if _use_auth_cookies():
+            _inject_cookie_js(
+                AUTH_SESSION_COOKIE,
+                token,
+                _SESSION_TTL_SECONDS,
+                key="auth_session_id_js",
+            )
         _debug_log(f"session_token issued={_token_fingerprint(token)}")
     except Exception as exc:
         _debug_log(f"session_token issue failed={type(exc).__name__}")
@@ -906,6 +928,18 @@ def _ensure_auth_debug(cookies: CookieManager, cfg: dict[str, Any]) -> dict[str,
     debug = st.session_state.get("_auth_debug")
     if not isinstance(debug, dict):
         debug = {}
+    if not _use_auth_cookies():
+        debug.update(
+            {
+                "cookie_name": cfg.get("cookie_name"),
+                "cookie_ready": False,
+                "cookie_present": False,
+                "cookie_error": "disabled",
+            }
+        )
+        st.session_state["_auth_debug"] = debug
+        _debug_log("auth_debug cookies disabled")
+        return debug
     try:
         cookies_ready = cookies.ready()
     except Exception:
@@ -926,6 +960,9 @@ def _ensure_auth_debug(cookies: CookieManager, cfg: dict[str, Any]) -> dict[str,
 
 
 def _load_user_from_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> dict[str, Any] | None:
+    if not _use_auth_cookies():
+        _debug_log("cookie_load disabled (cookies disabled)")
+        return None
     debug = _ensure_auth_debug(cookies, cfg)
     cookies_ready = bool(debug.get("cookie_ready"))
     _debug_log(
@@ -993,6 +1030,8 @@ def _store_user_cookie(
     user: dict[str, Any],
     save: bool = True,
 ) -> None:
+    if not _use_auth_cookies():
+        return
     serializer = _serializer(cfg["cookie_secret"])
     token = serializer.dumps(user)
     _debug_log("cookie_store attempt")
@@ -1017,6 +1056,8 @@ def _store_user_cookie(
 
 
 def _flush_pending_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> None:
+    if not _use_auth_cookies():
+        return
     _debug_log("flush_pending_cookie start")
     pending = st.session_state.get("_pending_user_cookie")
     if not isinstance(pending, dict):
@@ -1035,7 +1076,7 @@ def _flush_pending_cookie(cookies: CookieManager, cfg: dict[str, Any]) -> None:
     _debug_log("cookie_store flushed")
 
 
-def _build_login_url(cfg: dict[str, Any], cookies: CookieManager) -> str:
+def _build_login_url(cfg: dict[str, Any], cookies: CookieManager | None) -> str:
     oauth = OAuth2Session(
         client_id=cfg["client_id"],
         client_secret=cfg["client_secret"],
@@ -1062,13 +1103,14 @@ def _build_login_url(cfg: dict[str, Any], cookies: CookieManager) -> str:
     resolved_state = returned_state or state
     st.session_state[STATE_KEY] = resolved_state
     st.session_state[NONCE_KEY] = nonce
-    try:
-        if cookies.ready():
-            cookies[STATE_COOKIE] = resolved_state
-            cookies[NONCE_COOKIE] = nonce
-            _save_cookies(cookies)
-    except Exception:
-        pass
+    if cookies is not None and _use_auth_cookies():
+        try:
+            if cookies.ready():
+                cookies[STATE_COOKIE] = resolved_state
+                cookies[NONCE_COOKIE] = nonce
+                _save_cookies(cookies)
+        except Exception:
+            pass
     return url
 
 
@@ -1080,7 +1122,7 @@ def _exchange_code_for_user(
 ) -> dict[str, Any] | None:
     state_payload = _decode_state(cfg, state)
     expected_state = st.session_state.get(STATE_KEY)
-    if not expected_state and cookies is not None:
+    if not expected_state and cookies is not None and _use_auth_cookies():
         try:
             if cookies.ready():
                 expected_state = cookies.get(STATE_COOKIE)
@@ -1197,7 +1239,7 @@ def _exchange_code_for_user(
         return None
 
     expected_nonce = st.session_state.get(NONCE_KEY)
-    if not expected_nonce and cookies is not None:
+    if not expected_nonce and cookies is not None and _use_auth_cookies():
         try:
             if cookies.ready():
                 expected_nonce = cookies.get(NONCE_COOKIE)
@@ -1230,6 +1272,17 @@ def _app_url() -> str:
 
 def get_current_user(cookies: CookieManager | None = None) -> dict[str, Any] | None:
     cfg = _load_config()
+    if not _use_auth_cookies():
+        user = st.session_state.get(SESSION_KEY)
+        if isinstance(user, dict) and user.get("email"):
+            return user
+        token = _ensure_session_token(cfg)
+        if token:
+            store_user = _session_store_get(token)
+            if store_user:
+                st.session_state[SESSION_KEY] = store_user
+                return store_user
+        return None
     if cookies is None:
         cookies = _get_cookie_manager(refresh=True)
     _flush_pending_cookie(cookies, cfg)
@@ -1708,6 +1761,7 @@ def require_login() -> dict[str, Any]:
         st.stop()
 
     cfg = _load_config()
+    use_cookies = _use_auth_cookies()
     session_token = _ensure_session_token(cfg)
     # Persist any existing session user into the store to make refreshes resilient.
     _existing = st.session_state.get(SESSION_KEY)
@@ -1726,34 +1780,36 @@ def require_login() -> dict[str, Any]:
         _debug_log(f"require_login session_user early={session_user.get('email')}")
         _session_store_set(session_token, session_user)
         return _post_login(session_user)
-    header_user = _load_user_from_request_cookie(cfg)
-    if header_user:
-        st.session_state[SESSION_KEY] = header_user
-        _debug_log(f"require_login request_cookie early={header_user.get('email')}")
-        _auth_log("require_login request cookie user (early)")
-        _session_store_set(session_token, header_user)
-        return _post_login(header_user)
+    if use_cookies:
+        header_user = _load_user_from_request_cookie(cfg)
+        if header_user:
+            st.session_state[SESSION_KEY] = header_user
+            _debug_log(f"require_login request_cookie early={header_user.get('email')}")
+            _auth_log("require_login request cookie user (early)")
+            _session_store_set(session_token, header_user)
+            return _post_login(header_user)
 
     code = _query_value(params, "code")
     state = _query_value(params, "state")
 
-    await_cookie = st.session_state.get("_await_auth_cookie")
-    if isinstance(await_cookie, (int, float)):
-        cookies = _get_cookie_manager(refresh=True)
-        user = _load_user_from_request_cookie(cfg)
-        if not user:
-            user = _load_user_from_cookie(cookies, cfg) if _cookies_ready(cookies) else None
-        if user:
-            st.session_state[SESSION_KEY] = user
+    if use_cookies:
+        await_cookie = st.session_state.get("_await_auth_cookie")
+        if isinstance(await_cookie, (int, float)):
+            cookies = _get_cookie_manager(refresh=True)
+            user = _load_user_from_request_cookie(cfg)
+            if not user:
+                user = _load_user_from_cookie(cookies, cfg) if _cookies_ready(cookies) else None
+            if user:
+                st.session_state[SESSION_KEY] = user
+                st.session_state.pop("_await_auth_cookie", None)
+                _debug_log(f"require_login awaited cookie user={user.get('email')}")
+                _auth_log("require_login awaited cookie user")
+                return _post_login(user)
+            if time.time() - await_cookie < 4:
+                st.info("Finalizing sign-in...")
+                time.sleep(0.25)
+                _rerun()
             st.session_state.pop("_await_auth_cookie", None)
-            _debug_log(f"require_login awaited cookie user={user.get('email')}")
-            _auth_log("require_login awaited cookie user")
-            return _post_login(user)
-        if time.time() - await_cookie < 4:
-            st.info("Finalizing sign-in...")
-            time.sleep(0.25)
-            _rerun()
-        st.session_state.pop("_await_auth_cookie", None)
 
     inflight = st.session_state.get("_oauth_in_flight")
     if isinstance(inflight, (int, float)):
@@ -1764,27 +1820,28 @@ def require_login() -> dict[str, Any]:
 
     user = st.session_state.get(SESSION_KEY)
     if user:
-        if not _load_user_from_request_cookie(cfg):
-            try:
-                token = st.session_state.get("_pending_user_cookie_token")
-                if not isinstance(token, str):
-                    token = _serializer(cfg["cookie_secret"]).dumps(user)
-                _inject_cookie_js(
-                    cfg["cookie_name"],
-                    token,
-                    cfg["cookie_ttl_seconds"],
-                    key="auth_cookie_js_session",
-                )
-                st.session_state.pop("_pending_user_cookie_token", None)
-            except Exception as exc:
-                _auth_log(f"cookie_js set failed={exc}")
-        if isinstance(st.session_state.get("_pending_user_cookie"), dict):
-            try:
-                cookies = _get_cookie_manager(refresh=True)
-                _flush_pending_cookie(cookies, cfg)
-                _ensure_auth_debug(cookies, cfg)
-            except Exception:
-                pass
+        if use_cookies:
+            if not _load_user_from_request_cookie(cfg):
+                try:
+                    token = st.session_state.get("_pending_user_cookie_token")
+                    if not isinstance(token, str):
+                        token = _serializer(cfg["cookie_secret"]).dumps(user)
+                    _inject_cookie_js(
+                        cfg["cookie_name"],
+                        token,
+                        cfg["cookie_ttl_seconds"],
+                        key="auth_cookie_js_session",
+                    )
+                    st.session_state.pop("_pending_user_cookie_token", None)
+                except Exception as exc:
+                    _auth_log(f"cookie_js set failed={exc}")
+            if isinstance(st.session_state.get("_pending_user_cookie"), dict):
+                try:
+                    cookies = _get_cookie_manager(refresh=True)
+                    _flush_pending_cookie(cookies, cfg)
+                    _ensure_auth_debug(cookies, cfg)
+                except Exception:
+                    pass
         _debug_log(f"require_login session_user late={user.get('email')}")
         _auth_log("require_login session user")
         return _post_login(user)
@@ -1799,12 +1856,13 @@ def require_login() -> dict[str, Any]:
             return _post_login(cached_user)
         if st.session_state.get("_oauth_flow_handled") or processed_code == code or _is_code_used(code):
             _clear_query_params()
-            user = _load_user_from_request_cookie(cfg)
-            if user:
-                st.session_state[SESSION_KEY] = user
-                _debug_log(f"require_login code duplicate cookie user={user.get('email')}")
-                _auth_log("require_login code duplicate -> cookie user")
-                return _post_login(user)
+            if use_cookies:
+                user = _load_user_from_request_cookie(cfg)
+                if user:
+                    st.session_state[SESSION_KEY] = user
+                    _debug_log(f"require_login code duplicate cookie user={user.get('email')}")
+                    _auth_log("require_login code duplicate -> cookie user")
+                    return _post_login(user)
             _rerun()
         inflight = st.session_state.get("_oauth_in_flight")
         if isinstance(inflight, (int, float)) and time.time() - inflight < 8:
@@ -1822,25 +1880,26 @@ def require_login() -> dict[str, Any]:
                 _mark_code_used(code)
                 st.session_state[SESSION_KEY] = user
                 _session_store_set(session_token, user)
-                try:
-                    cookies = _get_cookie_manager(refresh=True)
-                    _flush_pending_cookie(cookies, cfg)
-                    _store_user_cookie(cookies, cfg, user, save=False)
-                    _save_cookies(cookies)
-                    _auth_log("require_login code user stored")
-                except Exception as exc:
-                    _auth_log(f"require_login cookie store failed={exc}")
-                try:
-                    token = _serializer(cfg["cookie_secret"]).dumps(user)
-                    _inject_cookie_js(
-                        cfg["cookie_name"],
-                        token,
-                        cfg["cookie_ttl_seconds"],
-                        key="auth_cookie_js_code",
-                    )
-                except Exception as exc:
-                    _auth_log(f"cookie_js set failed={exc}")
-                st.session_state["_await_auth_cookie"] = time.time()
+                if use_cookies:
+                    try:
+                        cookies = _get_cookie_manager(refresh=True)
+                        _flush_pending_cookie(cookies, cfg)
+                        _store_user_cookie(cookies, cfg, user, save=False)
+                        _save_cookies(cookies)
+                        _auth_log("require_login code user stored")
+                    except Exception as exc:
+                        _auth_log(f"require_login cookie store failed={exc}")
+                    try:
+                        token = _serializer(cfg["cookie_secret"]).dumps(user)
+                        _inject_cookie_js(
+                            cfg["cookie_name"],
+                            token,
+                            cfg["cookie_ttl_seconds"],
+                            key="auth_cookie_js_code",
+                        )
+                    except Exception as exc:
+                        _auth_log(f"cookie_js set failed={exc}")
+                    st.session_state["_await_auth_cookie"] = time.time()
                 try:
                     _clear_query_params()
                 except Exception:
@@ -1849,64 +1908,65 @@ def require_login() -> dict[str, Any]:
                 return _post_login(user)
         finally:
             st.session_state.pop("_oauth_in_flight", None)
-        auth_url = _build_login_url(cfg, _get_cookie_manager(refresh=True))
+        auth_url = _build_login_url(cfg, _get_cookie_manager(refresh=True) if use_cookies else None)
         _render_login_screen(auth_url)
         _auth_log("require_login code failed -> login screen")
         st.stop()
 
-    request_user = _load_user_from_request_cookie(cfg)
-    if request_user:
-        st.session_state[SESSION_KEY] = request_user
-        _debug_log(f"require_login request_cookie user={request_user.get('email')}")
-        _auth_log("require_login request cookie user")
-        return _post_login(request_user)
-
-    cookies = _get_cookie_manager(refresh=True)
-    _flush_pending_cookie(cookies, cfg)
-    _ensure_auth_debug(cookies, cfg)
-
-    user = _load_user_from_cookie(cookies, cfg)
-    if user:
-        st.session_state[SESSION_KEY] = user
-        _debug_log(f"require_login cookie user={user.get('email')}")
-        _auth_log("require_login cookie user")
-        _session_store_set(session_token, user)
-        return _post_login(user)
-    if not _cookies_ready(cookies):
+    if use_cookies:
         request_user = _load_user_from_request_cookie(cfg)
         if request_user:
             st.session_state[SESSION_KEY] = request_user
-            _debug_log(f"require_login request_cookie not_ready={request_user.get('email')}")
-            _auth_log("require_login request cookie user (not ready manager)")
+            _debug_log(f"require_login request_cookie user={request_user.get('email')}")
+            _auth_log("require_login request cookie user")
             return _post_login(request_user)
-        session_user = st.session_state.get(SESSION_KEY)
-        awaiting = st.session_state.get("_await_auth_cookie")
-        has_pending = isinstance(awaiting, (int, float)) or isinstance(
-            st.session_state.get("_pending_user_cookie"), dict
-        )
-        waits = st.session_state.get("_auth_cookie_waits", 0)
-        if not has_pending and waits < 6:
-            st.session_state["_auth_cookie_waits"] = waits + 1
-            _debug_log(f"require_login wait for cookies attempt={waits + 1}")
-            st.info("Loading session...")
-            time.sleep(0.25)
-            _rerun()
-        if has_pending and waits < 10:
-            st.session_state["_auth_cookie_waits"] = waits + 1
-            if not isinstance(awaiting, (int, float)):
-                st.session_state["_await_auth_cookie"] = time.time()
-            st.info("Finalizing sign-in...")
-            time.sleep(0.25)
-            _rerun()
-        st.session_state.pop("_await_auth_cookie", None)
-        st.session_state.pop("_pending_user_cookie", None)
-        st.session_state.pop("_pending_user_cookie_token", None)
-        st.session_state.pop("_auth_cookie_waits", None)
-        if isinstance(session_user, dict) and session_user.get("email"):
-            _auth_log("require_login fallback to session user")
-            _debug_log(f"require_login fallback session_user={session_user.get('email')}")
-            _session_store_set(session_token, session_user)
-            return _post_login(session_user)
+
+        cookies = _get_cookie_manager(refresh=True)
+        _flush_pending_cookie(cookies, cfg)
+        _ensure_auth_debug(cookies, cfg)
+
+        user = _load_user_from_cookie(cookies, cfg)
+        if user:
+            st.session_state[SESSION_KEY] = user
+            _debug_log(f"require_login cookie user={user.get('email')}")
+            _auth_log("require_login cookie user")
+            _session_store_set(session_token, user)
+            return _post_login(user)
+        if not _cookies_ready(cookies):
+            request_user = _load_user_from_request_cookie(cfg)
+            if request_user:
+                st.session_state[SESSION_KEY] = request_user
+                _debug_log(f"require_login request_cookie not_ready={request_user.get('email')}")
+                _auth_log("require_login request cookie user (not ready manager)")
+                return _post_login(request_user)
+            session_user = st.session_state.get(SESSION_KEY)
+            awaiting = st.session_state.get("_await_auth_cookie")
+            has_pending = isinstance(awaiting, (int, float)) or isinstance(
+                st.session_state.get("_pending_user_cookie"), dict
+            )
+            waits = st.session_state.get("_auth_cookie_waits", 0)
+            if not has_pending and waits < 6:
+                st.session_state["_auth_cookie_waits"] = waits + 1
+                _debug_log(f"require_login wait for cookies attempt={waits + 1}")
+                st.info("Loading session...")
+                time.sleep(0.25)
+                _rerun()
+            if has_pending and waits < 10:
+                st.session_state["_auth_cookie_waits"] = waits + 1
+                if not isinstance(awaiting, (int, float)):
+                    st.session_state["_await_auth_cookie"] = time.time()
+                st.info("Finalizing sign-in...")
+                time.sleep(0.25)
+                _rerun()
+            st.session_state.pop("_await_auth_cookie", None)
+            st.session_state.pop("_pending_user_cookie", None)
+            st.session_state.pop("_pending_user_cookie_token", None)
+            st.session_state.pop("_auth_cookie_waits", None)
+            if isinstance(session_user, dict) and session_user.get("email"):
+                _auth_log("require_login fallback to session user")
+                _debug_log(f"require_login fallback session_user={session_user.get('email')}")
+                _session_store_set(session_token, session_user)
+                return _post_login(session_user)
 
     if st.session_state.get("_current_page") != "Home":
         _debug_log("require_login redirect to home")
@@ -1917,7 +1977,7 @@ def require_login() -> dict[str, Any]:
             _rerun()
         st.stop()
 
-    auth_url = _build_login_url(cfg, cookies)
+    auth_url = _build_login_url(cfg, _get_cookie_manager(refresh=True) if use_cookies else None)
     _render_login_screen(auth_url)
     _auth_log("require_login render login")
     st.stop()
@@ -1925,12 +1985,12 @@ def require_login() -> dict[str, Any]:
 
 def logout() -> None:
     cfg = _load_config()
-    cookies = _get_cookie_manager()
+    cookies = _get_cookie_manager() if _use_auth_cookies() else None
     session_token = _session_token()
     current_user = st.session_state.get(SESSION_KEY)
     if isinstance(current_user, dict) and current_user.get("bypass"):
         st.session_state["_disable_bypass"] = True
-    if _cookies_ready(cookies):
+    if cookies is not None and _cookies_ready(cookies):
         if cookies.get(cfg["cookie_name"]):
             del cookies[cfg["cookie_name"]]
         if cookies.get(STATE_COOKIE):
