@@ -684,6 +684,31 @@ def _debug_enabled() -> bool:
     return raw in {"1", "true", "yes", "on"}
 
 
+def _debug_ui_enabled() -> bool:
+    raw = (_get_setting("AUTH_DEBUG_UI") or "").strip().lower()
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    try:
+        params = _get_query_params()
+        val = (_query_value(params, "auth_debug") or "").strip().lower()
+        return val in {"1", "true", "yes", "on"}
+    except Exception:
+        return False
+
+
+def _debug_ui_append(message: str) -> None:
+    if not _debug_ui_enabled():
+        return
+    logs = st.session_state.get("_auth_debug_ui")
+    if not isinstance(logs, list):
+        logs = []
+    timestamp = datetime.utcnow().strftime("%H:%M:%S")
+    logs.append(f"{timestamp} {message}")
+    if len(logs) > 40:
+        logs = logs[-40:]
+    st.session_state["_auth_debug_ui"] = logs
+
+
 def _ensure_logger() -> None:
     if not AUTH_LOGGER.handlers:
         handler = logging.StreamHandler()
@@ -698,6 +723,7 @@ def _debug_log(message: str) -> None:
     _ensure_logger()
     AUTH_LOGGER.debug(message)
     _auth_log(message)
+    _debug_ui_append(message)
 
 
 def _token_fingerprint(token: str) -> str:
@@ -1409,6 +1435,40 @@ def _render_home_screen(
             animation: float 9s ease-in-out infinite;
         }
 
+        .auth-debug {
+            margin-top: 2.2rem;
+            padding: 1rem 1.1rem;
+            border-radius: 18px;
+            border: 1px dashed rgba(148, 163, 184, 0.35);
+            background: rgba(10, 16, 38, 0.6);
+        }
+
+        .auth-debug-title {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.35rem;
+        }
+
+        .auth-debug-meta {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 0.65rem;
+        }
+
+        .auth-debug-log {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: #dbe4ff;
+            white-space: pre-wrap;
+            background: rgba(8, 12, 28, 0.7);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 0.75rem;
+            max-height: 220px;
+            overflow: auto;
+        }
+
         .kpi {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1480,6 +1540,51 @@ def _render_home_screen(
         secondary_cta = ""
         signed_in_note = ""
 
+    debug_html = ""
+    if _debug_ui_enabled():
+        debug_state = st.session_state.get("_auth_debug")
+        if not isinstance(debug_state, dict):
+            debug_state = {}
+        cookie_name = debug_state.get("cookie_name") or ""
+        cookie_ready = debug_state.get("cookie_ready")
+        cookie_present = debug_state.get("cookie_present")
+        cookie_error = debug_state.get("cookie_error") or "none"
+        host = _request_host() or "unknown"
+        scheme = _request_scheme(host)
+        session_token = st.session_state.get("_session_token")
+        session_fp = _token_fingerprint(session_token) if isinstance(session_token, str) else "none"
+        logout_ignore = st.session_state.get("_logout_ignore_until")
+        ignore_note = ""
+        if isinstance(logout_ignore, (int, float)):
+            remaining = max(0, int(logout_ignore - time.time()))
+            ignore_note = f"logout_ignore={remaining}s"
+        meta_parts = [
+            f"host={host}",
+            f"scheme={scheme}",
+            f"cookie_name={cookie_name or 'n/a'}",
+            f"cookie_ready={cookie_ready}",
+            f"cookie_present={cookie_present}",
+            f"cookie_error={cookie_error}",
+            f"session_fp={session_fp}",
+        ]
+        if ignore_note:
+            meta_parts.append(ignore_note)
+        meta_text = html.escape(" | ".join(meta_parts))
+        log_lines = st.session_state.get("_auth_debug_ui")
+        if not isinstance(log_lines, list):
+            log_lines = []
+        if log_lines:
+            log_text = "\n".join(html.escape(str(line)) for line in log_lines[-40:])
+        else:
+            log_text = "No debug logs yet."
+        debug_html = f"""
+        <div class="auth-debug">
+          <div class="auth-debug-title">Auth debug</div>
+          <div class="auth-debug-meta">{meta_text}</div>
+          <div class="auth-debug-log">{log_text}</div>
+        </div>
+        """
+
     page_html = f"""
     <div class="home-shell">
       <div class="topbar">
@@ -1509,6 +1614,7 @@ def _render_home_screen(
             </div>
           </div>
         </div>
+        {debug_html}
       </div>
     </div>
     """
