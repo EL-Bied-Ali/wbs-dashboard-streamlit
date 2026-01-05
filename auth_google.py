@@ -1885,6 +1885,12 @@ def require_login() -> dict[str, Any]:
             st.session_state.get("_pending_user_cookie"), dict
         )
         waits = st.session_state.get("_auth_cookie_waits", 0)
+        if not has_pending and waits < 6:
+            st.session_state["_auth_cookie_waits"] = waits + 1
+            _debug_log(f"require_login wait for cookies attempt={waits + 1}")
+            st.info("Loading session...")
+            time.sleep(0.25)
+            _rerun()
         if has_pending and waits < 10:
             st.session_state["_auth_cookie_waits"] = waits + 1
             if not isinstance(awaiting, (int, float)):
