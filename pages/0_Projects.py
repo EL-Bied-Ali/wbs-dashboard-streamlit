@@ -42,6 +42,7 @@ st.set_page_config(
     page_icon="CP",
     layout="wide",
 )
+st.session_state["_current_page"] = "Projects"
 
 # =============================
 # GLOBAL BACKGROUND + CSS

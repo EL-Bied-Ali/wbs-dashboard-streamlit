@@ -17,6 +17,7 @@ st.markdown(
 )
 
 st.session_state.pop("_force_home", None)
+st.session_state["_current_page"] = "Home"
 user = require_login()
 
 if user:

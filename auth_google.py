@@ -1902,6 +1902,15 @@ def require_login() -> dict[str, Any]:
             _session_store_set(session_token, session_user)
             return _post_login(session_user)
 
+    if st.session_state.get("_current_page") != "Home":
+        _debug_log("require_login redirect to home")
+        try:
+            st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
+        except Exception:
+            _redirect_js("/Home", key="auth_login_redirect")
+            _rerun()
+        st.stop()
+
     auth_url = _build_login_url(cfg, cookies)
     _render_login_screen(auth_url)
     _auth_log("require_login render login")
