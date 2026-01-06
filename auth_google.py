@@ -1718,15 +1718,88 @@ def _post_login(user: dict[str, Any]) -> dict[str, Any]:
     return user
 
 
-def require_login() -> dict[str, Any]:
-    _auth_log("require_login start")
-    current = st.session_state.get(SESSION_KEY)
-    if isinstance(current, dict) and current.get("email"):
-        _debug_log(f"require_login session_state user={current.get('email')}")
+def _oidc_user_dict() -> dict[str, Any] | None:
+    try:
+        user = st.user
+    except Exception:
+        return None
+    try:
+        is_logged_in = bool(getattr(user, "is_logged_in"))
+    except Exception:
+        is_logged_in = False
+    if not is_logged_in:
+        return None
+
+    def _value(key: str) -> str | None:
+        try:
+            return user.get(key)
+        except Exception:
+            try:
+                return user[key]
+            except Exception:
+                return None
+
+    email = (_value("email") or "").strip()
+    name = _value("name") or _value("given_name") or email or "User"
+    picture = _value("picture") or ""
+    return {
+        "email": email,
+        "name": name,
+        "picture": picture,
+        "sub": _value("sub"),
+        "provider": "oidc",
+    }
+
+
+def _render_oidc_login() -> None:
+    st.markdown(
+        """
+        <style>
+        .oidc-login {
+          max-width: 520px;
+          margin: 64px auto 0;
+          padding: 28px 32px;
+          border-radius: 18px;
+          border: 1px solid rgba(148,163,184,0.2);
+          background: linear-gradient(180deg, rgba(15,23,42,.8), rgba(11,18,36,.88));
+          box-shadow: 0 18px 36px rgba(0,0,0,0.35);
+          color: #e8eefc;
+        }
+        .oidc-login h2 {
+          margin: 0 0 8px;
+          font-size: 28px;
+          font-weight: 700;
+        }
+        .oidc-login p {
+          margin: 0 0 16px;
+          color: #9da8c6;
+          font-size: 16px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        <div class="oidc-login">
+          <h2>Sign in</h2>
+          <p>Use your identity provider to access ChronoPlan.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if hasattr(st, "login"):
+        st.button("Sign in", on_click=st.login, key="oidc_login_btn")
     else:
-        _debug_log("require_login session_state empty")
+        st.error("Streamlit OIDC is not available in this runtime.")
+    st.stop()
+
+
+def require_login() -> dict[str, Any]:
+    _auth_log("require_login oidc start")
     params = _get_query_params()
     _stash_referral_code(params)
+
     force_bypass = (
         (_query_value(params, "dev_bypass") or _query_value(params, "dev") or "")
         .strip()
@@ -1736,29 +1809,8 @@ def require_login() -> dict[str, Any]:
     dev_user_override = bool(
         (_query_value(params, "dev_user") or _query_value(params, "dev_email") or "").strip()
     )
-    if force_bypass:
+    if force_bypass or dev_user_override:
         st.session_state.pop("_disable_bypass", None)
-    if dev_user_override:
-        st.session_state.pop("_disable_bypass", None)
-    if not st.session_state.get("_disable_bypass"):
-        bypass_user = _bypass_user_from_env()
-        if bypass_user:
-            st.session_state[SESSION_KEY] = bypass_user
-            _debug_log(f"require_login bypass env user={bypass_user.get('email')}")
-            _auth_log("require_login bypass env")
-            return _post_login(bypass_user)
-        query_bypass = _bypass_user_from_query()
-        if query_bypass:
-            st.session_state[SESSION_KEY] = query_bypass
-            _debug_log(f"require_login bypass query user={query_bypass.get('email')}")
-            _auth_log("require_login bypass query")
-            return _post_login(query_bypass)
-        localhost_user = _bypass_user_for_localhost()
-        if localhost_user:
-            st.session_state[SESSION_KEY] = localhost_user
-            _debug_log(f"require_login bypass localhost user={localhost_user.get('email')}")
-            _auth_log("require_login bypass localhost")
-            return _post_login(localhost_user)
 
     if st.session_state.pop("_force_home", False):
         try:
@@ -1767,269 +1819,37 @@ def require_login() -> dict[str, Any]:
             _rerun()
         st.stop()
 
-    cfg = _load_config()
-    use_cookies = _use_auth_cookies()
-    session_token = _ensure_session_token(cfg)
-    # Persist any existing session user into the store to make refreshes resilient.
-    _existing = st.session_state.get(SESSION_KEY)
-    if isinstance(_existing, dict) and _existing.get("email"):
-        _session_store_set(session_token, _existing)
-    store_user = _session_store_get(session_token)
-    if store_user:
-        st.session_state[SESSION_KEY] = store_user
-        _debug_log(f"require_login session_store user={store_user.get('email')}")
-        _auth_log("require_login session store user")
-        return _post_login(store_user)
+    oidc_user = _oidc_user_dict()
+    if oidc_user:
+        st.session_state[SESSION_KEY] = oidc_user
+        _auth_log("require_login oidc user")
+        return _post_login(oidc_user)
 
-    session_user = st.session_state.get(SESSION_KEY)
-    if isinstance(session_user, dict) and session_user.get("email"):
-        _auth_log("require_login session user (early)")
-        _debug_log(f"require_login session_user early={session_user.get('email')}")
-        _session_store_set(session_token, session_user)
-        return _post_login(session_user)
-    if use_cookies:
-        header_user = _load_user_from_request_cookie(cfg)
-        if header_user:
-            st.session_state[SESSION_KEY] = header_user
-            _debug_log(f"require_login request_cookie early={header_user.get('email')}")
-            _auth_log("require_login request cookie user (early)")
-            _session_store_set(session_token, header_user)
-            return _post_login(header_user)
+    if not st.session_state.get("_disable_bypass"):
+        bypass_user = (
+            _bypass_user_from_env()
+            or _bypass_user_from_query()
+            or _bypass_user_for_localhost()
+        )
+        if bypass_user:
+            st.session_state[SESSION_KEY] = bypass_user
+            _auth_log("require_login bypass user")
+            return _post_login(bypass_user)
 
-    code = _query_value(params, "code")
-    state = _query_value(params, "state")
-
-    if use_cookies:
-        await_cookie = st.session_state.get("_await_auth_cookie")
-        if isinstance(await_cookie, (int, float)):
-            cookies = _get_cookie_manager(refresh=True)
-            user = _load_user_from_request_cookie(cfg)
-            if not user:
-                user = _load_user_from_cookie(cookies, cfg) if _cookies_ready(cookies) else None
-            if user:
-                st.session_state[SESSION_KEY] = user
-                st.session_state.pop("_await_auth_cookie", None)
-                _debug_log(f"require_login awaited cookie user={user.get('email')}")
-                _auth_log("require_login awaited cookie user")
-                return _post_login(user)
-            if time.time() - await_cookie < 4:
-                st.info("Finalizing sign-in...")
-                time.sleep(0.25)
-                _rerun()
-            st.session_state.pop("_await_auth_cookie", None)
-
-    inflight = st.session_state.get("_oauth_in_flight")
-    if isinstance(inflight, (int, float)):
-        if time.time() - inflight < 8:
-            st.info("Completing sign-in...")
-            st.stop()
-        st.session_state.pop("_oauth_in_flight", None)
-
-    user = st.session_state.get(SESSION_KEY)
-    if user:
-        if use_cookies:
-            if not _load_user_from_request_cookie(cfg):
-                try:
-                    token = st.session_state.get("_pending_user_cookie_token")
-                    if not isinstance(token, str):
-                        token = _serializer(cfg["cookie_secret"]).dumps(user)
-                    _inject_cookie_js(
-                        cfg["cookie_name"],
-                        token,
-                        cfg["cookie_ttl_seconds"],
-                        key="auth_cookie_js_session",
-                    )
-                    st.session_state.pop("_pending_user_cookie_token", None)
-                except Exception as exc:
-                    _auth_log(f"cookie_js set failed={exc}")
-            if isinstance(st.session_state.get("_pending_user_cookie"), dict):
-                try:
-                    cookies = _get_cookie_manager(refresh=True)
-                    _flush_pending_cookie(cookies, cfg)
-                    _ensure_auth_debug(cookies, cfg)
-                except Exception:
-                    pass
-        _debug_log(f"require_login session_user late={user.get('email')}")
-        _auth_log("require_login session user")
-        return _post_login(user)
-
-    if code:
-        processed_code = st.session_state.get("_oauth_processed_code")
-        cached_user = _get_cached_code_user(code)
-        if cached_user and _is_localhost_host(_request_host()):
-            st.session_state[SESSION_KEY] = cached_user
-            _debug_log(f"require_login code cached user={cached_user.get('email')}")
-            _auth_log("require_login code cached user")
-            return _post_login(cached_user)
-        if st.session_state.get("_oauth_flow_handled") or processed_code == code or _is_code_used(code):
-            _clear_query_params()
-            if use_cookies:
-                user = _load_user_from_request_cookie(cfg)
-                if user:
-                    st.session_state[SESSION_KEY] = user
-                    _debug_log(f"require_login code duplicate cookie user={user.get('email')}")
-                    _auth_log("require_login code duplicate -> cookie user")
-                    return _post_login(user)
-            _rerun()
-        inflight = st.session_state.get("_oauth_in_flight")
-        if isinstance(inflight, (int, float)) and time.time() - inflight < 8:
-            st.info("Completing sign-in...")
-            st.stop()
-        st.session_state["_oauth_in_flight"] = time.time()
-        st.session_state["_oauth_processed_code"] = code
-        user = None
-        try:
-            _auth_log("require_login code exchange start")
-            user = _exchange_code_for_user(cfg, code, state, None)
-            st.session_state.pop(STATE_KEY, None)
-            st.session_state.pop(NONCE_KEY, None)
-            if user:
-                _mark_code_used(code)
-                st.session_state[SESSION_KEY] = user
-                _session_store_set(session_token, user)
-                if use_cookies:
-                    try:
-                        cookies = _get_cookie_manager(refresh=True)
-                        _flush_pending_cookie(cookies, cfg)
-                        _store_user_cookie(cookies, cfg, user, save=False)
-                        _save_cookies(cookies)
-                        _auth_log("require_login code user stored")
-                    except Exception as exc:
-                        _auth_log(f"require_login cookie store failed={exc}")
-                    try:
-                        token = _serializer(cfg["cookie_secret"]).dumps(user)
-                        _inject_cookie_js(
-                            cfg["cookie_name"],
-                            token,
-                            cfg["cookie_ttl_seconds"],
-                            key="auth_cookie_js_code",
-                        )
-                    except Exception as exc:
-                        _auth_log(f"cookie_js set failed={exc}")
-                    st.session_state["_await_auth_cookie"] = time.time()
-                try:
-                    _clear_query_params()
-                except Exception:
-                    pass
-                _debug_log(f"require_login code user stored={user.get('email')}")
-                return _post_login(user)
-        finally:
-            st.session_state.pop("_oauth_in_flight", None)
-        auth_url = _build_login_url(cfg, _get_cookie_manager(refresh=True) if use_cookies else None)
-        _render_login_screen(auth_url)
-        _auth_log("require_login code failed -> login screen")
-        st.stop()
-
-    if use_cookies:
-        request_user = _load_user_from_request_cookie(cfg)
-        if request_user:
-            st.session_state[SESSION_KEY] = request_user
-            _debug_log(f"require_login request_cookie user={request_user.get('email')}")
-            _auth_log("require_login request cookie user")
-            return _post_login(request_user)
-
-        cookies = _get_cookie_manager(refresh=True)
-        _flush_pending_cookie(cookies, cfg)
-        _ensure_auth_debug(cookies, cfg)
-
-        user = _load_user_from_cookie(cookies, cfg)
-        if user:
-            st.session_state[SESSION_KEY] = user
-            _debug_log(f"require_login cookie user={user.get('email')}")
-            _auth_log("require_login cookie user")
-            _session_store_set(session_token, user)
-            return _post_login(user)
-        if not _cookies_ready(cookies):
-            request_user = _load_user_from_request_cookie(cfg)
-            if request_user:
-                st.session_state[SESSION_KEY] = request_user
-                _debug_log(f"require_login request_cookie not_ready={request_user.get('email')}")
-                _auth_log("require_login request cookie user (not ready manager)")
-                return _post_login(request_user)
-            session_user = st.session_state.get(SESSION_KEY)
-            awaiting = st.session_state.get("_await_auth_cookie")
-            has_pending = isinstance(awaiting, (int, float)) or isinstance(
-                st.session_state.get("_pending_user_cookie"), dict
-            )
-            waits = st.session_state.get("_auth_cookie_waits", 0)
-            if not has_pending and waits < 6:
-                st.session_state["_auth_cookie_waits"] = waits + 1
-                _debug_log(f"require_login wait for cookies attempt={waits + 1}")
-                st.info("Loading session...")
-                time.sleep(0.25)
-                _rerun()
-            if has_pending and waits < 10:
-                st.session_state["_auth_cookie_waits"] = waits + 1
-                if not isinstance(awaiting, (int, float)):
-                    st.session_state["_await_auth_cookie"] = time.time()
-                st.info("Finalizing sign-in...")
-                time.sleep(0.25)
-                _rerun()
-            st.session_state.pop("_await_auth_cookie", None)
-            st.session_state.pop("_pending_user_cookie", None)
-            st.session_state.pop("_pending_user_cookie_token", None)
-            st.session_state.pop("_auth_cookie_waits", None)
-            if isinstance(session_user, dict) and session_user.get("email"):
-                _auth_log("require_login fallback to session user")
-                _debug_log(f"require_login fallback session_user={session_user.get('email')}")
-                _session_store_set(session_token, session_user)
-                return _post_login(session_user)
-
-    if st.session_state.get("_current_page") != "Home":
-        _debug_log("require_login redirect to home")
-        try:
-            st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
-        except Exception:
-            _redirect_js("/Home", key="auth_login_redirect")
-            _rerun()
-        st.stop()
-
-    auth_url = _build_login_url(cfg, _get_cookie_manager(refresh=True) if use_cookies else None)
-    _render_login_screen(auth_url)
-    _auth_log("require_login render login")
-    st.stop()
+    _render_oidc_login()
+    raise RuntimeError("Login required")
 
 
 def logout() -> None:
-    cfg = _load_config()
-    cookies = _get_cookie_manager() if _use_auth_cookies() else None
-    session_token = _session_token()
-    current_user = st.session_state.get(SESSION_KEY)
-    if isinstance(current_user, dict) and current_user.get("bypass"):
-        st.session_state["_disable_bypass"] = True
-    if cookies is not None and _cookies_ready(cookies):
-        if cookies.get(cfg["cookie_name"]):
-            del cookies[cfg["cookie_name"]]
-        if cookies.get(STATE_COOKIE):
-            del cookies[STATE_COOKIE]
-        if cookies.get(NONCE_COOKIE):
-            del cookies[NONCE_COOKIE]
-        if cookies.get(AUTH_SESSION_COOKIE):
-            del cookies[AUTH_SESSION_COOKIE]
-        _save_cookies(cookies)
-    # Always attempt JS expiration for hosted environments where the cookie manager can lag.
-    _expire_cookie_js(cfg["cookie_name"], key="auth_cookie_js_logout")
-    _expire_cookie_js(STATE_COOKIE, key="auth_cookie_js_logout_state")
-    _expire_cookie_js(NONCE_COOKIE, key="auth_cookie_js_logout_nonce")
-    _expire_cookie_js(AUTH_SESSION_COOKIE, key="auth_cookie_js_logout_session")
-    _redirect_js("/Home", key="auth_cookie_js_logout_redirect")
-    st.session_state["_logout_ignore_until"] = time.time() + 5
     st.session_state.pop(SESSION_KEY, None)
-    st.session_state.pop(STATE_KEY, None)
-    st.session_state.pop(NONCE_KEY, None)
     st.session_state.pop("_pending_ref", None)
     st.session_state["_force_home"] = True
-    st.session_state.pop("_session_token", None)
-    st.session_state.pop("_await_auth_cookie", None)
-    st.session_state.pop("_auth_cookie_waits", None)
-    st.session_state.pop("_pending_user_cookie", None)
-    st.session_state.pop("_pending_user_cookie_token", None)
-    _session_store_delete(session_token)
-    _clear_query_params()
     try:
-        st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
+        st.query_params.clear()  # type: ignore[attr-defined]
     except Exception:
-        _rerun()
+        st.experimental_set_query_params()
+    if hasattr(st, "logout"):
+        st.logout()
     st.stop()
 
 
