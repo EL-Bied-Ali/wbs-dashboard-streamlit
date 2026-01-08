@@ -140,8 +140,7 @@ def _render_html(container, markup: str) -> None:
 # =============================
 # GLOBAL BACKGROUND + CSS
 # =============================
-if not st.session_state.get("_projects_css_loaded"):
-    st.markdown(
+st.markdown(
 """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
@@ -426,28 +425,6 @@ body::before {
   background: rgba(15,23,42,.35);
 }
 
-#st-key-open_create_dialog_btn button {
-  font-size: 14px;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 999px;
-  border: none;
-  background: linear-gradient(120deg, var(--accent), var(--accent-2));
-  color: #0b0f18;
-  box-shadow: 0 14px 36px rgba(109,213,237,.35);
-}
-
-#st-key-open_create_dialog_btn button:hover {
-  filter: brightness(1.05);
-}
-
-#st-key-open_create_dialog_btn button:disabled {
-  opacity: 0.65;
-  box-shadow: none;
-  background: rgba(148,163,184,0.35);
-  color: rgba(15,23,42,0.8);
-}
-
 /* ===== GRID ===== */
 .project-grid {
   display: grid;
@@ -540,38 +517,6 @@ body::before {
 .project-card-tool:hover {
   border-color: rgba(109,213,237,0.55);
   color: var(--text);
-}
-
-div[id^="st-key-card_"] {
-  position: relative;
-}
-
-div[id^="st-key-card_"] div[data-testid="stButton"] {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  z-index: 4;
-}
-
-div[id^="st-key-card_"] div[data-testid="stButton"] > button {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(148,163,184,0.25);
-  background: rgba(15,23,42,0.6);
-  box-shadow: none;
-}
-
-div[id^="st-key-card_"] div[data-testid="stButton"] > button:hover {
-  border-color: rgba(109,213,237,0.55);
-  color: var(--text);
-}
-
-div[id^="st-key-card_"] div[data-testid="stButton"] > button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 /* hover */
@@ -1050,36 +995,11 @@ section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] [data-test
   color: var(--muted);
 }
 
-#st-key-admin_create_btn button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(148,163,184,0.25);
-  background: transparent;
-  color: var(--muted);
-  font-weight: 600;
-  box-shadow: none;
-}
-
-#st-key-admin_create_btn button:hover {
-  border-color: rgba(109,213,237,0.7);
-  color: var(--text);
-}
-
-#st-key-admin_create_btn button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 
 </style>
 """,
 unsafe_allow_html=True
-    )
-    st.session_state["_projects_css_loaded"] = True
+)
 
 # =============================
 # HELPERS
@@ -1521,10 +1441,6 @@ if is_admin and owner_id:
         st.session_state[migrated_key] = True
 projects = _timeit("db.list_projects", lambda: list_projects(owner_id) or [])
 _debug_log(f"projects: loaded count={len(projects)}")
-if "show_create" not in st.session_state:
-    st.session_state["show_create"] = False
-if "show_manage" not in st.session_state:
-    st.session_state["show_manage"] = None
 
 params = _get_query_params()
 logout_param = _query_value(params, "logout")
@@ -1697,6 +1613,7 @@ if show_admin_sidebar:
         <div class="admin-card-title">{tools_label}</div>
         <div class="admin-actions">
           {admin_stats_link}
+          <a class="admin-button ghost" href="?create=1">Create project</a>
         </div>
         {admin_note}
       </div>
@@ -1704,8 +1621,6 @@ if show_admin_sidebar:
     """
     with st.sidebar:
         st.html(admin_sidebar_html)
-        if st.button("Create project", key="admin_create_btn", disabled=is_locked):
-            st.session_state["show_create"] = True
     if _is_localhost():
         with st.sidebar.expander("Dev user switcher", expanded=False):
             _render_dev_switcher_ui("admin_sidebar", user)
@@ -1716,28 +1631,28 @@ elif plan_status == "active":
     locked_cta_label = "Renew subscription"
 else:
     locked_cta_label = "Subscription required"
+if is_locked:
+    cta_button_html = f'<a class="cta-button" href="/Billing">{locked_cta_label}</a>'
+else:
+    cta_button_html = '<a class="cta-button" href="?create=1">Create project</a>'
+
+hero_html = f"""
+<div class="project-hero">
+  <div>
+    <h1 class="project-title">Pick your next project</h1>
+    <div class="project-sub">
+      Build dashboards per client or per timeline.
+    </div>
+  </div>
+  <div class="project-cta">
+    {cta_button_html}
+    <div class="ghost-chip">Projects {project_count}/{PROJECT_LIMIT}</div>
+  </div>
+</div>
+"""
 
 st.html(top_bar_html)
-hero_cols = st.columns([2.2, 1], gap="large")
-with hero_cols[0]:
-    st.markdown('<div class="project-title">Pick your next project</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="project-sub">Build dashboards per client or per timeline.</div>',
-        unsafe_allow_html=True,
-    )
-with hero_cols[1]:
-    if is_locked:
-        st.markdown(
-            f'<a class="cta-button" href="/Billing">{locked_cta_label}</a>',
-            unsafe_allow_html=True,
-        )
-    else:
-        if st.button("Create project", key="open_create_dialog_btn", disabled=is_locked):
-            st.session_state["show_create"] = True
-    st.markdown(
-        f'<div class="ghost-chip">Projects {project_count}/{PROJECT_LIMIT}</div>',
-        unsafe_allow_html=True,
-    )
+st.html(hero_html)
 
 flash_message = st.session_state.pop("project_flash", None)
 if flash_message:
@@ -1749,18 +1664,75 @@ if account and account.get("referral_code"):
         st.caption("Share this link to grant a bonus month on the first paid month.")
         st.code(referral_link)
 
-create_requested = st.session_state.get("show_create")
-if _is_truthy(create_param) or create_requested:
+manage_project = None
+if manage_param:
+    project_map = {p.get("id"): p for p in projects if p.get("id")}
+    manage_project = project_map.get(manage_param)
+    if not manage_project:
+        _clear_query_params()
+        st.warning("Project not found.")
+
+if manage_project:
+    _open_manage_dialog(manage_project, owner_id)
+
+if _is_truthy(create_param):
     if is_locked:
         st.warning("Subscription required to create projects.")
     else:
         _open_create_dialog(project_count, owner_id, user.get("billing_account_id"))
-    st.session_state["show_create"] = False
 
 # =============================
 # BUILD CARDS
 # =============================
+filtered = []
 status_cache: dict[str | None, tuple[str, str, str | None]] = {}
+grid_placeholder = st.empty()
+cards = []
+for p in projects:
+    project_id = p.get("id")
+    if not project_id:
+        continue
+    name_html = html.escape(p.get("name", "Untitled"))
+    updated_label_html = html.escape(_format_updated(p.get("updated_at")))
+    status_label = "Unchecked"
+    status_class = "warn"
+    file_path_value = p.get("file_path")
+    file_name = (p.get("file_name") or "").strip()
+    if not file_name and file_path_value:
+        file_name = Path(file_path_value).name
+    file_line_html = f'<div class="project-meta">Data {html.escape(file_name)}</div>' if file_name else ""
+    if not _file_exists(file_path_value):
+        status_label = "Needs upload"
+        file_line_html = '<div class="project-meta">No file uploaded</div>'
+    badge_class = f"project-badge {status_class}".strip()
+    card_class = "project-card"
+    card_link = (
+        f'<a class="project-card-link" href="/?project={html.escape(project_id)}" aria-label="Open project"></a>'
+        if not is_locked
+        else ""
+    )
+    cards.append(
+        _clean_html_block(
+            f"""
+            <div class="{card_class}">
+              {card_link}
+              <div class="project-card-content">
+                <div class="project-name">{name_html}</div>
+                <div class="{badge_class}">{status_label}</div>
+                {file_line_html}
+                <div class="project-meta">Updated {updated_label_html}</div>
+                <div class="project-action">Open project</div>
+              </div>
+            </div>
+            """
+        )
+    )
+    filtered.append(p)
+_render_html(
+    grid_placeholder,
+    f'<div class="project-grid">{"".join(cards)}</div>',
+)
+_debug_log("projects: rendered placeholder grid")
 
 if validate_excel:
     _debug_log("projects: validating excels")
@@ -1794,7 +1766,6 @@ else:
         else:
             status_cache[p.get("id")] = ("Unchecked", "warn", "Click “Validate Excel files” to compute readiness.")
 
-filtered = [p for p in projects if p.get("id")]
 filtered = _sort_projects(filtered, "Recently updated")
 
 if is_locked and plan_status == "trialing":
@@ -1804,9 +1775,7 @@ elif is_locked and plan_status == "active":
 else:
     locked_label = "Subscription required"
 
-grid_columns = 3
-cols = st.columns(grid_columns, gap="large")
-card_index = 0
+cards = []
 for p in filtered:
     project_id = p.get("id")
     if not project_id:
@@ -1829,6 +1798,7 @@ for p in filtered:
     detail_line_html = None
     if status_detail:
         detail_line_html = f'<div class="project-meta">{html.escape(status_detail)}</div>'
+    manage_link = f'<div class="project-card-toolbar"><a class="project-card-tool" href="?manage={html.escape(project_id)}">Manage</a></div>'
     badge_class = f"project-badge {status_class}".strip()
     file_line = file_line_html or ""
     detail_line = detail_line_html or ""
@@ -1840,98 +1810,76 @@ for p in filtered:
     )
     lock_html = f'<div class="project-card-lock">{locked_label}</div>' if is_locked else ""
     action_label = "Locked" if is_locked else _project_action(status_label)
-    card_html = _clean_html_block(
-        f"""
-        <div class="{card_class}">
-          {card_link}
-          {lock_html}
-          <div class="project-card-content">
-            <div class="project-name">{name_html}</div>
-            <div class="{badge_class}">{status_label}</div>
-            {file_line}
-            {detail_line}
-            <div class="project-meta">Updated {updated_label_html}</div>
-            <div class="project-action">{action_label}</div>
-          </div>
-        </div>
-        """
+    cards.append(
+        _clean_html_block(
+            f"""
+            <div class="{card_class}">
+              {card_link}
+              {manage_link}
+              {lock_html}
+              <div class="project-card-content">
+                <div class="project-name">{name_html}</div>
+                <div class="{badge_class}">{status_label}</div>
+                {file_line}
+                {detail_line}
+                <div class="project-meta">Updated {updated_label_html}</div>
+                <div class="project-action">{action_label}</div>
+              </div>
+            </div>
+            """
+        )
     )
-    col = cols[card_index % grid_columns]
-    with col:
-        with st.container(key=f"card_{project_id}"):
-            st.markdown(card_html, unsafe_allow_html=True)
-            if not is_locked:
-                if st.button("Manage", key=f"manage_btn_{project_id}"):
-                    st.session_state["show_manage"] = project_id
-    card_index += 1
 
 if project_count < PROJECT_LIMIT:
-    col = cols[card_index % grid_columns]
-    with col:
-        with st.container(key="card_create"):
-            if is_locked:
-                create_html = _clean_html_block(
-                    f"""
-                    <div class="project-card create-card is-disabled is-locked">
-                      <div class="project-card-lock">{locked_label}</div>
-                      <div class="project-card-content">
-                        <div class="project-name">Create new project</div>
-                        <div class="project-meta">Subscription required</div>
-                        <div class="project-action">Locked</div>
-                      </div>
-                    </div>
-                    """
-                )
-                st.markdown(create_html, unsafe_allow_html=True)
-            else:
-                create_html = _clean_html_block(
-                    f"""
-                    <div class="project-card create-card">
-                      <div class="project-card-content">
-                        <div class="project-name">Create new project</div>
-                        <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
-                        <div class="project-action">Launch builder</div>
-                      </div>
-                    </div>
-                    """
-                )
-                st.markdown(create_html, unsafe_allow_html=True)
-                if st.button("Create", key="create_card_btn"):
-                    st.session_state["show_create"] = True
-else:
-    col = cols[card_index % grid_columns]
-    with col:
-        with st.container(key="card_limit"):
-            limit_html = _clean_html_block(
+    if is_locked:
+        cards.append(
+            _clean_html_block(
                 f"""
-                <div class="project-card create-card is-disabled">
-                  <div class="project-name">Project limit reached</div>
-                  <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
-                  <div class="project-action">Archive a project to add more</div>
+                <div class="project-card create-card is-disabled is-locked">
+                  <div class="project-card-lock">{locked_label}</div>
+                  <div class="project-card-content">
+                    <div class="project-name">Create new project</div>
+                    <div class="project-meta">Subscription required</div>
+                    <div class="project-action">Locked</div>
+                  </div>
                 </div>
                 """
             )
-            st.markdown(limit_html, unsafe_allow_html=True)
+        )
+    else:
+        create_link = '<div class="project-card-toolbar"><a class="project-card-tool" href="?create=1">Create</a></div>'
+        cards.append(
+            _clean_html_block(
+                f"""
+                <div class="project-card create-card">
+                  <a class="project-card-link" href="?create=1" aria-label="Create project"></a>
+                  {create_link}
+                  <div class="project-card-content">
+                    <div class="project-name">Create new project</div>
+                    <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
+                    <div class="project-action">Launch builder</div>
+                  </div>
+                </div>
+                """
+            )
+        )
+else:
+    cards.append(
+        _clean_html_block(
+            f"""
+            <div class="project-card create-card is-disabled">
+              <div class="project-name">Project limit reached</div>
+              <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
+              <div class="project-action">Archive a project to add more</div>
+            </div>
+            """
+        )
+    )
 
+cards_html = "".join(cards)
+grid_html = f'<div class="project-grid">{cards_html}</div>'
+_render_html(grid_placeholder, grid_html)
 _debug_log("projects: rendered final grid")
-
-manage_project = None
-manage_requested = st.session_state.get("show_manage")
-if manage_requested:
-    project_map = {p.get("id"): p for p in projects if p.get("id")}
-    manage_project = project_map.get(manage_requested)
-    if not manage_project:
-        st.warning("Project not found.")
-    st.session_state["show_manage"] = None
-elif manage_param:
-    project_map = {p.get("id"): p for p in projects if p.get("id")}
-    manage_project = project_map.get(manage_param)
-    if not manage_project:
-        _clear_query_params()
-        st.warning("Project not found.")
-
-if manage_project:
-    _open_manage_dialog(manage_project, owner_id)
 
 if _debug:
     with st.sidebar.expander("Debug: timings", expanded=False):
