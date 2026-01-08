@@ -3,6 +3,9 @@ from datetime import datetime
 from pathlib import Path
 import html
 import os
+import time
+import textwrap
+from time import perf_counter
 import urllib.parse
 import streamlit as st
 
@@ -26,12 +29,14 @@ from projects import (
     project_mapping_key,
     update_project,
 )
-from wbs_app.extract_wbs_json import (
+from wbs_app.extract_wbs_json_calamine import (
     get_table_headers,
     suggest_column_mapping,
     SUMMARY_REQUIRED_FIELDS,
     ASSIGN_REQUIRED_FIELDS,
 )
+
+from excel_cache import load_headers_cache, save_headers_cache
 
 
 # =============================
@@ -43,6 +48,94 @@ st.set_page_config(
     layout="wide",
 )
 st.session_state["_current_page"] = "Projects"
+
+def _debug_enabled() -> bool:
+    try:
+        params = st.query_params  # type: ignore[attr-defined]
+    except Exception:
+        params = st.experimental_get_query_params()
+    raw = params.get("debug")
+    if isinstance(raw, list):
+        raw = raw[0] if raw else None
+    raw = (raw or os.getenv("CP_DEBUG", "")).strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+_debug = _debug_enabled()
+_timings: list[tuple[str, float]] = []
+
+def _debug_log(message: str) -> None:
+    if not st.session_state.get("_debug_logs"):
+        st.session_state["_debug_logs"] = []
+    ts = time.strftime("%H:%M:%S")
+    line = f"{ts} {message}"
+    st.session_state["_debug_logs"].append(line)
+    st.session_state["_debug_logs"] = st.session_state["_debug_logs"][-200:]
+    # Note: do not write to local files here; Streamlit's file watcher can
+    # trigger infinite reruns when files change (making the UI feel "stuck").
+
+def _timeit(label: str, fn):
+    start = perf_counter()
+    out = fn()
+    _timings.append((label, (perf_counter() - start) * 1000.0))
+    return out
+
+def _file_cache_key(path: str | None) -> tuple[float, int] | None:
+    if not path:
+        return None
+    try:
+        stat = os.stat(path)
+    except OSError:
+        return None
+    return (stat.st_mtime, stat.st_size)
+
+def _mapping_cache_key(mapping: dict | None) -> str:
+    if not mapping:
+        return ""
+    try:
+        import json
+
+        return json.dumps(mapping, sort_keys=True, separators=(",", ":"))
+    except Exception:
+        return str(mapping)
+
+@st.cache_data(show_spinner=False)
+def _cached_table_headers(
+    file_path: str,
+    file_key: tuple[float, int] | None,
+    table_type: str,
+    mapping_key: str,
+    mapping: dict[str, dict[str, str]] | None,
+):
+    _ = file_key
+    _ = mapping_key
+    return get_table_headers(
+        file_path,
+        table_type,
+        column_mapping=mapping,
+    )
+
+
+def _clean_html_block(markup: str) -> str:
+    cleaned = textwrap.dedent(markup).strip()
+    return "\n".join(line.lstrip() for line in cleaned.splitlines())
+
+
+def _render_html(container, markup: str) -> None:
+    # Streamlit's markdown renderer can interpret some HTML blocks as code fences,
+    # causing raw tags to show up. Use st.html for reliable rendering.
+    try:
+        empty_fn = getattr(container, "empty", None)
+        if callable(empty_fn):
+            empty_fn()
+        container_fn = getattr(container, "container", None)
+        if callable(container_fn):
+            with container_fn():
+                st.html(markup)
+                return
+    except Exception:
+        pass
+
+    st.html(markup)
 
 # =============================
 # GLOBAL BACKGROUND + CSS
@@ -1114,25 +1207,40 @@ def _open_create_dialog(
                 '<div class="manage-modal-sub">Start a new workspace for a client or timeline.</div>',
                 unsafe_allow_html=True,
             )
-            with st.container(key="create_form_main"):
-                if project_count >= PROJECT_LIMIT:
-                    st.warning(f"Project limit reached ({PROJECT_LIMIT}).")
-                    return
+            if project_count >= PROJECT_LIMIT:
+                st.warning(f"Project limit reached ({PROJECT_LIMIT}).")
+                return
+
+            with st.form("create_project_form", clear_on_submit=False):
                 name = st.text_input(
                     "Project name",
                     key="create_project_name",
                     placeholder="Project name",
                 )
-                if st.button("Create project", key="create_project_btn"):
-                    project = create_project(name, owner_id=owner_id)
-                    if project:
-                        record_event(account_id, "project_created", {"project_id": project["id"]})
-                        st.session_state["active_project_id"] = project["id"]
-                        st.session_state.pop("project_loaded_id", None)
-                        st.session_state["navigate_to_app"] = True
-                        _clear_query_params()
-                        st.rerun()
-                    st.error("Unable to create project.")
+                submitted = st.form_submit_button("Create project")
+
+            if not submitted:
+                return
+
+            cleaned = (name or "").strip()
+            if not cleaned:
+                st.warning("Project name cannot be empty.")
+                return
+
+            with st.spinner("Creating your project…"):
+                project = create_project(cleaned, owner_id=owner_id)
+
+            if not project:
+                st.error("Unable to create project.")
+                return
+
+            record_event(account_id, "project_created", {"project_id": project["id"]})
+            st.session_state["active_project_id"] = project["id"]
+            st.session_state.pop("project_loaded_id", None)
+
+            st.toast("Project created", icon="✅")
+            _clear_query_params()
+            st.switch_page("app.py")
 
     _dialog()
 
@@ -1250,16 +1358,36 @@ def _project_status(project: dict) -> tuple[str, str, str | None]:
     mapping = project.get("mapping")
     mapping = mapping if isinstance(mapping, dict) else {}
     try:
-        summary_headers = get_table_headers(
-            file_path,
-            "activity_summary",
-            column_mapping=mapping,
-        )
-        assign_headers = get_table_headers(
-            file_path,
-            "resource_assignments",
-            column_mapping=mapping,
-        )
+        persisted = load_headers_cache(file_path, mapping)
+        if persisted:
+            summary_headers = persisted.get("summary_headers")
+            assign_headers = persisted.get("assign_headers")
+        else:
+            file_cache_key = _file_cache_key(file_path)
+            mapping_cache_key = _mapping_cache_key(mapping)
+            summary_headers = _cached_table_headers(
+                file_path,
+                file_cache_key,
+                "activity_summary",
+                mapping_cache_key,
+                mapping,
+            )
+            assign_headers = _cached_table_headers(
+                file_path,
+                file_cache_key,
+                "resource_assignments",
+                mapping_cache_key,
+                mapping,
+            )
+            try:
+                save_headers_cache(
+                    file_path,
+                    mapping,
+                    summary_headers=summary_headers,
+                    assign_headers=assign_headers,
+                )
+            except Exception:
+                pass
     except Exception:
         return "File error", "warn", "Unreadable Excel file."
     summary_missing = _missing_required_fields(
@@ -1302,7 +1430,8 @@ def _sort_projects(items: list[dict], sort_mode: str) -> list[dict]:
 # =============================
 # AUTH + DATA
 # =============================
-user = require_login()
+_debug_log("projects: start")
+user = _timeit("auth.require_login", require_login)
 owner_id = owner_id_from_user(user)
 is_admin = _is_admin_user(user)
 if is_admin and owner_id:
@@ -1310,7 +1439,8 @@ if is_admin and owner_id:
     if not st.session_state.get(migrated_key):
         assign_projects_to_owner(owner_id)
         st.session_state[migrated_key] = True
-projects = list_projects(owner_id) or []
+projects = _timeit("db.list_projects", lambda: list_projects(owner_id) or [])
+_debug_log(f"projects: loaded count={len(projects)}")
 
 params = _get_query_params()
 logout_param = _query_value(params, "logout")
@@ -1329,14 +1459,6 @@ if project_param:
     _clear_query_params()
     st.warning("Project not found.")
 
-manage_project = None
-if manage_param:
-    project_map = {p.get("id"): p for p in projects if p.get("id")}
-    manage_project = project_map.get(manage_param)
-    if not manage_project:
-        _clear_query_params()
-        st.warning("Project not found.")
-
 
 # =============================
 # FILTERS
@@ -1347,6 +1469,29 @@ plan_state = access_status(account)
 is_locked = not plan_state.get("allowed", True)
 is_dev_bypass = bool(user.get("bypass")) and _is_localhost()
 show_admin_sidebar = is_admin or is_dev_bypass
+
+with st.sidebar:
+    validate_now = st.button(
+        "Validate Excel files (slow)",
+        key="validate_excel_now",
+        help="Checks each project's Excel to determine readiness/mapping issues.",
+    )
+    validate_auto = st.toggle(
+        "Auto-validate on load",
+        value=False,
+        key="validate_excel_auto",
+        help="Can be slow on large Excels; uses cache after first run.",
+    )
+    show_debug_logs = st.toggle(
+        "Show debug logs",
+        value=False,
+        key="projects_show_debug_logs",
+        help="Shows server-side progress markers for this page.",
+    )
+
+validate_excel = bool(validate_now or validate_auto)
+if validate_excel:
+    st.sidebar.caption("Validation is running (may take a while on huge Excel files).")
 
 logo_uri = _get_logo_data_uri()
 if logo_uri:
@@ -1519,6 +1664,14 @@ if account and account.get("referral_code"):
         st.caption("Share this link to grant a bonus month on the first paid month.")
         st.code(referral_link)
 
+manage_project = None
+if manage_param:
+    project_map = {p.get("id"): p for p in projects if p.get("id")}
+    manage_project = project_map.get(manage_param)
+    if not manage_project:
+        _clear_query_params()
+        st.warning("Project not found.")
+
 if manage_project:
     _open_manage_dialog(manage_project, owner_id)
 
@@ -1533,10 +1686,85 @@ if _is_truthy(create_param):
 # =============================
 filtered = []
 status_cache: dict[str | None, tuple[str, str, str | None]] = {}
+grid_placeholder = st.empty()
+cards = []
 for p in projects:
-    status_label, status_class, status_detail = _project_status(p)
-    status_cache[p.get("id")] = (status_label, status_class, status_detail)
+    project_id = p.get("id")
+    if not project_id:
+        continue
+    name_html = html.escape(p.get("name", "Untitled"))
+    updated_label_html = html.escape(_format_updated(p.get("updated_at")))
+    status_label = "Unchecked"
+    status_class = "warn"
+    file_path_value = p.get("file_path")
+    file_name = (p.get("file_name") or "").strip()
+    if not file_name and file_path_value:
+        file_name = Path(file_path_value).name
+    file_line_html = f'<div class="project-meta">Data {html.escape(file_name)}</div>' if file_name else ""
+    if not _file_exists(file_path_value):
+        status_label = "Needs upload"
+        file_line_html = '<div class="project-meta">No file uploaded</div>'
+    badge_class = f"project-badge {status_class}".strip()
+    card_class = "project-card"
+    card_link = (
+        f'<a class="project-card-link" href="/?project={html.escape(project_id)}" aria-label="Open project"></a>'
+        if not is_locked
+        else ""
+    )
+    cards.append(
+        _clean_html_block(
+            f"""
+            <div class="{card_class}">
+              {card_link}
+              <div class="project-card-content">
+                <div class="project-name">{name_html}</div>
+                <div class="{badge_class}">{status_label}</div>
+                {file_line_html}
+                <div class="project-meta">Updated {updated_label_html}</div>
+                <div class="project-action">Open project</div>
+              </div>
+            </div>
+            """
+        )
+    )
     filtered.append(p)
+_render_html(
+    grid_placeholder,
+    f'<div class="project-grid">{"".join(cards)}</div>',
+)
+_debug_log("projects: rendered placeholder grid")
+
+if validate_excel:
+    _debug_log("projects: validating excels")
+    status_box = st.status("Checking project Excel files…", expanded=False)
+    try:
+        for idx, p in enumerate(projects, start=1):
+            pid = p.get("id")
+            if not pid:
+                continue
+            status_box.update(label=f"Checking project {idx}/{len(projects)}…")
+            status_label, status_class, status_detail = _timeit(
+                f"project.status:{pid}",
+                lambda p=p: _project_status(p),
+            )
+            status_cache[pid] = (status_label, status_class, status_detail)
+    finally:
+        status_box.update(label="Projects ready", state="complete", expanded=False)
+else:
+    _debug_log("projects: validation skipped")
+    for p in projects:
+        file_path = p.get("file_path")
+        if not _file_exists(file_path):
+            status_cache[p.get("id")] = ("Needs upload", "warn", None)
+            continue
+        project_id = p.get("id")
+        file_key = p.get("file_key")
+        mapping_key = p.get("mapping_key")
+        expected_key = project_mapping_key(project_id, file_key)
+        if expected_key and mapping_key and mapping_key != expected_key:
+            status_cache[p.get("id")] = ("Needs mapping (Stale)", "warn", "Mapping is for a different upload.")
+        else:
+            status_cache[p.get("id")] = ("Unchecked", "warn", "Click “Validate Excel files” to compute readiness.")
 
 filtered = _sort_projects(filtered, "Recently updated")
 
@@ -1583,67 +1811,89 @@ for p in filtered:
     lock_html = f'<div class="project-card-lock">{locked_label}</div>' if is_locked else ""
     action_label = "Locked" if is_locked else _project_action(status_label)
     cards.append(
-        f"""
-        <div class="{card_class}">
-          {card_link}
-          {manage_link}
-          {lock_html}
-          <div class="project-card-content">
-            <div class="project-name">{name_html}</div>
-            <div class="{badge_class}">{status_label}</div>
-            {file_line}
-            {detail_line}
-            <div class="project-meta">Updated {updated_label_html}</div>
-            <div class="project-action">{action_label}</div>
-          </div>
-        </div>
-        """
+        _clean_html_block(
+            f"""
+            <div class="{card_class}">
+              {card_link}
+              {manage_link}
+              {lock_html}
+              <div class="project-card-content">
+                <div class="project-name">{name_html}</div>
+                <div class="{badge_class}">{status_label}</div>
+                {file_line}
+                {detail_line}
+                <div class="project-meta">Updated {updated_label_html}</div>
+                <div class="project-action">{action_label}</div>
+              </div>
+            </div>
+            """
+        )
     )
 
 if project_count < PROJECT_LIMIT:
     if is_locked:
         cards.append(
-            f"""
-            <div class="project-card create-card is-disabled is-locked">
-              <div class="project-card-lock">{locked_label}</div>
-              <div class="project-card-content">
-                <div class="project-name">Create new project</div>
-                <div class="project-meta">Subscription required</div>
-                <div class="project-action">Locked</div>
-              </div>
-            </div>
-            """
+            _clean_html_block(
+                f"""
+                <div class="project-card create-card is-disabled is-locked">
+                  <div class="project-card-lock">{locked_label}</div>
+                  <div class="project-card-content">
+                    <div class="project-name">Create new project</div>
+                    <div class="project-meta">Subscription required</div>
+                    <div class="project-action">Locked</div>
+                  </div>
+                </div>
+                """
+            )
         )
     else:
         create_link = '<div class="project-card-toolbar"><a class="project-card-tool" href="?create=1">Create</a></div>'
         cards.append(
-            f"""
-            <div class="project-card create-card">
-              <a class="project-card-link" href="?create=1" aria-label="Create project"></a>
-              {create_link}
-              <div class="project-card-content">
-                <div class="project-name">Create new project</div>
-                <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
-                <div class="project-action">Launch builder</div>
-              </div>
-            </div>
-            """
+            _clean_html_block(
+                f"""
+                <div class="project-card create-card">
+                  <a class="project-card-link" href="?create=1" aria-label="Create project"></a>
+                  {create_link}
+                  <div class="project-card-content">
+                    <div class="project-name">Create new project</div>
+                    <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
+                    <div class="project-action">Launch builder</div>
+                  </div>
+                </div>
+                """
+            )
         )
 else:
     cards.append(
-        f"""
-        <div class="project-card create-card is-disabled">
-          <div class="project-name">Project limit reached</div>
-          <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
-          <div class="project-action">Archive a project to add more</div>
-        </div>
-        """
+        _clean_html_block(
+            f"""
+            <div class="project-card create-card is-disabled">
+              <div class="project-name">Project limit reached</div>
+              <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
+              <div class="project-action">Archive a project to add more</div>
+            </div>
+            """
+        )
     )
 
 cards_html = "".join(cards)
-grid_html = f"""
-<div class="project-grid">
-  {cards_html}
-</div>
-"""
-st.html(grid_html)
+grid_html = f'<div class="project-grid">{cards_html}</div>'
+_render_html(grid_placeholder, grid_html)
+_debug_log("projects: rendered final grid")
+
+if _debug:
+    with st.sidebar.expander("Debug: timings", expanded=False):
+        for label, ms in _timings:
+            st.caption(f"{label}: {ms:.1f} ms")
+
+if show_debug_logs or _debug:
+    with st.sidebar.expander("Debug: logs", expanded=False):
+        logs = st.session_state.get("_debug_logs", [])
+        text = "\n".join(logs[-200:]) if logs else "(no logs yet)"
+        st.code(text)
+        st.download_button(
+            "Download logs",
+            data=(text + "\n").encode("utf-8"),
+            file_name="projects_debug.log",
+            mime="text/plain",
+        )
