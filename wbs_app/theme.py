@@ -2,6 +2,7 @@
 
 CSS = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap');
 /* ============ Layout global ============ */
 header[data-testid="stHeader"]{
   opacity:1; height:auto; min-height:48px;
@@ -733,81 +734,10 @@ div[class*="__rowwrap"] div[class*="__rowbtn"] .stButton button:hover{
 /* === Left sidebar: modern nav + pages === */
 section[data-testid="stSidebar"]{
   font-size: 16px;
-  background: linear-gradient(180deg, #0c1529 0%, #0a111f 55%, #090f1c 100%);
-  border-right: 1px solid rgba(90, 120, 200, 0.18);
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
-section[data-testid="stSidebar"] > div{
-  background: transparent !important;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarContent"]{
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"]{
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div{
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"]{
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-section[data-testid="stSidebar"] .sidebar-spacer{
-  flex: 1 1 auto;
-  min-height: 24px;
-}
-section[data-testid="stSidebar"] div[data-testid="stLayoutWrapper"]:has(.st-key-brand_card),
-section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-brand_card),
-section[data-testid="stSidebar"] .st-key-brand_card{
-  order: 999;
-  margin-top: 18px !important;
-}
-section[data-testid="stSidebar"] div[data-testid="stLayoutWrapper"]:has(.st-key-contact_card),
-section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-contact_card),
-section[data-testid="stSidebar"] .st-key-contact_card{
-  order: 1001;
-  margin-top: 12px !important;
-}
-section[data-testid="stSidebar"] .contact-title{
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: rgba(157,168,198,.85);
-  margin-bottom: 8px;
-}
-section[data-testid="stSidebar"] .contact-note{
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 12px;
-}
-section[data-testid="stSidebar"] .contact-link{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(148,163,184,.2);
-  background: rgba(15,23,42,.55);
-  color: var(--text);
-  font-weight: 700;
-  text-decoration: none;
-  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
-}
-section[data-testid="stSidebar"] .contact-link:hover{
-  border-color: rgba(96,165,250,.6);
-  background: rgba(30,41,59,.75);
-  box-shadow: 0 10px 22px rgba(0,0,0,.25);
+  background: var(--bg) !important;
+  height: 100vh !important;
+  max-height: 100vh;
+  overflow: hidden;
 }
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"]{
   display: none !important;
@@ -818,7 +748,28 @@ section[data-testid="stSidebar"] .sidebar-nav-title{
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: rgba(157,168,198,.85);
-  margin: 6px 0 10px 0;
+  margin: 6px 0 8px 0;
+}
+section[data-testid="stSidebar"] div.st-key-back_to_projects_link{
+  margin: 6px 0 14px 0;
+}
+section[data-testid="stSidebar"] div.st-key-back_to_projects_link [data-testid="stPageLink-NavLink"]{
+  padding: 6px 0 !important;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  font-size: 14px !important;
+  color: rgba(157,168,198,.9);
+}
+section[data-testid="stSidebar"] div.st-key-back_to_projects_link [data-testid="stPageLink-NavLink"]::before{
+  content: "< ";
+  color: rgba(157,168,198,.8);
+}
+section[data-testid="stSidebar"] div.st-key-back_to_projects_link [data-testid="stPageLink-NavLink"]:hover{
+  background: rgba(15,23,42,.45);
+  border: 1px solid rgba(148,163,184,.2);
+  padding: 6px 10px !important;
 }
 section[data-testid="stSidebar"] [data-testid="stPageLink"]{
   margin: 6px 0 !important;
@@ -852,80 +803,19 @@ section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] [data-testid
   line-height: 1.1;
   margin: 0 !important;
 }
-div.st-key-brand_logo_row_scurve > div[data-testid="stHorizontalBlock"],
-div.st-key-brand_logo_row_wbs > div[data-testid="stHorizontalBlock"]{
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: nowrap;
-}
-div[class*="st-key-brand_logo_item_"]{
-  position: relative;
-  width: 288px;
-  height: 288px;
-  display: grid;
-  grid-template-areas: "stack";
-  align-items: center;
-  justify-items: center;
-}
-div[class*="st-key-brand_logo_item_"] > div{
-  grid-area: stack;
-}
-div[class*="st-key-brand_logo_item_"] .stButton{
-  align-self: center;
-  justify-self: center;
-  z-index: 5;
-  pointer-events: auto;
-  margin: 0 !important;
-}
-div[class*="st-key-brand_logo_item_"] .brand-pill{
-  position: relative;
-  z-index: 1;
-  pointer-events: none;
-}
 section[data-testid="stSidebar"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
   margin: 0 !important;
   padding: 0 !important;
 }
 /* Sidebar auth card */
 section[data-testid="stSidebar"] div.st-key-auth_card{
-  margin: 6px 0 18px 0;
+  margin: 6px 0 12px 0;
   padding: 12px 54px 18px 12px;
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
   border: 1px solid rgba(148,163,184,.18);
   box-shadow: 0 12px 26px rgba(0,0,0,.28);
   position: relative;
-}
-section[data-testid="stSidebar"] div.st-key-brand_card{
-  margin: 18px 0 0 0;
-  padding: 12px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
-  border: 1px solid rgba(148,163,184,.18);
-  box-shadow: 0 12px 26px rgba(0,0,0,.28);
-  margin-top: 18px;
-}
-section[data-testid="stSidebar"] .brand-title{
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: rgba(157,168,198,.85);
-  margin-bottom: 10px;
-}
-section[data-testid="stSidebar"] .brand-label{
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(157,168,198,.85);
-  margin: 2px 0 6px 0;
-}
-section[data-testid="stSidebar"] div.st-key-contact_card{
-  margin: 12px 0 0 0;
-  padding: 12px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
-  border: 1px solid rgba(148,163,184,.18);
-  box-shadow: 0 12px 26px rgba(0,0,0,.28);
 }
 section[data-testid="stSidebar"] div.st-key-auth_card [data-testid="column"]{
   display: flex;
@@ -1038,6 +928,151 @@ section[data-testid="stSidebar"] div.st-key-auth_card div.st-key-auth_logout_btn
   border-color: rgba(96,165,250,.6) !important;
   background: rgba(30,41,59,.9) !important;
 }
+/* Sidebar branding card */
+section[data-testid="stSidebar"] div.st-key-brand_card{
+  margin: 18px 0 0 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
+  border: 1px solid rgba(148,163,184,.18);
+  box-shadow: 0 12px 26px rgba(0,0,0,.28);
+  margin-top: 18px;
+}
+section[data-testid="stSidebar"] .brand-title{
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(157,168,198,.85);
+  margin-bottom: 10px;
+}
+section[data-testid="stSidebar"] .brand-note{
+  font-size: 12px;
+  color: var(--muted);
+  margin: -2px 0 10px 0;
+}
+section[data-testid="stSidebar"] .brand-label{
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 2px 0 6px 0;
+}
+section[data-testid="stSidebar"] div.st-key-contact_card{
+  margin: 12px 0 0 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(11,18,36,.65));
+  border: 1px solid rgba(148,163,184,.18);
+  box-shadow: 0 12px 26px rgba(0,0,0,.28);
+}
+section[data-testid="stSidebarContent"]{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+section[data-testid="stSidebarUserContent"]{
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+section[data-testid="stSidebarUserContent"] > div{
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+section[data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"]{
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+section[data-testid="stSidebar"] .sidebar-spacer{
+  flex: 1 1 auto;
+  min-height: 24px;
+}
+section[data-testid="stSidebar"] div[data-testid="stLayoutWrapper"]:has(.st-key-brand_card),
+section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-brand_card),
+section[data-testid="stSidebar"] .st-key-brand_card{
+  order: 999;
+  margin-top: 18px !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stLayoutWrapper"]:has(.st-key-contact_card),
+section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.st-key-contact_card),
+section[data-testid="stSidebar"] .st-key-contact_card{
+  order: 1001;
+  margin-top: 12px !important;
+}
+section[data-testid="stSidebar"] .contact-title{
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(157,168,198,.85);
+  margin-bottom: 8px;
+}
+section[data-testid="stSidebar"] .contact-note{
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+section[data-testid="stSidebar"] .contact-link{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(148,163,184,.2);
+  background: rgba(15,23,42,.55);
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+section[data-testid="stSidebar"] .contact-link:hover{
+  border-color: rgba(96,165,250,.6);
+  background: rgba(30,41,59,.75);
+  box-shadow: 0 10px 22px rgba(0,0,0,.25);
+}
+section[data-testid="stSidebar"] .brand-preview{
+  width: 100%;
+  height: 64px;
+  border-radius: 10px;
+  border: 1px dashed rgba(148,163,184,.28);
+  background: rgba(15,23,42,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+section[data-testid="stSidebar"] .brand-preview img{
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+section[data-testid="stSidebar"] .brand-preview.placeholder{
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+section[data-testid="stSidebar"] div.st-key-brand_card [data-testid="stFileUploader"]{
+  margin-top: 8px;
+}
+section[data-testid="stSidebar"] div.st-key-brand_card [data-testid="stFileUploaderDropzone"]{
+  padding: 6px 8px;
+  min-height: 40px;
+  border-radius: 10px;
+}
+section[data-testid="stSidebar"] div.st-key-brand_card [data-testid="stFileUploaderDropzoneInstructions"]{
+  display: none;
+}
+section[data-testid="stSidebar"] div.st-key-brand_card [data-testid="stBaseButton-secondary"]{
+  width: 100%;
+}
 section[data-testid="stSidebar"] .stRadio [data-testid="stWidgetLabel"] p{
   font-size: 12px;
   font-weight: 700;
@@ -1074,6 +1109,10 @@ section[data-testid="stSidebar"] .stRadio [role="radiogroup"][aria-label="Pages"
   font-weight: 700;
   margin: 0;
 }
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p{
+  font-size: 16px;
+  font-weight: 700;
+}
 section[data-testid="stSidebar"] [data-testid="stSelectbox"]{
   background: rgba(15,23,42,.45);
   border: 1px solid rgba(148,163,184,.16);
@@ -1102,12 +1141,69 @@ section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="sele
   transform: none;
 }
 div[role="listbox"][aria-label*="Select activity"]{
-  font-size: 14px;
+  font-size: 20px;
 }
 div[role="listbox"][aria-label*="Select activity"] [role="option"]{
-  font-size: 14px;
-  line-height: 1.1;
+  font-size: 20px;
+  line-height: 1.2;
 }
+@media (max-width: 900px){
+  div[data-testid="stColumn"]{
+    min-width: 260px;
+    flex: 1 1 260px !important;
+  }
+}
+
+
+/* Activity tree in sidebar */
+section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .tree-title{
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 8px 0 6px 0;
+}
+section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stElementContainer{
+  width: 100% !important;
+}
+section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton{
+  margin: 4px 0;
+  width: 100%;
+}
+section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton button{
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: left;
+  white-space: pre;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148,163,184,.18);
+  background: rgba(15,23,42,.45);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton button > div{
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] [data-testid="stMarkdownContainer"]{
+  width: 100%;
+  text-align: left;
+}
+section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton button:hover{
+  border-color: rgba(125,211,252,.6);
+  background: rgba(30,41,59,.6);
+}
+section[data-testid="stSidebar"] div[class*="st-key-activity_tree"] .stButton button:focus{
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(96,165,250,.35);
+  border-color: rgba(96,165,250,.8);
+}
+
 /* Disable transitions on radios to avoid flicker when Streamlit rerenders */
 
 /* === Glass frame on main content (wraps hero + N2/N3) === */
@@ -1226,9 +1322,6 @@ body::before, body::after,
   width:auto;
   object-fit:contain;
 }
-
-
-
 
 </style>
 """
