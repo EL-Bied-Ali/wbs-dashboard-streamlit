@@ -28,7 +28,7 @@ from projects import (
     store_project_upload,
 )
 from billing_store import access_status, get_account_by_email
-from extract_wbs_json import (
+from extract_wbs_json_calamine import (
     extract_all_wbs,
     detect_expected_tables,
     compare_activity_ids,

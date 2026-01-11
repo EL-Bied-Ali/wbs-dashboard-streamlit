@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 import html
 
-from wbs_app.extract_wbs_json import (
+from wbs_app.extract_wbs_json_calamine import (
     build_schedule_lookup,
     build_preview_rows,
     build_weekly_progress,
