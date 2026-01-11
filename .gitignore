@@ -3,9 +3,9 @@ __pycache__/
 *.pyc
 *.pyo
 *.DS_Store
-.streamlit/
-!.streamlit/
+.streamlit/*
 !.streamlit/pages.toml
+.streamlit/generated_demo/
 .vscode/
 .idea/
 env/
@@ -15,4 +15,7 @@ venv/
 *.xlsx
 *.mp4
 New Python File.py
+tmp_*.py
+wbs_all.json
+artifacts/
 !artifacts/Chronoplan_Template.xlsx

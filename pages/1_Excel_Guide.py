@@ -3,6 +3,7 @@ from pathlib import Path
 import streamlit as st
 
 from auth_google import require_login, render_auth_sidebar, render_contact_sidebar
+from demo_template import demo_template_bytes
 from ui import inject_theme
 
 
@@ -30,8 +31,11 @@ render_contact_sidebar()
 
 
 def _excel_template_bytes():
+    demo_bytes = demo_template_bytes()
+    if demo_bytes[0] is not None:
+        return demo_bytes
+
     candidates = [
-        Path("artifacts") / "Chronoplan_Template.xlsx",
         Path("artifacts") / "W_example.xlsx",
         Path("artifacts") / "wbs_sample.xlsx",
         Path("Progress.xlsx"),
@@ -89,7 +93,14 @@ st.markdown(
     "- Weekly date columns: one column per week (week start), used for curves."
 )
 st.markdown(
+    "- For Cum Remaining Early Units, the first weekly column should match the current week."
+)
+st.markdown(
     "- Spreadsheet Field values: Cum Budgeted Units, Cum Actual Units, Cum Remaining Early Units."
+)
+st.markdown(
+    "- Planned data (Cum Budgeted Units) is treated as one week earlier in the app "
+    "(the last planned week is ignored and an extra week is added at the start)."
 )
 st.markdown("Example:")
 st.markdown(
@@ -115,7 +126,7 @@ If data is missing, the UI shows "?" and may fall back to demo values.
 
 **Project Progress dashboard**
 - Planned Progress (gauge): `Schedule % = (current week units / Budgeted Units) * 100`
-  using Resource Assignments with Spreadsheet Field = "Cum Budgeted Units".
+  using Resource Assignments with Spreadsheet Field = "Cum Budgeted Units" (shifted one week earlier).
 - Actual Progress (gauge): Activity Summary `Units % Complete`.
 - Planned Finish: Activity Summary `BL Project Finish`.
 - Forecast Finish: Activity Summary `Finish`.
@@ -123,7 +134,8 @@ If data is missing, the UI shows "?" and may fall back to demo values.
 - SV %: `Units % Complete - Schedule %`.
 - SPI: `Units % Complete / Schedule %` (displayed as a percent).
 - Weekly Progress chart: 7-week window centered on current week (3 before, current, 3 after).
-  Planned % per week = `(Cum Budgeted Units week value - previous week value) / Budgeted Units * 100`.
+  Planned % per week = `(Cum Budgeted Units week value - previous week value) / Budgeted Units * 100`,
+  using the planned values shifted one week earlier.
   Actual % per week uses `Cum Actual Units` for past weeks and
   `Cum Remaining Early Units` for current/future weeks.
 - Weekly SV % chart: `Planned % - Actual %` (or `Planned % - Forecast %` when actual is missing).
@@ -132,7 +144,8 @@ If data is missing, the UI shows "?" and may fall back to demo values.
   activity's `Budgeted Labor Units` to get percentages.
 
 **S-Curve page**
-- Planned curve: cumulative planned % = `Cum Budgeted Units / Budgeted Units * 100`.
+- Planned curve: cumulative planned % = `Cum Budgeted Units / Budgeted Units * 100`,
+  using the planned values shifted one week earlier.
 - Actual curve: cumulative actual % = `Cum Actual Units / Budgeted Units * 100` (past weeks only).
 - Forecast curve: cumulative forecast % = `Cum Remaining Early Units / Budgeted Units * 100`,
   stitched from the last actual point when forecast starts on the same or next week.
@@ -154,6 +167,7 @@ If data is missing, the UI shows "?" and may fall back to demo values.
 st.markdown("### Notes")
 st.markdown(
     "- All curves are computed as percent of **Budgeted Units**.\n"
+    "- Weekly date columns are treated as week start (Monday).\n"
     "- Keep a single header row at the top of each table.\n"
     "- Avoid merged header cells.\n"
     "- Dates can be Excel dates or ISO format (YYYY-MM-DD)."

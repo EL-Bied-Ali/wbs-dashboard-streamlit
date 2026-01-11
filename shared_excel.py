@@ -5,6 +5,8 @@ from pathlib import Path
 
 import streamlit as st
 
+from demo_template import get_demo_template_path
+
 _MANIFEST_PATH = Path(".streamlit") / "shared_excel.json"
 _DEFAULT_CANDIDATES = [
     Path("artifacts") / "Chronoplan_Template.xlsx",
@@ -60,7 +62,15 @@ def persist_shared_excel_state(path: str, name: str | None, key: str | None) -> 
 def set_default_excel_if_missing(persist: bool = True) -> str | None:
     if st.session_state.get("shared_excel_path"):
         return st.session_state.get("shared_excel_path")
+    candidates: list[Path] = []
+    dynamic_path = get_demo_template_path()
+    if dynamic_path:
+        candidates.append(dynamic_path)
     for path in _DEFAULT_CANDIDATES:
+        if path not in candidates:
+            candidates.append(path)
+
+    for path in candidates:
         if path.exists():
             file_key = f"default:{path.name}:{path.stat().st_mtime}"
             if st.session_state.get("shared_excel_key") == file_key:

@@ -4,13 +4,138 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 import argparse, json, re
+import os
+from time import perf_counter
 import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
 from datetime import datetime, date, timedelta
-from typing import Any
 
+# --- Calamine-based workbook loader (fast, no openpyxl) ---
+# Uses pandas' calamine engine to read sheets as raw values, then exposes a tiny
+# openpyxl-like API used by the rest of this file (iter_rows, cell, max_row/max_column).
+
+# Sheets to scan (keep narrow for speed)
+WANTED_SHEETS = [
+    "Activities",
+    "Ressource Assign. Actual",
+    "Ressource Assign. Budgeted",
+    "Ressource Assign. Remaining",
+]
+
+
+def _col_letter(n: int) -> str:
+    """1 -> A, 26 -> Z, 27 -> AA"""
+    if n <= 0:
+        return ""
+    out = []
+    while n:
+        n, r = divmod(n - 1, 26)
+        out.append(chr(65 + r))
+    return "".join(reversed(out))
+
+def _nan_to_none(v):
+    try:
+        # pandas uses NaN float for empty cells
+        if v is None:
+            return None
+        if isinstance(v, float) and (v != v):  # NaN check
+            return None
+    except Exception:
+        pass
+    return v
+
+class _Cell:
+    __slots__ = ("value",)
+    def __init__(self, value):
+        self.value = value
+
+class _Sheet:
+    def __init__(self, title: str, data: list[list]):
+        self.title = title
+        self._data = data or []
+        self.max_row = len(self._data)
+        self.max_column = max((len(r) for r in self._data), default=0)
+
+    def cell(self, row: int, column: int):
+        r = row - 1
+        c = column - 1
+        if r < 0 or c < 0:
+            return _Cell(None)
+        if r >= len(self._data):
+            return _Cell(None)
+        row_vals = self._data[r]
+        if c >= len(row_vals):
+            return _Cell(None)
+        return _Cell(row_vals[c])
+
+    def iter_rows(self, min_row: int, max_row: int, min_col: int, max_col: int, values_only: bool = False):
+        # openpyxl is 1-based inclusive; keep same.
+        r1 = max(min_row, 1)
+        r2 = max(max_row, 0)
+        c1 = max(min_col, 1)
+        c2 = max(max_col, 0)
+        for r in range(r1, r2 + 1):
+            out = []
+            for c in range(c1, c2 + 1):
+                v = self.cell(r, c).value
+                out.append(v)
+            if values_only:
+                yield tuple(out)
+            else:
+                yield tuple(_Cell(v) for v in out)
+
+class _Workbook:
+    def __init__(self, sheets: list[_Sheet]):
+        self.worksheets = sheets
+        self._by_name = {s.title: s for s in sheets}
+
+    def __getitem__(self, name: str) -> _Sheet:
+        return self._by_name[name]
+
+def _load_workbook_fast(input_xlsx: str):
+    """Load only needed sheets using calamine (fast)."""
+    # NOTE: ExcelFile lets calamine list sheet names quickly without parsing all.
+    xl = pd.ExcelFile(input_xlsx, engine="calamine")
+    wanted_lower = {w.lower() for w in WANTED_SHEETS}
+    sheet_names = xl.sheet_names
+
+    # Keep same behavior as before: only scan wanted sheets where possible.
+    selected = [s for s in sheet_names if any(w in (s or "").lower() for w in wanted_lower)]
+    # Fallback: if none matched (unexpected naming), load all to avoid breaking.
+    if not selected:
+        selected = sheet_names
+
+    sheets: list[_Sheet] = []
+    for name in selected:
+        df0 = xl.parse(sheet_name=name, header=None, dtype=object)
+        data = [[_nan_to_none(v) for v in row] for row in df0.values.tolist()]
+        sheets.append(_Sheet(str(name), data))
+    return _Workbook(sheets)
+
+_SCAN_MAX_COLS = int((os.getenv("EXCEL_SCAN_MAX_COLS") or "600").strip() or "600")
+_SCAN_MAX_ROWS = int((os.getenv("EXCEL_SCAN_MAX_ROWS") or "8000").strip() or "8000")
 PLANNED_WEEK_SHIFT_DAYS = 7
+
+def _wbs_profile_enabled() -> bool:
+    raw = (os.getenv("WBS_PROFILE") or "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+def _wbs_profile_rows() -> int:
+    raw = (os.getenv("WBS_PROFILE_ROWS") or "").strip()
+    if not raw:
+        return 200
+    try:
+        return max(int(raw), 0)
+    except ValueError:
+        return 200
+
+def _wbs_profile_skip_after() -> int:
+    raw = (os.getenv("WBS_PROFILE_SKIP_AFTER") or "").strip()
+    if not raw:
+        return 0
+    try:
+        return max(int(raw), 0)
+    except ValueError:
+        return 0
 
 REQUIRED_COLS = [
     "Planned Finish", "Forecast Finish", "Schedule %", "Earned %",
@@ -171,17 +296,23 @@ def _parse_days(v: Any) -> float | None:
         return None
 
 def _to_excel_date(v: Any) -> date | None:
-    try:
-        from openpyxl.utils.datetime import from_excel
-    except Exception:
-        from_excel = None
+    """Best-effort conversion to date.
+    Handles:
+    - datetime/date objects
+    - Excel serial numbers (int/float)
+    - common date strings
+    """
+    from datetime import timedelta
+
     if isinstance(v, datetime):
         return v.date()
     if isinstance(v, date):
         return v
-    if isinstance(v, (int, float)) and from_excel is not None:
+    if isinstance(v, (int, float)) and v == v:  # not NaN
+        # Excel serial date (1900 system). Using 1899-12-30 baseline (accounts for Excel leap bug).
         try:
-            return from_excel(v).date()
+            base = datetime(1899, 12, 30)
+            return (base + timedelta(days=float(v))).date()
         except Exception:
             return None
 
@@ -256,7 +387,7 @@ def _cell_ref(meta: Dict[str, Any] | None, row_idx: int | None, col_idx: int | N
     col_num = col_base + col_idx
     if row_num <= 0 or col_num <= 0:
         return None
-    return f"{_sheet_ref(sheet)}!{get_column_letter(col_num)}{row_num}"
+    return f"{_sheet_ref(sheet)}!{_col_letter(col_num)}{row_num}"
 
 def _append_tip_sources(tip: str | None, sources: List[str], prefix: str = "Cells") -> str | None:
     items = [s for s in sources if s]
@@ -410,97 +541,167 @@ def _match_header_groups(headers: List[Any], groups: dict) -> Tuple[List[str], L
     return matched, missing
 
 # ---------- Détection de tous les blocs (avec extension gauche pour colonne label) ----------
-def detect_all_blocks_with_left_extension(ws, max_added_left: int = 5) -> List[Tuple[int,int,int,int]]:
+def detect_all_blocks_with_left_extension(ws, max_added_left: int = 5) -> List[Tuple[int, int, int, int]]:
     max_r, max_c = ws.max_row, ws.max_column
-    blocks: List[Tuple[int,int,int,int]] = []
+    scan_max_r = min(max_r, max(50, _SCAN_MAX_ROWS))
+    blocks: List[Tuple[int, int, int, int]] = []
     r = 1
-    while r <= max_r:
-        headers = [ws.cell(r,c).value for c in range(1,max_c+1)]
+    while r <= scan_max_r:
+        row_vals = next(
+            ws.iter_rows(
+                min_row=r,
+                max_row=r,
+                min_col=1,
+                max_col=max_c,
+                values_only=True,
+            ),
+            None,
+        )
+        headers = list(row_vals) if row_vals else []
         if not any(headers):
-            r += 1; continue
+            r += 1
+            continue
         if not has_all_required(headers):
-            r += 1; continue
+            r += 1
+            continue
 
-        nz = [i+1 for i,v in enumerate(headers) if v not in (None,""," ")]
+        nz = [i + 1 for i, v in enumerate(headers) if v not in (None, "", " ")]
+        if not nz:
+            r += 1
+            continue
         c1, c2 = min(nz), max(nz)
 
-        # descendre pour fin du bloc
+        # Descend to end of block
         r2 = r + 1
-        while r2 <= max_r:
-            row_vals = [ws.cell(r2, c).value for c in range(c1, c2+1)]
+        while r2 <= scan_max_r:
+            vals = next(
+                ws.iter_rows(
+                    min_row=r2,
+                    max_row=r2,
+                    min_col=c1,
+                    max_col=c2,
+                    values_only=True,
+                ),
+                None,
+            )
+            row_vals = list(vals) if vals else []
             if all(v in (None, "", " ") for v in row_vals):
                 break
             r2 += 1
 
-        # extension gauche si colonne sans titre avec données
+        # Extend left if column before has data
         added = 0
         while c1 > 1 and added < max_added_left:
-            col_vals = [ws.cell(rr, c1-1).value for rr in range(r+1, r2)]
-            if any(v not in (None,""," ") for v in col_vals):
+            any_data = False
+            for vals in ws.iter_rows(
+                min_row=r + 1,
+                max_row=r2 - 1,
+                min_col=c1 - 1,
+                max_col=c1 - 1,
+                values_only=True,
+            ):
+                v = vals[0] if vals else None
+                if v not in (None, "", " "):
+                    any_data = True
+                    break
+            if any_data:
                 c1 -= 1
                 added += 1
             else:
                 break
 
-        blocks.append((r, c1, r2-1, c2))
-        # saute au-delà de ce bloc
+        blocks.append((r, c1, r2 - 1, c2))
         r = r2 + 1
     return blocks
 
 # ---------- Detection: summary + assignments tables ----------
-def detect_expected_tables(input_xlsx: str) -> List[Dict[str, Any]]:
-    wb = load_workbook(input_xlsx, data_only=True)
-    results: List[Dict[str, Any]] = []
+def _scan_tables(ws: Any, max_r: int, max_c: int) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    r = 1
+    while r <= max_r:
+        row_vals = next(
+            ws.iter_rows(
+                min_row=r,
+                max_row=r,
+                min_col=1,
+                max_col=max_c,
+                values_only=True,
+            ),
+            None,
+        )
+        headers = list(row_vals) if row_vals else []
+        if not any(headers):
+            r += 1
+            continue
+        matched_summary, missing_summary = _match_header_groups(headers, SUMMARY_HEADER_GROUPS)
+        matched_assign, missing_assign = _match_header_groups(headers, ASSIGN_HEADER_GROUPS)
+        date_cols = sum(1 for h in headers if _is_week_header(h))
+        summary_ok = (
+            "activity id" in matched_summary and
+            ("finish" in matched_summary or "bl project finish" in matched_summary) and
+            len(matched_summary) >= 3
+        )
+        assign_ok = (
+            {"activity id", "budgeted units", "spreadsheet field"}.issubset(set(matched_assign)) and
+            date_cols >= 1
+        )
+        if not summary_ok and not assign_ok:
+            r += 1
+            continue
+        nz = [i + 1 for i, v in enumerate(headers) if v not in (None, "", " ")]
+        if not nz:
+            r += 1
+            continue
+        c1, c2 = min(nz), min(max(nz), max_c)
+        r2 = r + 1
+        while r2 <= max_r:
+            vals = next(
+                ws.iter_rows(
+                    min_row=r2,
+                    max_row=r2,
+                    min_col=c1,
+                    max_col=c2,
+                    values_only=True,
+                ),
+                None,
+            )
+            row_vals = list(vals) if vals else []
+            if all(v in (None, "", " ") for v in row_vals):
+                break
+            r2 += 1
+        rows.append({
+            "sheet": ws.title,
+            "range": f"R{r}C{c1}:R{r2-1}C{c2}",
+            "header_row": r,
+            "type": "activity_summary" if summary_ok else "resource_assignments",
+            "missing": missing_summary if summary_ok else missing_assign,
+            "date_columns": date_cols,
+        })
+        r = r2 + 1
+    return rows
+
+
+def detect_expected_tables_in_workbook(wb: Any) -> List[Dict[str, Any]]:
+    all_results: List[Dict[str, Any]] = []
+    scan_limits = [
+        (min(_SCAN_MAX_ROWS, 200), min(_SCAN_MAX_COLS, 80)),          # fast
+        (min(_SCAN_MAX_ROWS, 8000), min(_SCAN_MAX_COLS, 600)),        # normal
+        (_SCAN_MAX_ROWS * 2, _SCAN_MAX_COLS * 2),                     # wide
+    ]
+
     for ws in wb.worksheets:
-        max_r, max_c = ws.max_row, ws.max_column
-        r = 1
-        while r <= max_r:
-            headers = [ws.cell(r, c).value for c in range(1, max_c + 1)]
-            if not any(headers):
-                r += 1
-                continue
+        ws_results: List[Dict[str, Any]] = []
+        for max_r, max_c in scan_limits:
+            ws_results = _scan_tables(ws, min(ws.max_row, max_r), min(ws.max_column, max_c))
+            if ws_results:
+                all_results.extend(ws_results)
+                break
+    return all_results
 
-            matched_summary, missing_summary = _match_header_groups(headers, SUMMARY_HEADER_GROUPS)
-            matched_assign, missing_assign = _match_header_groups(headers, ASSIGN_HEADER_GROUPS)
-            date_cols = sum(1 for h in headers if _is_week_header(h))
 
-            summary_ok = (
-                "activity id" in matched_summary and
-                ("finish" in matched_summary or "bl project finish" in matched_summary) and
-                len(matched_summary) >= 3
-            )
-            assign_ok = (
-                {"activity id", "budgeted units", "spreadsheet field"}.issubset(set(matched_assign)) and
-                date_cols >= 5
-            )
-
-            if not summary_ok and not assign_ok:
-                r += 1
-                continue
-
-            nz = [i + 1 for i, v in enumerate(headers) if v not in (None, "", " ")]
-            if not nz:
-                r += 1
-                continue
-            c1, c2 = min(nz), max(nz)
-
-            r2 = r + 1
-            while r2 <= max_r:
-                row_vals = [ws.cell(r2, c).value for c in range(c1, c2 + 1)]
-                if all(v in (None, "", " ") for v in row_vals):
-                    break
-                r2 += 1
-
-            results.append({
-                "sheet": ws.title,
-                "range": f"R{r}C{c1}:R{r2-1}C{c2}",
-                "header_row": r,
-                "type": "activity_summary" if summary_ok else "resource_assignments",
-                "missing": missing_summary if summary_ok else missing_assign,
-                "date_columns": date_cols,
-            })
-            r = r2 + 1
-    return results
+def detect_expected_tables(input_xlsx: str) -> List[Dict[str, Any]]:
+    wb = _load_workbook_fast(input_xlsx)
+    return detect_expected_tables_in_workbook(wb)
 
 def _parse_range(range_str: str) -> Tuple[int, int, int, int]:
     m = re.match(r"R(\d+)C(\d+):R(\d+)C(\d+)", range_str)
@@ -512,8 +713,8 @@ def compare_activity_ids(
     input_xlsx: str,
     column_mapping: dict[str, dict[str, str]] | None = None,
 ) -> Dict[str, Any]:
-    wb = load_workbook(input_xlsx, data_only=True)
-    tables = detect_expected_tables(input_xlsx)
+    wb = _load_workbook_fast(input_xlsx)
+    tables = detect_expected_tables_in_workbook(wb)
     summary_ids: List[str] = []
     assign_ids: List[str] = []
 
@@ -558,16 +759,30 @@ def _load_table_from_meta(
 ) -> Tuple[pd.DataFrame, Dict[str, Any], list[Any]]:
     ws = wb[table["sheet"]]
     r1, c1, r2, c2 = _parse_range(table["range"])
-    raw_headers = [ws.cell(r1, c).value for c in range(c1, c2 + 1)]
-    data = [[ws.cell(rr, cc).value for cc in range(c1, c2 + 1)] for rr in range(r1, r2 + 1)]
-    df = pd.DataFrame(data)
-    df.columns = make_unique_columns([str(x).strip() if x is not None else "" for x in raw_headers])
-    df = df.iloc[1:, :].reset_index(drop=True)
+    rows = list(
+        ws.iter_rows(
+            min_row=r1,
+            max_row=r2,
+            min_col=c1,
+            max_col=c2,
+            values_only=True,
+        )
+    )
+    if not rows:
+        meta = {
+            "sheet": table["sheet"],
+            "range": table["range"],
+            "header_row": r1,
+            "data_row_start": r1 + 1,
+            "data_col_start": c1,
+        }
+        return pd.DataFrame(), meta, []
+    raw_headers = list(rows[0])
+    columns = make_unique_columns(
+        [str(x).strip() if x is not None else "" for x in raw_headers]
+    )
+    df = pd.DataFrame(rows[1:], columns=columns).reset_index(drop=True)
     df, top_trim, left_trim, _, right_trim = trim_empty_border_with_offsets(df)
-    if right_trim:
-        raw_headers = raw_headers[left_trim:-right_trim]
-    else:
-        raw_headers = raw_headers[left_trim:]
     meta = {
         "sheet": table["sheet"],
         "range": table["range"],
@@ -575,15 +790,16 @@ def _load_table_from_meta(
         "data_row_start": r1 + 1 + top_trim,
         "data_col_start": c1 + left_trim,
     }
-    return df, meta, raw_headers
+    end = len(raw_headers) - right_trim if right_trim else len(raw_headers)
+    trimmed_raw_headers = raw_headers[left_trim:end]
+    return df, meta, trimmed_raw_headers
 
-def _load_detected_table(
-    input_xlsx: str,
+def _load_detected_table_wb(
+    wb: Any,
     table_type: str,
     column_mapping: dict[str, dict[str, str]] | None = None,
 ) -> Tuple[pd.DataFrame, Dict[str, Any], list[Any]] | None:
-    wb = load_workbook(input_xlsx, data_only=True)
-    tables = [t for t in detect_expected_tables(input_xlsx) if t["type"] == table_type]
+    tables = [t for t in detect_expected_tables_in_workbook(wb) if t["type"] == table_type]
     if not tables:
         return None
     table = max(tables, key=_row_count)
@@ -592,13 +808,23 @@ def _load_detected_table(
     df, raw_headers = _apply_column_mapping(df, raw_headers, mapping)
     return df, meta, raw_headers
 
-def _load_resource_assignments_table(
+
+def _load_detected_table(
     input_xlsx: str,
+    table_type: str,
+    column_mapping: dict[str, dict[str, str]] | None = None,
+) -> Tuple[pd.DataFrame, Dict[str, Any], list[Any]] | None:
+    wb = _load_workbook_fast(input_xlsx)
+    return _load_detected_table_wb(wb, table_type, column_mapping=column_mapping)
+
+def _load_resource_assignments_table_wb(
+    wb: Any,
     spreadsheet_field_marker: str | None,
     column_mapping: dict[str, dict[str, str]] | None = None,
 ) -> Tuple[pd.DataFrame, Dict[str, Any], list[Any], bool] | None:
-    wb = load_workbook(input_xlsx, data_only=True)
-    tables = [t for t in detect_expected_tables(input_xlsx) if t["type"] == "resource_assignments"]
+    tables = [
+        t for t in detect_expected_tables_in_workbook(wb) if t["type"] == "resource_assignments"
+    ]
     if not tables:
         return None
 
@@ -633,10 +859,23 @@ def _load_resource_assignments_table(
     meta["marker_matched"] = matched
     return df, meta, raw_headers, matched
 
-def build_schedule_lookup(
+def _load_resource_assignments_table(
     input_xlsx: str,
+    spreadsheet_field_marker: str | None,
+    column_mapping: dict[str, dict[str, str]] | None = None,
+) -> Tuple[pd.DataFrame, Dict[str, Any], list[Any], bool] | None:
+    wb = _load_workbook_fast(input_xlsx)
+    return _load_resource_assignments_table_wb(
+        wb,
+        spreadsheet_field_marker,
+        column_mapping=column_mapping,
+    )
+
+def build_schedule_lookup(
+    input_xlsx: str | None = None,
     today: date | None = None,
     column_mapping: dict[str, dict[str, str]] | None = None,
+    wb: Any | None = None,
 ) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Any]]:
     """
     Calcule Schedule % depuis le tableau Ressource Assignments :
@@ -649,34 +888,147 @@ def build_schedule_lookup(
         "table": None,
         "errors": [],
     }
-    table = _load_resource_assignments_table(
-        input_xlsx,
-        "Cum Budgeted Units",
-        column_mapping=column_mapping,
-    )
-    if table is None:
+    today = today or date.today()
+    target_week = _week_start(today)
+    info["week_date"] = target_week.isoformat()
+    planned_shift = timedelta(days=PLANNED_WEEK_SHIFT_DAYS)
+
+    def _read_column_values(ws: Any, col: int, r_start: int, r_end: int) -> list[Any]:
+        values: list[Any] = []
+        for row in ws.iter_rows(min_row=r_start, max_row=r_end, min_col=col, max_col=col, values_only=True):
+            values.append(row[0] if row else None)
+        return values
+
+    t0 = perf_counter()
+    if wb is None:
+        if not input_xlsx:
+            raise ValueError("input_xlsx is required when wb is not provided")
+        wb = _load_workbook_fast(input_xlsx)
+        info["timings"] = {"open_ms": (perf_counter() - t0) * 1000.0}
+    else:
+        info["timings"] = {"open_ms": 0.0}
+    mapping = (column_mapping or {}).get("resource_assignments") or {}
+    field_variants = _table_field_variants("resource_assignments")
+
+    def _idx(headers: list[Any], canonical: str) -> int | None:
+        mapped = mapping.get(canonical)
+        if mapped:
+            return _find_header_idx_norm(headers, [mapped])
+        variants = field_variants.get(canonical, [canonical])
+        return _find_header_idx_norm(headers, variants)
+
+    marker = "Cum Budgeted Units"
+    t1 = perf_counter()
+    best: dict[str, Any] | None = None
+    for ws in wb.worksheets:
+        max_r, max_c = ws.max_row, ws.max_column
+        scan_max_c = min(max_c, max(20, _SCAN_MAX_COLS))
+        scan_max_r = min(max_r, max(50, _SCAN_MAX_ROWS))
+        row_iter = ws.iter_rows(
+            min_row=1,
+            max_row=scan_max_r,
+            min_col=1,
+            max_col=scan_max_c,
+            values_only=True,
+        )
+        r = 0
+        for scan_row in row_iter:
+            r += 1
+            scan_headers = list(scan_row) if scan_row else []
+            if not any(scan_headers):
+                continue
+            matched_assign, _missing_assign = _match_header_groups(scan_headers, ASSIGN_HEADER_GROUPS)
+            date_cols = sum(1 for h in scan_headers if _is_week_header(h))
+            assign_ok = (
+                {"activity id", "budgeted units", "spreadsheet field"}.issubset(set(matched_assign))
+                and date_cols >= 1
+            )
+            if not assign_ok:
+                continue
+
+            nz = [i + 1 for i, v in enumerate(scan_headers) if v not in (None, "", " ")]
+            if not nz:
+                continue
+            c1, c2 = min(nz), min(max(nz), scan_max_c)
+
+            table_headers = scan_headers[c1 - 1 : c2]
+            field_idx = _idx(table_headers, "Spreadsheet Field")
+            matched_marker = False
+            if field_idx is not None:
+                marker_abs_idx = (c1 - 1) + field_idx
+            else:
+                marker_abs_idx = None
+
+            r2 = r + 1
+            data_iter = ws.iter_rows(
+                min_row=r + 1,
+                max_row=max_r,
+                min_col=1,
+                max_col=scan_max_c,
+                values_only=True,
+            )
+            for next_row in data_iter:
+                row_vals = list(next_row[c1 - 1 : c2])
+                if all(v in (None, "", " ") for v in row_vals):
+                    break
+                if marker_abs_idx is not None:
+                    v = next_row[marker_abs_idx] if marker_abs_idx < len(next_row) else None
+                    if v is not None and marker.lower() in str(v).lower():
+                        matched_marker = True
+                r2 += 1
+
+            candidate = {
+                "sheet": ws.title,
+                "range": f"R{r}C{c1}:R{r2-1}C{c2}",
+                "header_row": r,
+                "headers": table_headers,
+                "marker": marker,
+                "marker_matched": matched_marker,
+            }
+            cand_rows = (r2 - 1) - r
+            if best is None:
+                best = candidate
+            else:
+                best_rows = (_parse_range(best["range"])[2] - _parse_range(best["range"])[0])
+                if candidate["marker_matched"] and not best["marker_matched"]:
+                    best = candidate
+                elif candidate["marker_matched"] == best["marker_matched"] and cand_rows > best_rows:
+                    best = candidate
+
+            if matched_marker:
+                break
+        if best is not None and best["marker_matched"]:
+            break
+
+    info["timings"]["detect_ms"] = (perf_counter() - t1) * 1000.0
+    if best is None:
         info["status"] = "missing_table"
         info["errors"].append("Resource assignments table not found.")
         return {}, info
 
-    df, meta, raw_headers, matched = table
+    meta = {
+        "sheet": best["sheet"],
+        "range": best["range"],
+        "header_row": best["header_row"],
+        "marker": marker,
+        "marker_matched": bool(best.get("marker_matched")),
+    }
     info["table"] = meta
-    if not matched:
+    if not meta["marker_matched"]:
         info["errors"].append("Planned table not found by Spreadsheet Field = Cum Budgeted Units.")
 
-    id_idx = _find_header_idx(raw_headers, "Activity ID")
-    budget_idx = _find_header_idx(raw_headers, "Budgeted Units")
+    ws = wb[meta["sheet"]]
+    r1, c1, r2, c2 = _parse_range(meta["range"])
+    headers = list(best.get("headers") or [])
+    id_idx = _idx(headers, "Activity ID")
+    budget_idx = _idx(headers, "Budgeted Units")
     if id_idx is None or budget_idx is None:
         info["status"] = "missing_columns"
         info["errors"].append("Missing Activity ID or Budgeted Units columns in resource assignments.")
         return {}, info
 
-    today = today or date.today()
-    target_week = _week_start(today)
-    info["week_date"] = target_week.isoformat()
-    planned_shift = timedelta(days=PLANNED_WEEK_SHIFT_DAYS)
     week_idx = None
-    for idx, h in enumerate(raw_headers):
+    for idx, h in enumerate(headers):
         h_date = _to_excel_date(h)
         if not h_date:
             continue
@@ -690,29 +1042,40 @@ def build_schedule_lookup(
         info["errors"].append(
             f"No column for current week ({target_week.isoformat()}); expected source week {shifted_week}."
         )
+        week_col = None
     else:
-        info["week_col"] = str(raw_headers[week_idx])
+        info["week_col"] = str(headers[week_idx])
+        week_col = c1 + week_idx
 
-    id_col = df.columns[id_idx]
-    budget_col = df.columns[budget_idx]
-    week_col = df.columns[week_idx] if week_idx is not None else None
+    id_col = c1 + id_idx
+    budget_col = c1 + budget_idx
 
+    meta["data_row_start"] = r1 + 1
+    meta["data_col_start"] = c1
+
+    t2 = perf_counter()
+    ids = _read_column_values(ws, id_col, r1 + 1, r2)
+    budgets = _read_column_values(ws, budget_col, r1 + 1, r2)
+    if week_col is None:
+        weeks = [None] * len(ids)
+    else:
+        weeks = _read_column_values(ws, week_col, r1 + 1, r2)
+    info["timings"]["read_cols_ms"] = (perf_counter() - t2) * 1000.0
+
+    include_cells = (os.getenv("SCHEDULE_CELL_REFS", "0") or "").strip().lower() in {"1", "true", "yes", "on"}
+
+    t3 = perf_counter()
     lookup: Dict[str, Dict[str, Any]] = {}
-    for row_idx, row in df.iterrows():
-        raw_id = row.get(id_col)
+    for row_idx, (raw_id, budget_raw, week_raw) in enumerate(zip(ids, budgets, weeks)):
         if raw_id is None or str(raw_id).strip() == "":
             continue
         key = str(raw_id).strip()
         if key in lookup:
             continue
-        budget = _safe_float(row.get(budget_col))
-        week_val = _safe_float(row.get(week_col)) if week_col else None
-        budget_cell = _cell_ref(meta, row_idx, budget_idx) if budget_idx is not None else None
-        week_cell = _cell_ref(meta, row_idx, week_idx) if week_idx is not None else None
-
-        tip = "Schedule % = Units (current week) / Budgeted Units"
-        display = "?"
+        budget = _safe_float(budget_raw)
+        week_val = _safe_float(week_raw) if week_idx is not None else None
         value = None
+        display = "?"
         if week_idx is None:
             tip = f"Schedule unavailable: week column {target_week.isoformat()} not found."
         elif budget in (None, 0):
@@ -723,23 +1086,24 @@ def build_schedule_lookup(
             value = (week_val / budget) * 100.0
             display = f"{value:.2f}%"
             tip = f"Schedule % = Units ({target_week.isoformat()}) / Budgeted Units"
-        tip = _append_tip_sources(
-            tip,
-            [
-                f"Week: {week_cell}" if week_cell else "",
-                f"Budgeted Units: {budget_cell}" if budget_cell else "",
-            ],
-        )
 
-        lookup[key] = {
+        entry: Dict[str, Any] = {
             "value": value,
             "display": display,
             "tip": tip,
             "budgeted_units": budget,
-            "budget_cell": budget_cell,
-            "week_cell": week_cell,
         }
-
+        if include_cells:
+            entry["budget_cell"] = _cell_ref(meta, row_idx, budget_idx)
+            entry["week_cell"] = _cell_ref(meta, row_idx, week_idx) if week_idx is not None else None
+        lookup[key] = entry
+    info["timings"]["build_lookup_ms"] = (perf_counter() - t3) * 1000.0
+    info["timings"]["total_ms"] = (
+        info["timings"].get("open_ms", 0.0)
+        + info["timings"].get("detect_ms", 0.0)
+        + info["timings"].get("read_cols_ms", 0.0)
+        + info["timings"].get("build_lookup_ms", 0.0)
+    )
     return lookup, info
 
 def build_weekly_progress(
@@ -760,8 +1124,9 @@ def build_weekly_progress(
         "table": None,
         "errors": [],
     }
-    planned_table = _load_resource_assignments_table(
-        input_xlsx,
+    wb = _load_workbook_fast(input_xlsx)
+    planned_table = _load_resource_assignments_table_wb(
+        wb,
         "Cum Budgeted Units",
         column_mapping=column_mapping,
     )
@@ -775,13 +1140,13 @@ def build_weekly_progress(
     if not planned_matched:
         info["errors"].append("Planned table not found by Spreadsheet Field = Cum Budgeted Units.")
 
-    actual_past_table = _load_resource_assignments_table(
-        input_xlsx,
+    actual_past_table = _load_resource_assignments_table_wb(
+        wb,
         "Cum Actual Units",
         column_mapping=column_mapping,
     )
-    actual_future_table = _load_resource_assignments_table(
-        input_xlsx,
+    actual_future_table = _load_resource_assignments_table_wb(
+        wb,
         "Cum Remaining Early Units",
         column_mapping=column_mapping,
     )
@@ -1217,14 +1582,17 @@ def build_preview_rows(
     prefer_first_table: bool = False,
     column_mapping: dict[str, dict[str, str]] | None = None,
 ) -> List[Dict[str, Any]]:
-    wb = load_workbook(input_xlsx, data_only=True)
-    tables = [t for t in detect_expected_tables(input_xlsx) if t["type"] == table_type]
+    wb = _load_workbook_fast(input_xlsx)
+    tables = [t for t in detect_expected_tables_in_workbook(wb) if t["type"] == table_type]
     rows: List[Dict[str, Any]] = []
     mapping = (column_mapping or {}).get(table_type, {})
     field_variants = _table_field_variants(table_type)
 
+    lead_spaces_re = re.compile(r"^\s*")
+
     def _lead_spaces(s: str) -> int:
-        return len(re.match(r"^\s*", s).group(0))
+        m = lead_spaces_re.match(s)
+        return len(m.group(0)) if m else 0
 
     def _idx(headers: list[Any], canonical: str) -> int | None:
         mapped = mapping.get(canonical)
@@ -1290,10 +1658,10 @@ def build_preview_rows(
                             "finish": ws.cell(rr, c1 + finish_idx).value if finish_idx is not None else None,
                             "variance_days": ws.cell(rr, c1 + variance_idx).value if variance_idx is not None else None,
                             "budgeted_units": ws.cell(rr, c1 + budget_idx).value if budget_idx is not None else None,
-                            "units_complete_cell": f"{sheet_ref}!{get_column_letter(c1 + units_idx)}{rr}" if units_idx is not None else None,
-                            "bl_project_finish_cell": f"{sheet_ref}!{get_column_letter(c1 + bl_finish_idx)}{rr}" if bl_finish_idx is not None else None,
-                            "finish_cell": f"{sheet_ref}!{get_column_letter(c1 + finish_idx)}{rr}" if finish_idx is not None else None,
-                            "variance_days_cell": f"{sheet_ref}!{get_column_letter(c1 + variance_idx)}{rr}" if variance_idx is not None else None,
+                            "units_complete_cell": f"{sheet_ref}!{_col_letter(c1 + units_idx)}{rr}" if units_idx is not None else None,
+                            "bl_project_finish_cell": f"{sheet_ref}!{_col_letter(c1 + bl_finish_idx)}{rr}" if bl_finish_idx is not None else None,
+                            "finish_cell": f"{sheet_ref}!{_col_letter(c1 + finish_idx)}{rr}" if finish_idx is not None else None,
+                            "variance_days_cell": f"{sheet_ref}!{_col_letter(c1 + variance_idx)}{rr}" if variance_idx is not None else None,
                         }
                     )
 
@@ -1314,45 +1682,67 @@ def build_preview_rows(
     table = max(tables, key=_row_count)
     ws = wb[table["sheet"]]
     r1, c1, r2, c2 = _parse_range(table["range"])
-    header = [ws.cell(r1, c).value for c in range(c1, c2 + 1)]
+
+    rows_iter = ws.iter_rows(
+        min_row=r1,
+        max_row=r2,
+        min_col=c1,
+        max_col=c2,
+        values_only=True,
+    )
+    header = list(next(rows_iter))
+
     id_idx = _idx(header, "Activity ID")
     units_idx = _idx(header, "Units % Complete")
     variance_idx = _idx(header, "Variance - BL Project Finish Date")
     bl_finish_idx = _idx(header, "BL Project Finish")
     finish_idx = _idx(header, "Finish")
+    status_idx = _idx(header, "Activity Status")
+    budget_idx = _idx(header, "Budgeted Labor Units")
+    name_idx = _idx(header, "Activity Name")
     if id_idx is None:
         return []
 
-    for r in range(r1 + 1, r2 + 1):
-        val = ws.cell(r, c1 + id_idx).value
+    sheet_ref = _sheet_ref(table["sheet"])
+    excel_row = r1 + 1
+    for row in rows_iter:
+        val = row[id_idx] if id_idx is not None else None
         if val is None or str(val).strip() == "":
+            excel_row += 1
             continue
         raw = str(val)
-        units_val = ws.cell(r, c1 + units_idx).value if units_idx is not None else None
-        variance_val = ws.cell(r, c1 + variance_idx).value if variance_idx is not None else None
-        bl_finish_val = ws.cell(r, c1 + bl_finish_idx).value if bl_finish_idx is not None else None
-        finish_val = ws.cell(r, c1 + finish_idx).value if finish_idx is not None else None
-        sheet_ref = _sheet_ref(table["sheet"])
-        units_cell = f"{sheet_ref}!{get_column_letter(c1 + units_idx)}{r}" if units_idx is not None else None
-        variance_cell = f"{sheet_ref}!{get_column_letter(c1 + variance_idx)}{r}" if variance_idx is not None else None
-        bl_finish_cell = f"{sheet_ref}!{get_column_letter(c1 + bl_finish_idx)}{r}" if bl_finish_idx is not None else None
-        finish_cell = f"{sheet_ref}!{get_column_letter(c1 + finish_idx)}{r}" if finish_idx is not None else None
-        rows.append({
-            "sheet": table["sheet"],
-            "range": table["range"],
-            "raw": raw,
-            "label": raw.strip(),
-            "indent": _lead_spaces(raw),
-            "activity_id": raw.strip(),
-            "units_complete": units_val,
-            "variance_days": variance_val,
-            "bl_project_finish": bl_finish_val,
-            "finish": finish_val,
-            "units_complete_cell": units_cell,
-            "variance_days_cell": variance_cell,
-            "bl_project_finish_cell": bl_finish_cell,
-            "finish_cell": finish_cell,
-        })
+        activity_id = raw.strip()
+
+        def _get(idx: int | None):
+            return row[idx] if idx is not None and idx < len(row) else None
+
+        units_val = _get(units_idx)
+        variance_val = _get(variance_idx)
+        bl_finish_val = _get(bl_finish_idx)
+        finish_val = _get(finish_idx)
+
+        rows.append(
+            {
+                "sheet": table["sheet"],
+                "range": table["range"],
+                "raw": raw,
+                "label": activity_id,
+                "indent": _lead_spaces(raw),
+                "activity_id": activity_id,
+                "activity_name": _get(name_idx),
+                "activity_status": _get(status_idx),
+                "budgeted_units": _get(budget_idx),
+                "units_complete": units_val,
+                "variance_days": variance_val,
+                "bl_project_finish": bl_finish_val,
+                "finish": finish_val,
+                "units_complete_cell": f"{sheet_ref}!{_col_letter(c1 + units_idx)}{excel_row}" if units_idx is not None else None,
+                "variance_days_cell": f"{sheet_ref}!{_col_letter(c1 + variance_idx)}{excel_row}" if variance_idx is not None else None,
+                "bl_project_finish_cell": f"{sheet_ref}!{_col_letter(c1 + bl_finish_idx)}{excel_row}" if bl_finish_idx is not None else None,
+                "finish_cell": f"{sheet_ref}!{_col_letter(c1 + finish_idx)}{excel_row}" if finish_idx is not None else None,
+            }
+        )
+        excel_row += 1
 
     if not rows:
         return []
@@ -1372,11 +1762,16 @@ def _match_column(columns: list[Any], candidates: list[str]) -> Any | None:
     return None
 
 def _build_activity_name_map(
-    input_xlsx: str,
+    input_xlsx: str | None = None,
     column_mapping: dict[str, dict[str, str]] | None = None,
+    wb: Any | None = None,
 ) -> Dict[str, str]:
-    table = _load_detected_table(
-        input_xlsx,
+    if wb is None:
+        if not input_xlsx:
+            raise ValueError("input_xlsx is required when wb is not provided")
+        wb = _load_workbook_fast(input_xlsx)
+    table = _load_detected_table_wb(
+        wb,
         "activity_summary",
         column_mapping=column_mapping,
     )
@@ -1447,6 +1842,16 @@ def to_wbs_tree(
     source_meta: Dict[str, Any] | None = None,
     activity_name_map: Dict[str, str] | None = None,
 ) -> Dict:
+    prof_enabled = _wbs_profile_enabled()
+    prof_row_limit = _wbs_profile_rows()
+    prof_skip_after = _wbs_profile_skip_after()
+    prof_start = perf_counter() if prof_enabled else None
+    prof_metrics_ms = 0.0
+    prof_metrics_rows = 0
+    prof_metrics_min = None
+    prof_metrics_max = None
+    processed_rows = 0
+
     df = df.copy()
     df["_row_idx"] = df.index
     df[label_col] = df[label_col].fillna("")
@@ -1454,7 +1859,7 @@ def to_wbs_tree(
     df["_indent"] = df[label_col].apply(leading_spaces)
 
     uniq = sorted(df["_indent"].unique().tolist()) or [0]
-    space2lvl = {sp: i+1 for i, sp in enumerate(uniq)}
+    space2lvl = {sp: i for i, sp in enumerate(uniq)}
     activity_id_col = "Activity ID" if "Activity ID" in df.columns else None
     if activity_id_col is None:
         activity_id_col = _match_column(
@@ -1661,10 +2066,11 @@ def to_wbs_tree(
     stack: List[Dict] = []
 
     for _, r in df.iterrows():
+        processed_rows += 1
         base_label = clean_label(r[label_col])
         if not base_label:
             continue
-        lvl = space2lvl.get(r["_indent"], len(space2lvl))  # fallback = plus profond
+        lvl_int = int(space2lvl.get(r["_indent"], len(space2lvl)))  # fallback = plus profond
         row_idx = int(r.get("_row_idx")) if "_row_idx" in r else None
         activity_id = _normalize_activity_id(r.get(activity_id_col))
         if activity_name_col:
@@ -1693,18 +2099,28 @@ def to_wbs_tree(
             display_label = base_label
         node = {
             "label": display_label,
-            "level": int(lvl),
+            "level": lvl_int,
             "activity_id": activity_id or base_label,
-            "metrics": row_metrics(r, row_idx),
+            "metrics": None,
             "children": [],
         }
+        if prof_enabled and (prof_row_limit <= 0 or prof_metrics_rows < prof_row_limit):
+            t0 = perf_counter()
+            node["metrics"] = row_metrics(r, row_idx)
+            elapsed_ms = (perf_counter() - t0) * 1000.0
+            prof_metrics_ms += elapsed_ms
+            prof_metrics_min = elapsed_ms if prof_metrics_min is None else min(prof_metrics_min, elapsed_ms)
+            prof_metrics_max = elapsed_ms if prof_metrics_max is None else max(prof_metrics_max, elapsed_ms)
+            prof_metrics_rows += 1
+        else:
+            node["metrics"] = row_metrics(r, row_idx)
 
         if not stack:
             root = node
             stack = [node]
             continue
 
-        while stack and stack[-1]["level"] >= lvl:
+        while stack and stack[-1]["level"] >= lvl_int:
             stack.pop()
 
         if not stack:
@@ -1718,7 +2134,22 @@ def to_wbs_tree(
         else:
             stack[-1]["children"].append(node)
             stack.append(node)
+        if prof_enabled and prof_skip_after > 0 and processed_rows >= prof_skip_after:
+            break
 
+    if prof_enabled:
+        total_ms = (perf_counter() - prof_start) * 1000.0 if prof_start else 0.0
+        avg_ms = (prof_metrics_ms / prof_metrics_rows) if prof_metrics_rows else 0.0
+        print(
+            "wbs_profile to_wbs_tree "
+            f"df_rows={len(df)} processed_rows={processed_rows} total_ms={total_ms:.1f} "
+            f"row_metrics_rows={prof_metrics_rows} "
+            f"row_metrics_ms={prof_metrics_ms:.1f} "
+            f"row_metrics_avg_ms={avg_ms:.2f} "
+            f"row_metrics_min_ms={(prof_metrics_min or 0.0):.2f} "
+            f"row_metrics_max_ms={(prof_metrics_max or 0.0):.2f}",
+            flush=True,
+        )
     return root or {}
 
 # ---------- Extraction (tous les tableaux) ----------
@@ -1728,83 +2159,104 @@ def extract_all_wbs(
     schedule_info: Dict[str, Any] | None = None,
     column_mapping: dict[str, dict[str, str]] | None = None,
 ) -> List[Dict]:
-    wb = load_workbook(input_xlsx, data_only=True)
+    prof_enabled = _wbs_profile_enabled()
+
+    wb = _load_workbook_fast(input_xlsx)
     results: List[Dict] = []
 
     if schedule_lookup is None or schedule_info is None:
         schedule_lookup, schedule_info = build_schedule_lookup(
-            input_xlsx,
+            input_xlsx=None,
             column_mapping=column_mapping,
+            wb=wb,
         )
     activity_name_map = _build_activity_name_map(
-        input_xlsx,
+        input_xlsx=None,
         column_mapping=column_mapping,
+        wb=wb,
     )
 
-    for ws in wb.worksheets:
-        blocks = detect_all_blocks_with_left_extension(ws)
-        for (r1, c1, r2, c2) in blocks:
-            data = [[ws.cell(rr, cc).value for cc in range(c1, c2+1)] for rr in range(r1, r2+1)]
-            if len(data) < 2:
-                continue
-            df = pd.DataFrame(data)
-            df.columns = make_unique_columns([str(x).strip() if x is not None else "" for x in df.iloc[0].tolist()])
-            df = df.iloc[1:, :].reset_index(drop=True)
-            df, top_trim, left_trim, _, _ = trim_empty_border_with_offsets(df)
-            source_meta = {
-                "sheet": ws.title,
-                "range": f"R{r1}C{c1}:R{r2}C{c2}",
-                "data_row_start": r1 + 1 + top_trim,
-                "data_col_start": c1 + left_trim,
-            }
-
-            # Filtre: doit contenir toutes les colonnes requises
-            if not all(col in df.columns for col in REQUIRED_COLS):
-                continue
-
-            label_col = pick_label_col(df)
-            tree = to_wbs_tree(
-                df,
-                label_col,
-                schedule_lookup=schedule_lookup,
-                schedule_info=schedule_info,
-                source_meta=source_meta,
-                activity_name_map=activity_name_map,
-            )
-            if tree:
-                results.append({
-                    "sheet": ws.title,
-                    "range": f"R{r1}C{c1}:R{r2}C{c2}",
-                    "wbs": tree
-                })
-
-    if results:
-        return results
-
-    # Fallback: use detected activity summary table
-    summary = _load_detected_table(
-        input_xlsx,
+    t0 = perf_counter() if prof_enabled else None
+    summary = _load_detected_table_wb(
+        wb,
         "activity_summary",
         column_mapping=column_mapping,
     )
-    if summary is None:
-        return results
-    df, meta, _ = summary
-    label_col = "Activity ID" if "Activity ID" in df.columns else pick_label_col(df)
-    tree = to_wbs_tree(
-        df,
-        label_col,
-        schedule_lookup=schedule_lookup,
-        schedule_info=schedule_info,
-        source_meta=meta,
-        activity_name_map=activity_name_map,
-    )
-    if tree:
-        results.append({
-            "sheet": meta["sheet"],
-            "range": meta["range"],
-            "wbs": tree,
-        })
+    if prof_enabled and t0 is not None:
+        print(
+            f"wbs_profile _load_detected_table_ms={(perf_counter() - t0) * 1000.0:.1f}",
+            flush=True,
+        )
+    if summary is not None:
+        df, meta, _ = summary
+        label_col = "Activity ID" if "Activity ID" in df.columns else pick_label_col(df)
+        t1 = perf_counter() if prof_enabled else None
+        tree = to_wbs_tree(
+            df,
+            label_col,
+            schedule_lookup=schedule_lookup,
+            schedule_info=schedule_info,
+            source_meta=meta,
+            activity_name_map=activity_name_map,
+        )
+        if prof_enabled and t1 is not None:
+            print(
+                f"wbs_profile to_wbs_tree_ms={(perf_counter() - t1) * 1000.0:.1f}",
+                flush=True,
+            )
+        if tree:
+            results.append({"sheet": meta["sheet"], "range": meta["range"], "wbs": tree})
+
+    scan_all_blocks = (os.getenv("WBS_SCAN_ALL_BLOCKS") or "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    if scan_all_blocks:
+        wanted_ws = [ws for ws in wb.worksheets if _is_wanted_sheet(ws.title)]
+        for ws in wanted_ws:
+            blocks = detect_all_blocks_with_left_extension(ws)
+            for (r1, c1, r2, c2) in blocks:
+                data = list(
+                    ws.iter_rows(
+                        min_row=r1,
+                        max_row=r2,
+                        min_col=c1,
+                        max_col=c2,
+                        values_only=True,
+                    )
+                )
+                if len(data) < 2:
+                    continue
+
+                df = pd.DataFrame(
+                    data[1:],
+                    columns=make_unique_columns([str(x).strip() if x is not None else "" for x in data[0]]),
+                )
+                df, top_trim, left_trim, _, _ = trim_empty_border_with_offsets(df)
+                source_meta = {
+                    "sheet": ws.title,
+                    "range": f"R{r1}C{c1}:R{r2}C{c2}",
+                    "data_row_start": r1 + 1 + top_trim,
+                    "data_col_start": c1 + left_trim,
+                }
+
+                if not all(col in df.columns for col in REQUIRED_COLS):
+                    continue
+
+                label_col = pick_label_col(df)
+                tree = to_wbs_tree(
+                    df,
+                    label_col,
+                    schedule_lookup=schedule_lookup,
+                    schedule_info=schedule_info,
+                    source_meta=source_meta,
+                    activity_name_map=activity_name_map,
+                )
+                if tree:
+                    results.append({"sheet": ws.title, "range": source_meta["range"], "wbs": tree})
+
     return results
 
 # ---------- CLI ----------

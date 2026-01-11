@@ -18,6 +18,7 @@ from activity_filters import build_activity_filter_sidebar, ROOT_ACTIVITY_ALL
 from shared_excel import (
     set_default_excel_if_missing,
 )
+from demo_template import demo_template_bytes
 from projects import (
     apply_project_to_session,
     get_project,
@@ -179,8 +180,11 @@ def _store_project_upload(project_info, uploaded):
     return store_project_upload(project_info, uploaded)
 
 def _excel_template_bytes():
+    demo_bytes = demo_template_bytes()
+    if demo_bytes[0] is not None:
+        return demo_bytes
+
     candidates = [
-        Path("artifacts") / "Chronoplan_Template.xlsx",
         Path("artifacts") / "W_example.xlsx",
         Path("artifacts") / "wbs_sample.xlsx",
         Path("Progress.xlsx"),
@@ -204,6 +208,7 @@ def _render_excel_format_help():
                     "- Resource Assignments required: Activity ID, Budgeted Units, Spreadsheet Field (optional Start/Finish).",
                     "- Spreadsheet Field values: Cum Budgeted Units, Cum Actual Units, Cum Remaining Early Units.",
                     "- Weekly date columns (week start) are used for curves.",
+                    "- Cum Remaining Early Units should start on the current week.",
                     "",
                     "**Tips**",
                     "- One header row per table, no merged cells.",

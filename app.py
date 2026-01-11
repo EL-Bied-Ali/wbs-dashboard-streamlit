@@ -39,6 +39,7 @@ from activity_filters import build_activity_filter_sidebar
 from shared_excel import (
     set_default_excel_if_missing,
 )
+from demo_template import demo_template_bytes
 from projects import (
     apply_project_to_session,
     get_project,
@@ -198,8 +199,11 @@ def _store_project_upload(project_info, uploaded):
     return store_project_upload(project_info, uploaded)
 
 def _excel_template_bytes():
+    demo_bytes = demo_template_bytes()
+    if demo_bytes[0] is not None:
+        return demo_bytes
+
     candidates = [
-        Path("artifacts") / "Chronoplan_Template.xlsx",
         Path("artifacts") / "W_example.xlsx",
         Path("artifacts") / "wbs_sample.xlsx",
         Path("Progress.xlsx"),
