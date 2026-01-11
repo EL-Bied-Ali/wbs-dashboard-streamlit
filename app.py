@@ -1901,6 +1901,7 @@ def render_s_curve_page():
             third_vals = [_forecast_pct(row) for row in weekly_series]
             last_actual_idx = None
             last_actual_val = None
+            last_actual_units = None
             for idx, row in enumerate(weekly_series):
                 budget_units = row.get("budgeted_units")
                 cum_units = row.get("actual_cum_units")
@@ -1914,9 +1915,14 @@ def render_s_curve_page():
                 if isinstance(val, (int, float)):
                     last_actual_idx = idx
                     last_actual_val = min(100.0, val)
+                    last_actual_units = cum_units
 
-            # Build forecast curve: start at last actual, then follow forecast cumulative %
-            if isinstance(last_actual_idx, int) and isinstance(last_actual_val, (int, float)):
+            # Build forecast curve: start at last actual, then add remaining units to last actual units.
+            if (
+                isinstance(last_actual_idx, int)
+                and isinstance(last_actual_val, (int, float))
+                and isinstance(last_actual_units, (int, float))
+            ):
                 forecast_curve[last_actual_idx] = last_actual_val
                 forecast_hover[last_actual_idx] = _hover_with_tip(
                     f"{last_actual_val:.2f}%",
@@ -1926,14 +1932,23 @@ def render_s_curve_page():
                 for idx in range(last_actual_idx + 1, n):
                     v = third_vals[idx]
                     if isinstance(v, (int, float)):
-                        val = min(100.0, v)
+                        budget_units = weekly_series[idx].get("budgeted_units")
+                        if isinstance(budget_units, (int, float)) and budget_units != 0:
+                            combined_units = last_actual_units + weekly_series[idx].get(
+                                "forecast_cum_units", 0.0
+                            )
+                            val = (combined_units / budget_units) * 100.0
+                        else:
+                            val = v
+                        val = min(100.0, val)
                         if isinstance(prev_forecast, (int, float)):
                             val = max(prev_forecast, val)
                         forecast_curve[idx] = val
                         prev_forecast = val
                         forecast_hover[idx] = _hover_with_tip(
                             f"{val:.2f}%",
-                            _forecast_tip(weekly_series[idx]),
+                            _forecast_tip(weekly_series[idx])
+                            or "Forecast % = (Last actual cum units + Cum Remaining Early Units) / Budgeted Units",
                         )
                     else:
                         if isinstance(prev_forecast, (int, float)):
