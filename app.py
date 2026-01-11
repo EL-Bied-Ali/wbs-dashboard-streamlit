@@ -23,6 +23,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from auth_google import (
+    get_current_user,
     require_login,
     render_auth_sidebar,
     render_contact_sidebar,
@@ -89,6 +90,21 @@ def _set_query_params(values: dict[str, str]) -> None:
     except AttributeError:
         st.experimental_set_query_params(**values)
 
+
+def _handle_logged_out_redirect() -> None:
+    params = _get_query_params()
+    logged_out = _query_value(params, "logged_out")
+    if not logged_out:
+        return
+    _set_query_params({})
+    try:
+        st.switch_page("pages/0_Home.py")
+    except Exception:
+        pass
+    st.stop()
+
+_handle_logged_out_redirect()
+
 params = _get_query_params()
 ptxn = _query_value(params, "_ptxn")
 if ptxn:
@@ -96,6 +112,10 @@ if ptxn:
     st.session_state["checkout_txn"] = ptxn
     _set_query_params({})
     st.switch_page("pages/4_Billing.py")
+    st.stop()
+
+if not get_current_user():
+    st.switch_page("pages/0_Home.py")
     st.stop()
 
 
@@ -738,7 +758,10 @@ def _build_weekly_window(data, current_week: str | date | None):
     week_labels = []
     week_dates = []
 
-    for d in data:
+    last_actual_idx = None
+    for idx, d in enumerate(data):
+        if isinstance(d.get("actual_cum_units"), (int, float)):
+            last_actual_idx = idx
         label = d.get("week_label") or d.get("week") or ""
         week_labels.append(_short_week_label(label))
         week_dates.append(_parse_week_date(d.get("week_date") or d.get("week")))
@@ -756,7 +779,9 @@ def _build_weekly_window(data, current_week: str | date | None):
         a_tip = d.get("actual_tip", "")
         a_text = a_display or (f"{a_val:.1f}%" if isinstance(a_val, (int, float)) else "?")
         is_future = False
-        if week_dates[-1] and current_date:
+        if last_actual_idx is not None:
+            is_future = idx > last_actual_idx
+        elif week_dates[-1] and current_date:
             is_future = week_dates[-1] > current_date
         if is_future:
             a_tip = a_tip.replace("Actual %", "Forecast %").replace("Actual unavailable", "Forecast unavailable")

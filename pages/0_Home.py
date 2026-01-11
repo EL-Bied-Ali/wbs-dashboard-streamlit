@@ -4,7 +4,6 @@ import streamlit as st
 
 from auth_google import require_login
 
-
 _icon_path = Path(__file__).resolve().parents[1] / "chronoplan_logo.png"
 st.set_page_config(
     page_title="ChronoPlan",

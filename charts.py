@@ -194,6 +194,7 @@ def s_curve(
                 continue
             if abs(a_val - f_val) <= meet_tolerance:
                 _add_pin(x_val, a_val, f"{a_val:.1f}%", "#2fc192", y_offset=44, x_offset=48)
+                break
     fig.update_layout(
         height=520,
         barmode="group",

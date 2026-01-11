@@ -113,6 +113,7 @@ def _load_workbook_fast(input_xlsx: str):
 
 _SCAN_MAX_COLS = int((os.getenv("EXCEL_SCAN_MAX_COLS") or "600").strip() or "600")
 _SCAN_MAX_ROWS = int((os.getenv("EXCEL_SCAN_MAX_ROWS") or "8000").strip() or "8000")
+# Applied to Cum Actual Units week columns to align with reporting week.
 PLANNED_WEEK_SHIFT_DAYS = 7
 
 def _wbs_profile_enabled() -> bool:
@@ -891,7 +892,6 @@ def build_schedule_lookup(
     today = today or date.today()
     target_week = _week_start(today)
     info["week_date"] = target_week.isoformat()
-    planned_shift = timedelta(days=PLANNED_WEEK_SHIFT_DAYS)
 
     def _read_column_values(ws: Any, col: int, r_start: int, r_end: int) -> list[Any]:
         values: list[Any] = []
@@ -1032,15 +1032,14 @@ def build_schedule_lookup(
         h_date = _to_excel_date(h)
         if not h_date:
             continue
-        planned_week = _week_start(h_date - planned_shift)
+        planned_week = _week_start(h_date)
         if planned_week == target_week:
             week_idx = idx
             break
     if week_idx is None:
         info["status"] = "week_not_found"
-        shifted_week = (target_week + planned_shift).isoformat()
         info["errors"].append(
-            f"No column for current week ({target_week.isoformat()}); expected source week {shifted_week}."
+            f"No column for current week ({target_week.isoformat()})."
         )
         week_col = None
     else:
@@ -1203,12 +1202,11 @@ def build_weekly_progress(
 
     planned_week_map: Dict[date, int] = {}
     planned_label_map: Dict[date, Any] = {}
-    planned_shift = timedelta(days=PLANNED_WEEK_SHIFT_DAYS)
     for idx, h in enumerate(raw_headers):
         h_date = _to_excel_date(h)
         if not h_date:
             continue
-        week = _week_start(h_date - planned_shift)
+        week = _week_start(h_date)
         if week not in planned_week_map:
             planned_week_map[week] = idx
             planned_label_map[week] = h
@@ -1221,6 +1219,7 @@ def build_weekly_progress(
     id_col = df.columns[id_idx]
     budget_col = df.columns[budget_idx]
     actual_past_id_col = None
+    actual_shift = timedelta(days=PLANNED_WEEK_SHIFT_DAYS)
     actual_past_week_map: Dict[date, int] = {}
     actual_past_label_map: Dict[date, Any] = {}
     actual_past_row = None
@@ -1239,7 +1238,7 @@ def build_weekly_progress(
                 h_date = _to_excel_date(h)
                 if not h_date:
                     continue
-                week = _week_start(h_date)
+                week = _week_start(h_date - actual_shift)
                 if week not in actual_past_week_map:
                     actual_past_week_map[week] = idx
                     actual_past_label_map[week] = h
@@ -1439,7 +1438,7 @@ def build_weekly_progress(
         if week_val is not None:
             prev_val = week_val
 
-        use_future = week_date >= target_week
+        use_future = week_date > target_week
         actual_val = None
         actual_display = "?"
         actual_cum_val = None

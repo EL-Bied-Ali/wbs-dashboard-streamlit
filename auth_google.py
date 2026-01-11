@@ -1843,11 +1843,11 @@ def require_login() -> dict[str, Any]:
 def logout() -> None:
     st.session_state.pop(SESSION_KEY, None)
     st.session_state.pop("_pending_ref", None)
-    st.session_state["_force_home"] = True
     try:
         st.query_params.clear()  # type: ignore[attr-defined]
+        st.query_params["logged_out"] = "1"  # type: ignore[index]
     except Exception:
-        st.experimental_set_query_params()
+        st.experimental_set_query_params(logged_out="1")
     if hasattr(st, "logout"):
         st.logout()
     st.stop()
