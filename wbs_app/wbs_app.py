@@ -453,6 +453,8 @@ def _signed_class(val, display=None):
         return "muted"
     return "ok" if val >= 0 else "bad"
 def _fmt_signed(val, display=None, tip=None):
+    display = _normalize_pct_display(display, signed=True)
+
     if display is None:
         if val is None:
             display = "?"
@@ -479,12 +481,31 @@ def _fmt_text(val, display=None, tip=None):
 def _to_j(v): 
     try: return float(str(v).replace("j","").strip())
     except: return 0.0
+
+def _normalize_pct_display(display: str | None, signed: bool = False) -> str | None:
+    if display is None:
+        return None
+    s = str(display).strip()
+    if not s.endswith("%"):
+        return s
+    raw = s[:-1].strip()
+    try:
+        v = float(raw.replace("+", "")) if raw else 0.0
+        if raw.startswith("+") and signed:
+            return _pct(v, signed=True)
+        return _pct(v, signed=signed)
+    except Exception:
+        return s
+
 def _bar(v, color, variant: int | None = None, display: str | None = None, tip: str | None = None):
     variant = 0 if variant is None else int(variant) % 2
     val = v if isinstance(v, (int, float)) else None
     width = max(0, min(100, val if val is not None else 0))
     if display is None:
-        display = f"{width:.2f}%"
+        display = _pct(width, signed=False)
+    else:
+        display = _normalize_pct_display(display, signed=False)
+
     title = f' title="{tip}"' if tip else ""
     return (
         f'<span class="mbar-wrap"{title}>'
@@ -604,6 +625,16 @@ def _title_span(full_label: str, display_label: str) -> str:
     title_attr = f' title="{safe_full}"' if safe_display != safe_full else ""
     return f'<span class="title"{title_attr}>{safe_display}</span>'
 
+def _pct(x, signed: bool = False):
+    try:
+        v = float(x)
+        sign = "+" if signed and v >= 0 else ""
+        t = f"{v:.2f}".rstrip("0").rstrip(".")  # <-- enlève .00
+        return f"{sign}{t}%"
+    except Exception:
+        return "?" if x is None else str(x)
+
+
 def render_detail_table(node:dict, anim_variant:int=0, truncate_labels: bool = True):
     rows=[]
     base_level=int(node.get("level", 2))
@@ -645,15 +676,20 @@ def render_detail_table(node:dict, anim_variant:int=0, truncate_labels: bool = T
             _collect_rows(ch)
 
     _collect_rows(node)
-    def sgn(v, display=None, tip=None): 
+    def sgn(v, display=None, tip=None):
+        display = _normalize_pct_display(display, signed=True)  # <-- AJOUT
+
         if display is None:
             if v is None:
                 display = "?"
             else:
-                display = f'{("+" if v>0 else "")}{v:.2f}%'
+                display = _pct(v, signed=True)
+
         cls = _signed_class(v, display)
         title = f' title="{tip}"' if tip else ""
         return f'<span class="{cls}"{title}>{display}</span>'
+
+
     trs=[]
     for r in rows:
         label_text = html.escape(r.get("label",""))
@@ -682,6 +718,7 @@ def render_detail_table(node:dict, anim_variant:int=0, truncate_labels: bool = T
       </div>
     </div>
     """), unsafe_allow_html=True)
+
 
 def render_barchart(node:dict, chart_key:str|None=None, truncate_labels: bool = True)->bool:
     labels_full=[]; labels_display=[]; schedule=[]; earned=[]; schedule_text=[]; earned_text=[]
@@ -779,8 +816,8 @@ def _h1(label, m, anim_variant:int=0, display_label: str | None = None):
     <div class="hero compact">
       <div class="n1-grid">
         <div class="n1g-label"><span class="dot"></span>{label_html}</div>
-        <div class="n1g-cell"><span class="small">Planned</span>{_fmt_text(planned, planned_display, planned_tip)}</div>
-        <div class="n1g-cell"><span class="small">Forecast</span>{_fmt_text(forecast, forecast_display, forecast_tip)}</div>
+        <div class="n1g-cell"><span class="small">Planned Finish</span>{_fmt_text(planned, planned_display, planned_tip)}</div>
+        <div class="n1g-cell"><span class="small">Forecast Finish</span>{_fmt_text(forecast, forecast_display, forecast_tip)}</div>
         <div class="n1g-cell"><span class="small">Schedule</span>{_bar(sched_v,'blue', anim_variant, display=sched_display, tip=sched_tip)}</div>
         <div class="n1g-cell"><span class="small">Earned</span>{_bar(earn_v,'green', anim_variant, display=earn_display, tip=earn_tip)}</div>
         <div class="n1g-cell"><span class="small">+Variance</span>{_fmt_signed(ecart_v, ecart_display, ecart_tip)}</div>
@@ -1215,12 +1252,12 @@ if preview_mode:
             earned_tip = "Earned unavailable: Units % Complete missing."
         else:
             earned = parse_percent_float(earned_raw)
-            earned_display = f"{earned:.2f}%"
+            earned_display = _pct(earned, signed=False)
             earned_tip = "Earned % = Units % Complete"
 
         if isinstance(earned, (int, float)) and isinstance(schedule, (int, float)):
             ecart = round(earned - schedule, 2)
-            ecart_display = f"{ecart:+.2f}%"
+            ecart_display = _pct(ecart, signed=True)
             ecart_tip = "Variance = Earned % - Schedule %"
         else:
             ecart = None
@@ -1242,7 +1279,7 @@ if preview_mode:
                 impact_tip = "Impact unavailable: Budgeted Units missing or 0."
             else:
                 impact = (activity_budget / root_budget) * ecart
-                impact_display = f"{impact:+.2f}%"
+                impact_display = _pct(impact, signed=True)
                 impact_tip = "Impact = (Budgeted Units / Root Budgeted Units) * Variance"
         else:
             impact_display = "?"

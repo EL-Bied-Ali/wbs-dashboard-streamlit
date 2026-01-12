@@ -846,7 +846,7 @@ def _session_store_get(token: str | None) -> dict[str, Any] | None:
         return None
     store = _session_store_cleanup(_load_session_store())
     entry = store.get(token)
-    if entry and isinstance(entry, tuple) and len(entry) == 2:
+    if entry and isinstance(entry, (tuple, list)) and len(entry) == 2:
         ts, user = entry
         if isinstance(user, dict):
             _debug_log(
@@ -1795,61 +1795,21 @@ def _render_oidc_login() -> None:
     st.stop()
 
 
-def require_login() -> dict[str, Any]:
-    _auth_log("require_login oidc start")
-    params = _get_query_params()
-    _stash_referral_code(params)
 
-    force_bypass = (
-        (_query_value(params, "dev_bypass") or _query_value(params, "dev") or "")
-        .strip()
-        .lower()
-        in {"1", "true", "yes"}
-    )
-    dev_user_override = bool(
-        (_query_value(params, "dev_user") or _query_value(params, "dev_email") or "").strip()
-    )
-    if force_bypass or dev_user_override:
-        st.session_state.pop("_disable_bypass", None)
-
-    if st.session_state.pop("_force_home", False):
-        try:
-            st.switch_page("pages/0_Home.py")  # type: ignore[attr-defined]
-        except Exception:
-            _rerun()
+def require_login() -> dict:
+    if not st.user.is_logged_in:
+        st.login("google")
         st.stop()
 
-    oidc_user = _oidc_user_dict()
-    if oidc_user:
-        st.session_state[SESSION_KEY] = oidc_user
-        _auth_log("require_login oidc user")
-        return _post_login(oidc_user)
-
-    if not st.session_state.get("_disable_bypass"):
-        bypass_user = (
-            _bypass_user_from_env()
-            or _bypass_user_from_query()
-            or _bypass_user_for_localhost()
-        )
-        if bypass_user:
-            st.session_state[SESSION_KEY] = bypass_user
-            _auth_log("require_login bypass user")
-            return _post_login(bypass_user)
-
-    _render_oidc_login()
-    raise RuntimeError("Login required")
-
+    return {
+        "sub": getattr(st.user, "sub", None),
+        "email": getattr(st.user, "email", None),
+        "name": getattr(st.user, "name", None) or getattr(st.user, "display_name", None),
+        "picture": getattr(st.user, "picture", None),
+    }
 
 def logout() -> None:
-    st.session_state.pop(SESSION_KEY, None)
-    st.session_state.pop("_pending_ref", None)
-    try:
-        st.query_params.clear()  # type: ignore[attr-defined]
-        st.query_params["logged_out"] = "1"  # type: ignore[index]
-    except Exception:
-        st.experimental_set_query_params(logged_out="1")
-    if hasattr(st, "logout"):
-        st.logout()
+    st.logout()
     st.stop()
 
 

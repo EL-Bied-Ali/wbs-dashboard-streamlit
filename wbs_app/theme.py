@@ -154,6 +154,12 @@ div[class*="hero_wrap__"] div[class*="__hero_toggle"] button{
   border:1px solid #1f2a44; border-radius:14px; padding:12px; margin:8px 0;
   box-shadow:0 6px 16px rgba(0,0,0,.22); overflow:hidden; animation: fadeSlideUp .45s ease .1s both;
 }
+/* === N3: masquer les labels de colonnes dans les lignes === */
+.table-card .n2g-cell .small,
+.table-card td .small{
+  display: none !important;
+}
+
 table.neo{width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed;}
 table.neo thead th{
   font-size:var(--fs-n3-head)!important; letter-spacing:.3px; text-transform:uppercase;
@@ -1321,6 +1327,16 @@ body::before, body::after,
   height:100%;
   width:auto;
   object-fit:contain;
+}
+
+/* N2: garder les labels de colonnes seulement sur la 1ère ligne (depth-2) */
+.n2-grid .n2g-cell .small { 
+  display: none !important;
+}
+
+/* Exception: la 1ère ligne N2 (celle avec depth-2) garde les labels */
+.n2-grid.depth-2 .n2g-cell .small {
+  display: inline-block !important;
 }
 
 </style>

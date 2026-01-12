@@ -7,3 +7,4 @@ google-auth==2.45.0
 itsdangerous==2.2.0
 requests==2.32.5
 streamlit-cookies-manager==0.2.0
+python-calamine

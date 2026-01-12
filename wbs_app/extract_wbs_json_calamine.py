@@ -2069,7 +2069,8 @@ def to_wbs_tree(
         base_label = clean_label(r[label_col])
         if not base_label:
             continue
-        lvl_int = int(space2lvl.get(r["_indent"], len(space2lvl)))  # fallback = plus profond
+        lvl0 = int(space2lvl.get(r["_indent"], len(space2lvl)))  # 0-based
+        lvl = lvl0 + 1  # 1-based (IMPORTANT pour l'UI)  # fallback = plus profond
         row_idx = int(r.get("_row_idx")) if "_row_idx" in r else None
         activity_id = _normalize_activity_id(r.get(activity_id_col))
         if activity_name_col:
@@ -2098,7 +2099,7 @@ def to_wbs_tree(
             display_label = base_label
         node = {
             "label": display_label,
-            "level": lvl_int,
+            "level": lvl,
             "activity_id": activity_id or base_label,
             "metrics": None,
             "children": [],
@@ -2119,7 +2120,7 @@ def to_wbs_tree(
             stack = [node]
             continue
 
-        while stack and stack[-1]["level"] >= lvl_int:
+        while stack and stack[-1]["level"] >= lvl:
             stack.pop()
 
         if not stack:

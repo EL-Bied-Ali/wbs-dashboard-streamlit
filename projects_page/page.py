@@ -59,13 +59,20 @@ def render_projects_page(
 
     if st.session_state.pop("navigate_to_app", False):
         st.switch_page("app.py")
+        st.stop()
+
 
     if project_param:
         project_map = {p.get("id"): p for p in projects if p.get("id")}
         if project_param in project_map:
-            redirect_to_project(project_param)
+            st.session_state["active_project_id"] = project_param
+            st.switch_page("app.py")
+            st.stop()
         clear_query_params()
         st.warning("Project not found.")
+
+
+
 
     account = get_account_by_email(user.get("email", ""))
     plan_state = access_status(account)

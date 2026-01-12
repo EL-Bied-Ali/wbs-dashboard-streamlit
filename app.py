@@ -114,9 +114,6 @@ if ptxn:
     st.switch_page("pages/4_Billing.py")
     st.stop()
 
-if not get_current_user():
-    st.switch_page("pages/0_Home.py")
-    st.stop()
 
 
 def _render_access_gate(state: dict[str, Any]) -> None:
@@ -196,6 +193,8 @@ if not st.session_state.get("active_project_id") and project_param:
     st.session_state["active_project_id"] = project_param
 if not st.session_state.get("active_project_id"):
     st.switch_page("pages/0_Projects.py")
+    st.stop()
+
 if st.session_state.get("active_project_id") and project_param != st.session_state.get("active_project_id"):
     _set_query_params({"project": st.session_state["active_project_id"]})
     st.rerun()
@@ -207,6 +206,8 @@ render_auth_sidebar(user)
 project = get_project(st.session_state.get("active_project_id"), owner_id=owner_id)
 if not project:
     st.switch_page("pages/0_Projects.py")
+    st.stop()
+
 account = get_account_by_email(user.get("email", ""))
 gate = access_status(account)
 if not gate.get("allowed", True):
