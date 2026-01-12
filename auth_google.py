@@ -1796,17 +1796,25 @@ def _render_oidc_login() -> None:
 
 
 
-def require_login() -> dict:
-    if not st.user.is_logged_in:
-        st.login("google")
+import streamlit as st
+
+def require_login():
+    user_obj = getattr(st, "user", None) or getattr(st, "experimental_user", None)
+
+    is_logged_in = False
+    if user_obj is not None and hasattr(user_obj, "is_logged_in"):
+        is_logged_in = bool(getattr(user_obj, "is_logged_in"))
+
+    if not is_logged_in:
+        st.login("google")   # ou st.login("google") si tu utilises [auth.google]
         st.stop()
 
-    return {
-        "sub": getattr(st.user, "sub", None),
-        "email": getattr(st.user, "email", None),
-        "name": getattr(st.user, "name", None) or getattr(st.user, "display_name", None),
-        "picture": getattr(st.user, "picture", None),
-    }
+    # Retourne un dict-like safe
+    try:
+        return dict(user_obj)
+    except Exception:
+        return user_obj
+
 
 def logout() -> None:
     st.logout()
