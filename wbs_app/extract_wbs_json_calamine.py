@@ -1032,10 +1032,13 @@ def build_schedule_lookup(
         h_date = _to_excel_date(h)
         if not h_date:
             continue
-        planned_week = _week_start(h_date)
+        planned_shift = timedelta(days=7)  # shift Cum Budgeted Units 1 week into the future
+
+        planned_week = _week_start(h_date + planned_shift)
         if planned_week == target_week:
             week_idx = idx
             break
+
     if week_idx is None:
         info["status"] = "week_not_found"
         info["errors"].append(
@@ -1202,14 +1205,17 @@ def build_weekly_progress(
 
     planned_week_map: Dict[date, int] = {}
     planned_label_map: Dict[date, Any] = {}
+    planned_shift = timedelta(days=7)  # shift Cum Budgeted Units 1 week into the future
+
     for idx, h in enumerate(raw_headers):
         h_date = _to_excel_date(h)
         if not h_date:
             continue
-        week = _week_start(h_date)
+        week = _week_start(h_date + planned_shift)
         if week not in planned_week_map:
             planned_week_map[week] = idx
             planned_label_map[week] = h
+
 
     today = today or date.today()
     target_week = _week_start(today)
@@ -1219,7 +1225,6 @@ def build_weekly_progress(
     id_col = df.columns[id_idx]
     budget_col = df.columns[budget_idx]
     actual_past_id_col = None
-    actual_shift = timedelta(days=PLANNED_WEEK_SHIFT_DAYS)
     actual_past_week_map: Dict[date, int] = {}
     actual_past_label_map: Dict[date, Any] = {}
     actual_past_row = None
@@ -1238,10 +1243,11 @@ def build_weekly_progress(
                 h_date = _to_excel_date(h)
                 if not h_date:
                     continue
-                week = _week_start(h_date - actual_shift)
+                week = _week_start(h_date)
                 if week not in actual_past_week_map:
                     actual_past_week_map[week] = idx
                     actual_past_label_map[week] = h
+
             for idx, r in actual_past_df.iterrows():
                 raw_id = r.get(actual_past_id_col)
                 if raw_id is None or str(raw_id).strip() == "":
