@@ -286,15 +286,29 @@ def _safe_float(v: Any) -> float | None:
 def _parse_days(v: Any) -> float | None:
     if v is None:
         return None
+
+    # Handle pandas NaN
+    if isinstance(v, float) and v != v:
+        return None
+
     if isinstance(v, (int, float)):
-        return float(v)
+        val = float(v)
+        # Handle NaN after cast
+        if isinstance(val, float) and val != val:
+            return None
+        return val
+
     s = str(v).lower().replace("j", "").strip()
     if not s:
         return None
     try:
-        return float(s)
+        val = float(s)
+        if isinstance(val, float) and val != val:
+            return None
+        return val
     except Exception:
         return None
+
 
 def _to_excel_date(v: Any) -> date | None:
     """Best-effort conversion to date.
@@ -2183,11 +2197,31 @@ def extract_all_wbs(
     )
 
     t0 = perf_counter() if prof_enabled else None
-    summary = _load_detected_table_wb(
-        wb,
-        "activity_summary",
+    # --- FORCE same Activity Summary block as Select Activity ---
+    preview_rows = build_preview_rows(
+        input_xlsx,
+        table_type="activity_summary",
+        prefer_first_table=True,
         column_mapping=column_mapping,
     )
+
+    summary = None
+    if preview_rows:
+        first = preview_rows[0]
+        table = {
+            "sheet": first["sheet"],
+            "range": first["range"],
+        }
+        summary = _load_table_from_meta(wb, table)
+
+    # Fallback (sécurité)
+    if summary is None:
+        summary = _load_detected_table_wb(
+            wb,
+            "activity_summary",
+            column_mapping=column_mapping,
+        )
+
     if prof_enabled and t0 is not None:
         print(
             f"wbs_profile _load_detected_table_ms={(perf_counter() - t0) * 1000.0:.1f}",
