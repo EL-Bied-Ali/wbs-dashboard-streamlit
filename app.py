@@ -870,6 +870,9 @@ def weekly_progress_fig(data, current_week: str | date | None):
     window = _build_weekly_window(data, current_week)
     if not window:
         return base_layout(go.Figure(), height=350)
+
+
+
     weeks = window["weeks"]
     week_labels = window["week_labels"]
     week_dates = window["week_dates"]
@@ -1095,6 +1098,25 @@ def weekly_sv_fig(data, current_week: str | date | None):
     window = _build_weekly_window(data, current_week)
     if not window:
         return base_layout(go.Figure(), height=260)
+    # Cut x-axis at current week (included) for Schedule Gap only
+    current_week_date = _parse_week_date(current_week)
+    if current_week_date and window.get("week_dates"):
+        last = None
+        for i, d in enumerate(window["week_dates"]):
+            if d is not None and d <= current_week_date:
+                last = i
+        if last is not None:
+            for k in [
+                "weeks", "week_labels", "week_dates",
+                "planned_vals", "planned_text", "planned_tips",
+                "actual_vals", "actual_text", "actual_tips",
+                "forecast_vals", "forecast_text", "forecast_tips",
+            ]:
+                window[k] = window[k][: last + 1]
+
+            # Keep "Current week" tick on the rightmost visible week
+            window["current_pos"] = last
+
     week_labels = window["week_labels"]
     planned_vals = window["planned_vals"]
     planned_text = window["planned_text"]
