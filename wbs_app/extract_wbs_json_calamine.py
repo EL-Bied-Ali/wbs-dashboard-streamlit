@@ -2004,10 +2004,10 @@ def to_wbs_tree(
         gliss_val = _parse_days(gliss_raw)
         if gliss_val is None:
             gliss_display = "?"
-            gliss_tip = "Slip unavailable: Variance - BL Project Finish Date missing."
+            gliss_tip = "Glissement unavailable: Variance - BL Project Finish Date missing."
         else:
             gliss_display = f"{int(gliss_val)}d"
-            gliss_tip = "Slip = Variance - BL Project Finish Date (days)"
+            gliss_tip = "Glissement = Variance - BL Project Finish Date (days)"
         planned_text = as_text(planned)
         if planned_text:
             planned_display = planned_text

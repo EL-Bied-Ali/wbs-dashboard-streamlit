@@ -1146,13 +1146,17 @@ section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="sele
   line-height: normal;
   transform: none;
 }
-div[role="listbox"][aria-label*="Select activity"]{
+div[role="listbox"][aria-label*="Select activity"],
+div[role="listbox"][aria-label*="WBS"]{
   font-size: 20px;
 }
-div[role="listbox"][aria-label*="Select activity"] [role="option"]{
+
+div[role="listbox"][aria-label*="Select activity"] [role="option"],
+div[role="listbox"][aria-label*="WBS"] [role="option"]{
   font-size: 20px;
   line-height: 1.2;
 }
+
 @media (max-width: 900px){
   div[data-testid="stColumn"]{
     min-width: 260px;

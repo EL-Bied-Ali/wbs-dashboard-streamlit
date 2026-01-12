@@ -1664,7 +1664,7 @@ def render_dashboard():
             if activity_filter:
                 active_key = selected_key or activity_filter["default_key"]
                 selected_key = st.selectbox(
-                    "Select activity",
+                    "WBS",
                     activity_filter["filtered_options"],
                     index=activity_filter["filtered_options"].index(active_key),
                     format_func=lambda k: activity_filter["activity_display"].get(k, k),
@@ -1772,7 +1772,7 @@ def render_s_curve_page():
                 if selected_key not in activity_filter["filtered_options"]:
                     selected_key = activity_filter["filtered_options"][0]
                 selected_key = st.selectbox(
-                    "Select activity",
+                    "WBS",
                     activity_filter["filtered_options"],
                     index=activity_filter["filtered_options"].index(selected_key),
                     format_func=lambda k: activity_filter["activity_display"].get(k, k),

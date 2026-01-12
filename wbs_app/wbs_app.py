@@ -711,7 +711,7 @@ def render_detail_table(node:dict, anim_variant:int=0, truncate_labels: bool = T
       <div class="table-wrap">
         <table class="neo">
           <thead><tr>
-            <th></th><th>Planned</th><th>Forecast</th><th>Schedule</th><th>Earned</th><th>+Variance</th><th>Impact</th><th>Slip</th>
+            <th></th><th>Planned</th><th>Forecast</th><th>Schedule</th><th>Earned</th><th>+Variance</th><th>Impact</th><th>glissement</th>
           </tr></thead>
           <tbody>{''.join(trs)}</tbody>
         </table>
@@ -822,7 +822,7 @@ def _h1(label, m, anim_variant:int=0, display_label: str | None = None):
         <div class="n1g-cell"><span class="small">Earned</span>{_bar(earn_v,'green', anim_variant, display=earn_display, tip=earn_tip)}</div>
         <div class="n1g-cell"><span class="small">+Variance</span>{_fmt_signed(ecart_v, ecart_display, ecart_tip)}</div>
         <div class="n1g-cell"><span class="small">Impact</span>{_fmt_signed(impact_v, impact_display, impact_tip)}</div>
-        <div class="n1g-cell"><span class="small">Slip</span>{_fmt_days(gl, gl_display, gl_tip)}</div>
+        <div class="n1g-cell"><span class="small">glissement</span>{_fmt_days(gl, gl_display, gl_tip)}</div>
       </div>
     </div>""")
 
@@ -859,7 +859,7 @@ def _h2(label, level, m, anim_variant:int=0, leaf_html: str = "", display_label:
         <div class="n2g-cell"><span class="small">Earned</span>{_bar(earn_v,'green', anim_variant, display=earn_display, tip=earn_tip)}</div>
       <div class="n2g-cell"><span class="small">+Variance</span>{_fmt_signed(ecart_v, ecart_display, ecart_tip)}</div>
       <div class="n2g-cell"><span class="small">Impact</span>{_fmt_signed(impact_v, impact_display, impact_tip)}</div>
-      <div class="n2g-cell gliss"><span class="small">Slip</span>{_fmt_days(gl, gl_display, gl_tip)}</div>
+      <div class="n2g-cell gliss"><span class="small">glissement</span>{_fmt_days(gl, gl_display, gl_tip)}</div>
     </div>""")
 
 def _slug(s:str)->str: return "".join(ch if ch.isalnum() else "_" for ch in s)
@@ -1141,14 +1141,14 @@ if preview_mode:
     st.markdown("- earned (from Units % Complete)")
     st.markdown("- variance (earned - schedule)")
     st.markdown("- impact (Budgeted Units ratio * variance)")
-    st.markdown("- slip (Variance - BL Project Finish Date)")
+    st.markdown("- glissement (Variance - BL Project Finish Date)")
     st.markdown("Random placeholder fields (to be mapped later):")
     st.markdown("- planned_finish")
     st.markdown("- forecast_finish")
     st.markdown("- earned")
     st.markdown("- variance")
     st.markdown("- impact")
-    st.markdown("- slip")
+    st.markdown("- glissement")
     preview_rows = st.session_state.get("_preview_rows", [])
     if detected_tables:
         st.markdown("Detected tables:")
@@ -1314,10 +1314,10 @@ if preview_mode:
                 gliss_val = None
         if gliss_val is None:
             gliss_display = "?"
-            gliss_tip = "Slip unavailable: Variance - BL Project Finish Date missing."
+            gliss_tip = "glissement unavailable: Variance - BL Project Finish Date missing."
         else:
             gliss_display = f"{int(gliss_val)}j"
-            gliss_tip = "Slip = Variance - BL Project Finish Date (days)"
+            gliss_tip = "glissement = Variance - BL Project Finish Date (days)"
         return {
             "planned_finish": planned_text,
             "planned_display": planned_display,

@@ -74,7 +74,7 @@ def main() -> None:
 
         before = {
             "max_depth": _selected_label(page, "Max depth"),
-            "activity": _selected_label(page, "Select activity"),
+            "activity": _selected_label(page, "WBS"),
         }
 
         depth_options = []
@@ -84,12 +84,12 @@ def main() -> None:
             page.wait_for_load_state("networkidle")
 
         if args.activity:
-            activity_options = _select_option(page, "Select activity", args.activity)
+            activity_options = _select_option(page, "WBS", args.activity)
             page.wait_for_load_state("networkidle")
 
         after = {
             "max_depth": _selected_label(page, "Max depth"),
-            "activity": _selected_label(page, "Select activity"),
+            "activity": _selected_label(page, "WBS"),
         }
 
         result = {

@@ -57,7 +57,7 @@ def build_activity_filter_sidebar(
 
     def _root_label(value: str) -> str:
         if value == ROOT_ACTIVITY_ALL:
-            return "All activities"
+            return "All WBS"
         meta = activity_id_meta.get(value)
         if not meta:
             return value
