@@ -23,14 +23,13 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from auth_google import (
-    get_current_user,
-    require_login,
     render_auth_sidebar,
     render_contact_sidebar,
     brand_strip_html,
     _custom_logo_data_uri,
     _remove_custom_logo,
 )
+
 from billing_store import access_status, get_account_by_email
 from charts import s_curve
 from data import demo_series, load_from_excel, sample_dashboard_data
@@ -98,7 +97,7 @@ def _handle_logged_out_redirect() -> None:
         return
     _set_query_params({})
     try:
-        st.switch_page("pages/0_Home.py")
+        st.switch_page("pages/0_Router.py")
     except Exception:
         pass
     st.stop()
@@ -185,8 +184,24 @@ def _render_access_gate(state: dict[str, Any]) -> None:
         st.switch_page("pages/4_Billing.py")
 
 
-user = require_login()
+# --- Streamlit OIDC guard ---
+user_obj = getattr(st, "user", None)
+is_logged_in = bool(user_obj and getattr(user_obj, "is_logged_in", False))
+
+if not is_logged_in:
+    st.switch_page("pages/0_Router.py")
+    st.stop()
+
+# --- Build a dict compatible with the rest of your code ---
+user = {
+    "email": getattr(user_obj, "email", "") or "",
+    "name": getattr(user_obj, "name", "") or "",
+    "picture": getattr(user_obj, "picture", "") or "",
+}
+
 owner_id = owner_id_from_user(user)
+
+
 params = _get_query_params()
 project_param = _query_value(params, "project")
 if not st.session_state.get("active_project_id") and project_param:
@@ -1297,7 +1312,7 @@ def activities_status_fig(data: dict, error_msg: str | None = None, apply_layout
 
 # ---------- Sidebar navigation ----------
 st.sidebar.markdown('<div class="sidebar-nav-title">Navigation</div>', unsafe_allow_html=True)
-st.sidebar.page_link("app.py", label="Project Progress")
+st.sidebar.page_link("pages/10_Dashboard.py", label="Project Progress")
 st.sidebar.page_link("pages/3_S_Curve.py", label="S-Curve")
 st.sidebar.page_link("pages/2_WBS.py", label="WBS")
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)
