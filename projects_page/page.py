@@ -239,7 +239,7 @@ def render_projects_page(
         card_html = clean_html_block(
             f"""
 <div class="project-card">
-  <a class="project-card-link" href="/?project={html.escape(pid)}" aria-label="Open project"></a>
+  <a class="project-card-link" href="?project={html.escape(pid)}" target="_self" aria-label="Open project"></a>
   <div class="project-card-content">
     <div class="project-name">{name_html}</div>
     {file_chip_html}
@@ -305,10 +305,11 @@ def render_projects_page(
 
             card_class = "project-card is-locked" if is_locked else "project-card"
             card_link = (
-                f'<a class="project-card-link" href="/?project={html.escape(pid)}" aria-label="Open project"></a>'
+                f'<a class="project-card-link" href="?project={html.escape(pid)}" target="_self" aria-label="Open project"></a>'
                 if not is_locked
                 else ""
             )
+
             lock_html = f'<div class="project-card-lock">{locked_label}</div>' if is_locked else ""
             action_label = "Locked" if is_locked else project_action(status_label)
 
@@ -341,52 +342,10 @@ def render_projects_page(
             card_index += 1
 
         col = cols[card_index % grid_columns]
-        with col:
-            with st.container(key="card_create"):
-                if project_count < PROJECT_LIMIT:
-                    if is_locked:
-                        create_html = clean_html_block(
-                            f"""
-<div class="project-card create-card is-disabled is-locked">
-  <div class="project-card-lock">{locked_label}</div>
-  <div class="project-card-content">
-    <div class="project-name">Create new project</div>
-    <div class="project-meta">Subscription required</div>
-  </div>
-</div>
-"""
-                        )
-                        st.markdown(create_html, unsafe_allow_html=True)
-                    else:
-                        create_link = (
-                            '<div class="project-card-toolbar">'
-                            '<a class="project-card-tool" href="?create=1">Create</a>'
-                            "</div>"
-                        )
-                        create_html = clean_html_block(
-                            f"""
-<div class="project-card create-card">
-  <a class="project-card-link" href="?create=1" aria-label="Create project"></a>
-  {create_link}
-  <div class="project-card-content">
-    <div class="project-name">Create new project</div>
-    <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
-    <div class="project-action">Launch builder</div>
-  </div>
-</div>
-"""
-                        )
-                        st.markdown(create_html, unsafe_allow_html=True)
-                else:
-                    limit_html = clean_html_block(
-                        f"""
-<div class="project-card create-card is-disabled">
-  <div class="project-name">Project limit reached</div>
-  <div class="project-meta">Limit {PROJECT_LIMIT} projects</div>
-</div>
-"""
-                    )
-                    st.markdown(limit_html, unsafe_allow_html=True)
+
+# --- Create project card REMOVED ---
+# (button in hero/top-bar is the single entry point)
+
 
     if _debug:
         st.caption("Debug enabled.")
