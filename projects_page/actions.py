@@ -8,15 +8,21 @@ import streamlit as st
 from billing_store import record_event
 from projects import create_project, delete_project, update_project
 
+def _clear_flow_params_preserve_dev() -> None:
+    from projects_page.routing import del_params
+    del_params("create", "new", "project", "logout")
+
 
 def open_create_dialog(
     *,
     project_count: int,
     project_limit: int,
     owner_id: str | None,
+    org_id: str | None,
     account_id: int | None,
     clear_query_params_fn,
 ) -> None:
+
     if not hasattr(st, "dialog"):
         st.info("Update Streamlit to use modal project creation.")
         return
@@ -41,7 +47,7 @@ def open_create_dialog(
                 )
 
                 if st.button("Create project", key="create_project_btn"):
-                    project = create_project(name, owner_id=owner_id)
+                    project = create_project(name, owner_id=owner_id, org_id=org_id)
                     if project:
                         record_event(
                             account_id,
@@ -51,8 +57,10 @@ def open_create_dialog(
                         st.session_state["active_project_id"] = project["id"]
                         st.session_state.pop("project_loaded_id", None)
                         st.session_state["navigate_to_app"] = True
-                        clear_query_params_fn()
+                        _clear_flow_params_preserve_dev()
                         st.rerun()
+
+
 
                     st.error("Unable to create project.")
 

@@ -8,15 +8,9 @@ import streamlit as st
 
 
 def debug_enabled() -> bool:
-    try:
-        params = st.query_params  # type: ignore[attr-defined]
-    except Exception:
-        params = st.experimental_get_query_params()
+    params = dict(st.query_params)
 
     raw = params.get("debug")
-    if isinstance(raw, list):
-        raw = raw[0] if raw else None
-
     raw = (raw or os.getenv("CP_DEBUG", "")).strip().lower()
     return raw in {"1", "true", "yes", "on"}
 

@@ -58,25 +58,17 @@ st.markdown(
 )
 
 def _get_query_params() -> dict:
-    try:
-        return st.query_params  # type: ignore[attr-defined]
-    except AttributeError:
-        return st.experimental_get_query_params()
+    return dict(st.query_params)
 
 
 def _query_value(params: dict, key: str) -> str | None:
     val = params.get(key)
-    if isinstance(val, list):
-        return val[0] if val else None
+    return val
     return val
 
 
 def _set_query_params(values: dict[str, str]) -> None:
-    try:
-        st.query_params.clear()  # type: ignore[attr-defined]
-        st.query_params.update(values)  # type: ignore[attr-defined]
-    except AttributeError:
-        st.experimental_set_query_params(**values)
+    st.query_params.update(values)
 
 
 def _render_access_gate(state: dict[str, Any]) -> None:

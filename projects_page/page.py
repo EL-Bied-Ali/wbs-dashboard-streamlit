@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import html
+import urllib.parse
 from pathlib import Path
 from typing import Callable
+import os
+DEBUG_AUTH = os.getenv("AUTH_DEBUG_UI") == "1"
+
 
 import streamlit as st
 
 from auth_google import _get_logo_data_uri, logout, require_login
 from billing_store import access_status, get_account_by_email
-from projects import PROJECT_LIMIT, assign_projects_to_owner, list_projects, owner_id_from_user
+from projects import PROJECT_LIMIT, assign_projects_to_owner, list_projects, owner_id_from_user, list_projects_for_org, org_id_from_email
 from projects_page.actions import open_create_dialog, project_actions_popover
 from projects_page.debug_tools import debug_enabled, debug_log, timeit
 from projects_page.routing import (
@@ -18,10 +22,14 @@ from projects_page.routing import (
     is_truthy,
     query_value,
     redirect_to_project,
+    get_params,
+    del_params,
 )
 from projects_page.status import file_exists, format_updated, project_action, project_status, sort_projects
 from projects_page.styles import clean_html_block, inject_global_css, render_html
 from projects_page.ui import render_admin_sidebar_left, render_hero, render_top_bar
+
+
 
 
 def render_projects_page(
@@ -37,7 +45,15 @@ def render_projects_page(
     _timings: list[tuple[str, float]] = []
 
     user = require_login()
+
+    if DEBUG_AUTH:
+        st.info("DEBUG AUTH USER")
+        st.write(user)
+
     owner_id = owner_id_from_user(user)
+    email = (user or {}).get("email")
+    org_id = org_id_from_email(email)
+
 
     is_admin = is_admin_user_fn(user)
     if is_admin and owner_id:
@@ -46,7 +62,7 @@ def render_projects_page(
             assign_projects_to_owner(owner_id)
             st.session_state[migrated_key] = True
 
-    projects = list_projects(owner_id) or []
+    projects = list_projects_for_org(org_id) or list_projects(owner_id) or []
     project_count = len(projects)
 
     params = get_query_params()
@@ -68,7 +84,7 @@ def render_projects_page(
             st.session_state["active_project_id"] = project_param
             st.switch_page("pages/10_Dashboard.py")
             st.stop()
-        clear_query_params()
+        del_params("project")
         st.warning("Project not found.")
 
 
@@ -182,7 +198,11 @@ def render_projects_page(
     if is_locked:
         cta_button_html = f'<a class="cta-button" href="/Billing">{locked_cta_label}</a>'
     else:
-        cta_button_html = '<a class="cta-button" href="?create=1">Create project</a>'
+        params = get_params()
+        params['create'] = '1'
+        query_string = '&'.join(f'{k}={urllib.parse.quote(str(v))}' for k,v in params.items())
+        create_href = f'?{query_string}'
+        cta_button_html = f'<a class="cta-button" href="{create_href}">Create project</a>'
 
     render_hero(
         cta_button_html=cta_button_html,
@@ -208,9 +228,13 @@ def render_projects_page(
                 project_count=project_count,
                 project_limit=PROJECT_LIMIT,
                 owner_id=owner_id,
+                org_id=org_id,   # <-- AJOUT
                 account_id=user.get("billing_account_id"),
                 clear_query_params_fn=clear_query_params,
             )
+
+
+
 
     grid_placeholder = st.empty()
     cards: list[str] = []

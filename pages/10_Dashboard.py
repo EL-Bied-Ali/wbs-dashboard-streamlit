@@ -28,6 +28,7 @@ from auth_google import (
     brand_strip_html,
     _custom_logo_data_uri,
     _remove_custom_logo,
+    require_login,
 )
 
 from billing_store import access_status, get_account_by_email
@@ -69,25 +70,16 @@ st.markdown(
 )
 
 def _get_query_params() -> dict:
-    try:
-        return st.query_params  # type: ignore[attr-defined]
-    except AttributeError:
-        return st.experimental_get_query_params()
+    return dict(st.query_params)
 
 
 def _query_value(params: dict, key: str) -> str | None:
     val = params.get(key)
-    if isinstance(val, list):
-        return val[0] if val else None
     return val
 
 
 def _set_query_params(values: dict[str, str]) -> None:
-    try:
-        st.query_params.clear()  # type: ignore[attr-defined]
-        st.query_params.update(values)  # type: ignore[attr-defined]
-    except AttributeError:
-        st.experimental_set_query_params(**values)
+    st.query_params.update(values)
 
 
 def _handle_logged_out_redirect() -> None:
@@ -184,20 +176,11 @@ def _render_access_gate(state: dict[str, Any]) -> None:
         st.switch_page("pages/4_Billing.py")
 
 
-# --- Streamlit OIDC guard ---
-user_obj = getattr(st, "user", None)
-is_logged_in = bool(user_obj and getattr(user_obj, "is_logged_in", False))
+# --- Auth check ---
+user = require_login()
 
-if not is_logged_in:
-    st.switch_page("pages/0_Router.py")
-    st.stop()
-
-# --- Build a dict compatible with the rest of your code ---
-user = {
-    "email": getattr(user_obj, "email", "") or "",
-    "name": getattr(user_obj, "name", "") or "",
-    "picture": getattr(user_obj, "picture", "") or "",
-}
+# Debug: uncomment to validate auth source
+# st.info(f"Auth debug: {get_auth_debug_info(user)}")
 
 owner_id = owner_id_from_user(user)
 

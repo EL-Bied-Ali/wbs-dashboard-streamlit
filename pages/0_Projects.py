@@ -85,14 +85,13 @@ def _render_dev_switcher_ui(prefix: str, user: dict | None) -> None:
     if st.button("Switch user", key=f"{prefix}_dev_switch_btn"):
         if email_input.strip():
             switch_dev_user(email_input, name_input, ref_input)
+            st.rerun()
         else:
             st.warning("Enter an email to switch.")
 
+
     if st.button("Clear dev user", key=f"{prefix}_dev_clear_btn"):
-        try:
-            st.query_params.clear()  # type: ignore[attr-defined]
-        except AttributeError:
-            st.experimental_set_query_params()
+        st.query_params.clear()
         st.rerun()
 
     saved_users = list_dev_users()
@@ -111,6 +110,8 @@ def _render_dev_switcher_ui(prefix: str, user: dict | None) -> None:
 
             if cols[1].button("Switch", key=f"{prefix}_saved_switch_{idx}"):
                 switch_dev_user(email_value, name_value, ref_input)
+                st.rerun()
+
 
             if cols[2].button("Forget", key=f"{prefix}_saved_forget_{idx}"):
                 forget_dev_user(email_value)

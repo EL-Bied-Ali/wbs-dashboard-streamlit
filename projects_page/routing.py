@@ -8,26 +8,35 @@ import streamlit as st
 
 
 def get_query_params() -> dict[str, Any]:
-    try:
-        return dict(st.query_params)  # type: ignore[attr-defined]
-    except Exception:
-        return st.experimental_get_query_params()
+    return dict(st.query_params)
 
 
 def query_value(params: dict[str, Any], key: str) -> str | None:
     val = params.get(key)
-    if isinstance(val, list):
-        return val[0] if val else None
     if val is None:
         return None
     return str(val)
 
 
 def clear_query_params() -> None:
-    try:
-        st.query_params.clear()  # type: ignore[attr-defined]
-    except Exception:
-        st.experimental_set_query_params()
+    st.query_params.clear()
+
+
+def get_params() -> dict[str, str]:
+    return dict(st.query_params)
+
+
+def set_params_merge(**updates):
+    for k, v in updates.items():
+        if v is None:
+            st.query_params.pop(k, None)
+        else:
+            st.query_params[k] = str(v)
+
+
+def del_params(*keys):
+    for k in keys:
+        st.query_params.pop(k, None)
 
 
 def is_truthy(value: str | None) -> bool:

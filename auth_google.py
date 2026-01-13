@@ -74,13 +74,15 @@ def _load_dev_users() -> list[dict[str, str]]:
     return cleaned
 
 
-def _save_dev_users(users: list[dict[str, str]]) -> None:
+def _save_dev_users(users: list[dict[str, str]]) -> bool:
     try:
         _DEV_USERS_PATH.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(users, indent=2)
         _DEV_USERS_PATH.write_text(payload, encoding="utf-8")
-    except Exception:
-        return
+        return True
+    except Exception as e:
+        st.error(f"Failed to write dev_users.json at {_DEV_USERS_PATH}: {e}")
+        return False
 
 
 def list_dev_users() -> list[dict[str, str]]:
@@ -107,7 +109,8 @@ def forget_dev_user(email: str) -> None:
         return
     lower_email = email_value.lower()
     users = [u for u in _load_dev_users() if u.get("email", "").lower() != lower_email]
-    _save_dev_users(users)
+    if _save_dev_users(users):
+        _rerun()
 
 
 def switch_dev_user(email: str, name: str | None = None, ref_code: str | None = None) -> None:
@@ -131,17 +134,11 @@ def switch_dev_user(email: str, name: str | None = None, ref_code: str | None = 
     }
     st.session_state.pop("_disable_bypass", None)
     remember_dev_user(email_value, name_value)
-    try:
-        st.query_params.clear()  # type: ignore[attr-defined]
-        values = {"dev_user": email_value, "dev_name": name_value}
-        if ref_value:
-            values["ref"] = ref_value
-        st.query_params.update(values)  # type: ignore[attr-defined]
-    except AttributeError:
-        values = {"dev_user": email_value, "dev_name": name_value}
-        if ref_value:
-            values["ref"] = ref_value
-        st.experimental_set_query_params(**values)
+    st.query_params.clear()
+    values = {"dev_user": email_value, "dev_name": name_value}
+    if ref_value:
+        values["ref"] = ref_value
+    st.query_params.update(values)
     _rerun()
 
 
@@ -287,16 +284,11 @@ def _int_setting(key: str, default: int) -> int:
 
 
 def _get_query_params() -> dict[str, Any]:
-    try:
-        return st.query_params  # type: ignore[attr-defined]
-    except AttributeError:
-        return st.experimental_get_query_params()
+    return dict(st.query_params)
 
 
 def _query_value(params: dict[str, Any], key: str) -> str | None:
     val = params.get(key)
-    if isinstance(val, list):
-        return val[0] if val else None
     return val
 
 
@@ -314,12 +306,14 @@ def _bypass_user_from_query() -> dict[str, Any] | None:
     host = _request_host()
     if not _is_localhost_host(host):
         return None
+    _debug_log(f"bypass_query host={host} localhost_ok={_is_localhost_host(host)}")
     params = _get_query_params()
     dev_user = (
         _query_value(params, "dev_user")
         or _query_value(params, "dev_email")
         or ""
     ).strip()
+    _debug_log(f"bypass_query host={host} localhost_ok={_is_localhost_host(host)} dev_user={dev_user}")
     dev_name = (_query_value(params, "dev_name") or "").strip()
     raw = (
         _query_value(params, "dev_bypass")
@@ -340,9 +334,11 @@ def _bypass_user_from_query() -> dict[str, Any] | None:
 
 def _is_localhost_host(host: str | None) -> bool:
     if not host:
-        return False
+        # Streamlit sometimes can't access request host on refresh.
+        # If host is missing, assume local dev.
+        return True
     base = host.split(":")[0].strip().lower()
-    return base in {"localhost", "127.0.0.1", "::1"}
+    return base in {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
 
 
 def _request_headers() -> dict[str, str]:
@@ -519,9 +515,14 @@ def _request_host() -> str | None:
     except Exception:
         pass
     try:
+        return st.get_option("browser.serverAddress")
+    except Exception:
+        pass
+    try:
         return st.get_option("server.address")
     except Exception:
-        return None
+        pass
+    return None
 
 
 def _normalize_redirect_uri(uri: str) -> str:
@@ -565,10 +566,7 @@ def _bypass_user_for_localhost() -> dict[str, Any] | None:
 
 
 def _clear_query_params() -> None:
-    try:
-        st.query_params.clear()  # type: ignore[attr-defined]
-    except Exception:
-        st.experimental_set_query_params()
+    st.query_params.clear()
 
 
 def _rerun() -> None:
@@ -1796,27 +1794,48 @@ def _render_oidc_login() -> None:
 
 
 
-import streamlit as st
+def require_login(force_login: bool = True) -> dict[str, Any] | None:
+    # 1) Dev impersonation in session survives reruns
+    dev_user = st.session_state.get(SESSION_KEY)
+    if isinstance(dev_user, dict) and dev_user.get("email") and dev_user.get("bypass"):
+        return dev_user
 
-def require_login():
-    user_obj = getattr(st, "user", None) or getattr(st, "experimental_user", None)
+    # 2) Dev impersonation from URL (localhost only)
+    dev_from_query = _bypass_user_from_query()
+    if isinstance(dev_from_query, dict) and dev_from_query.get("email"):
+        st.session_state[SESSION_KEY] = dev_from_query
+        return dev_from_query
 
-    is_logged_in = False
-    if user_obj is not None and hasattr(user_obj, "is_logged_in"):
-        is_logged_in = bool(getattr(user_obj, "is_logged_in"))
+    # 3) OIDC user
+    oidc_user = _oidc_user_dict()
+    if not oidc_user:
+        if force_login:
+            st.login("google")
+            st.stop()
+        return None
 
-    if not is_logged_in:
-        st.login("google")   # ou st.login("google") si tu utilises [auth.google]
-        st.stop()
+    # Optional: cache OIDC user in session so shape is consistent downstream
+    st.session_state[SESSION_KEY] = oidc_user
+    return oidc_user
 
-    # Retourne un dict-like safe
-    try:
-        return dict(user_obj)
-    except Exception:
-        return user_obj
+
+def get_auth_debug_info(user: dict[str, Any] | None) -> str:
+    """Debug helper: returns effective auth source and current email."""
+    if not user:
+        return "no user"
+    email = user.get("email", "")
+    if user.get("bypass"):
+        if st.session_state.get(SESSION_KEY):
+            return f"bypass-session: {email}"
+        else:
+            return f"bypass-query: {email}"
+    else:
+        return f"oidc: {email}"
 
 
 def logout() -> None:
+    # also clear dev impersonation
+    st.session_state.pop(SESSION_KEY, None)
     st.logout()
     st.stop()
 
@@ -1937,12 +1956,10 @@ def render_auth_sidebar(
                     else:
                         st.warning("Enter an email to switch.")
                 if st.button("Clear dev user", key="auth_dev_clear"):
-                    try:
-                        st.query_params.clear()  # type: ignore[attr-defined]
-                    except AttributeError:
-                        st.experimental_set_query_params()
+                    st.query_params.clear()
                     _rerun()
                 saved_users = list_dev_users()
+                st.caption(f"dev_users_path={_DEV_USERS_PATH} exists={_DEV_USERS_PATH.exists()}")
                 if saved_users:
                     st.markdown("**Saved accounts**")
                     for idx, entry in enumerate(saved_users):
@@ -1957,8 +1974,10 @@ def render_auth_sidebar(
                         if cols[1].button("Switch", key=f"auth_dev_saved_switch_{idx}"):
                             switch_dev_user(email_value, name_value, ref_input)
                         if cols[2].button("Forget", key=f"auth_dev_saved_forget_{idx}"):
+                            st.write("DEBUG dev_users_path", _DEV_USERS_PATH)
+                            st.write("DEBUG before", _load_dev_users())
                             forget_dev_user(email_value)
-                            _rerun()
+                            st.write("DEBUG after", _load_dev_users())
                     with st.expander("Reset account data", expanded=False):
                         options = [u.get("email", "") for u in saved_users if u.get("email")]
                         target = st.selectbox(

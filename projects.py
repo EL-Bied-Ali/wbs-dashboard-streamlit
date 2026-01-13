@@ -12,6 +12,10 @@ PROJECT_LIMIT = 3
 PROJECTS_PATH = Path("artifacts") / "projects.json"
 PROJECTS_DIR = Path("artifacts") / "projects"
 
+def org_id_from_email(email: str | None) -> str | None:
+    if not email or "@" not in email:
+        return None
+    return email.split("@", 1)[1].lower().strip()
 
 def _normalize_owner_id(value: object | None) -> str | None:
     if value is None:
@@ -105,25 +109,25 @@ def list_projects(owner_id: str | int | None = None) -> list[dict]:
         if _normalize_owner_id(project.get("owner_id")) == owner_key
     ]
 
+def list_projects_for_org(org_id: str | None) -> list[dict]:
+    if not org_id:
+        return []
+    projects = _load_projects()
+    return [p for p in projects if p.get("org_id") == org_id]
 
-def create_project(name: str | None, owner_id: str | int | None = None) -> dict | None:
+
+def create_project(name: str | None, owner_id: str | int | None = None, org_id: str | None = None) -> dict | None:
     owner_key = _normalize_owner_id(owner_id)
     if not owner_key:
         return None
+
     projects = _load_projects()
-    owner_projects = [
-        project
-        for project in projects
-        if _normalize_owner_id(project.get("owner_id")) == owner_key
-    ]
-    if len(owner_projects) >= PROJECT_LIMIT:
-        return None
-    clean_name = (name or "").strip()
-    if not clean_name:
-        clean_name = f"Project {len(owner_projects) + 1}"
+
+    clean_name = (name or "").strip() or f"Project {len(projects) + 1}"
     project = {
         "id": _new_project_id(projects),
         "owner_id": owner_key,
+        "org_id": org_id,              # <-- AJOUT
         "name": clean_name,
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
@@ -136,6 +140,7 @@ def create_project(name: str | None, owner_id: str | int | None = None) -> dict 
     projects.append(project)
     _save_projects(projects)
     return project
+
 
 
 def get_project(project_id: str | None, owner_id: str | int | None = None) -> dict | None:
