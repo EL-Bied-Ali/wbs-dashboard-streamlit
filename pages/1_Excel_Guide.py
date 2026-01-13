@@ -23,7 +23,7 @@ render_auth_sidebar(user, show_logo=False, show_branding=False)
 inject_theme()
 
 st.sidebar.markdown('<div class="sidebar-nav-title">Navigation</div>', unsafe_allow_html=True)
-st.sidebar.page_link("app.py", label="Project Progress")
+st.sidebar.page_link("pages/10_Dashboard.py", label="Project Progress")
 st.sidebar.page_link("pages/3_S_Curve.py", label="S-Curve")
 st.sidebar.page_link("pages/2_WBS.py", label="WBS")
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)

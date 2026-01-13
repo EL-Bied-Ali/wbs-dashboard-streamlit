@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 
 CSS = """
 <style>
@@ -225,7 +225,7 @@ table.neo tbody tr:hover{ background:rgba(148,163,184,.06); transition:backgroun
 .table-card table.neo, .table-card table.neo *{ border:0 !important; box-shadow:none !important; }
 .table-card table.neo thead{ display:none !important; }
 
-/* ==== Barres horizontales (si tu les rÃ©actives) ==== */
+/* ==== Barres horizontales (si tu les réactives) ==== */
 .mbar-wrap{display:flex; align-items:center; gap:8px;}
 .mbar{
   position:relative; height:var(--bar-h); background:#1f2a44; border-radius:999px; overflow:hidden; flex-shrink:0;
@@ -305,7 +305,7 @@ hr{
   height: 0; padding: 0; margin: 0;
 }
 
-/* Nettoyage des marges â€œfantÃ´mesâ€ autour des markdown/cols */
+/* Nettoyage des marges “fantômes” autour des markdown/cols */
 div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) [data-testid="stMarkdownContainer"] > p{ margin:0 !important; }
 div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) .stColumns,
 div[data-testid="stVerticalBlock"]:has(.n2-block-sentinel) [data-testid="column"]{ overflow:visible; }
@@ -353,7 +353,7 @@ div[data-testid="stExpander"] > details > summary{
 }
 div[data-testid="stExpander"] > details > summary::-webkit-details-marker{ display:none!important }
 
-/* ================= N3: animations (rejouent grÃ¢ce au remount) ================= */
+/* ================= N3: animations (rejouent grâce au remount) ================= */
 @keyframes n3Open{
   0%{max-height:0;opacity:0;transform:scaleY(.98) translateY(-6px)}
   100%{max-height:2000px;opacity:1;transform:scaleY(1) translateY(0)}
@@ -396,11 +396,11 @@ div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpande
   to{opacity:1;transform:translateY(0)}
 }
 
-/* LÃ©gers dÃ©calages pour un rendu plus fluide */
+/* Légers décalages pour un rendu plus fluide */
 .n2-grid .mbar-wrap.v{--delay:90ms}
 .table-card .mbar-wrap.v{--delay:40ms}
 
-/* Respecte lâ€™accessibilitÃ© */
+/* Respecte l’accessibilité */
 @media (prefers-reduced-motion: reduce){
   .mfill.anim{animation:none;width:var(--to,0%)}
   .mbar-wrap.v .mval{animation:none;opacity:1}
@@ -432,7 +432,7 @@ div[data-testid="stExpanderDetails"] .mfill{ transition:none }
 
 
 
-/* ====== keyframes doublÃ©s pour rejouer (A/B) ====== */
+/* ====== keyframes doublés pour rejouer (A/B) ====== */
 @keyframes n3ChartInA { from{opacity:0;transform:translateY(12px) scale(.985)} to{opacity:1;transform:translateY(0) scale(1)} }
 @keyframes n3ChartInB { from{opacity:0;transform:translateY(12px) scale(.985)} to{opacity:1;transform:translateY(0) scale(1)} }
 
@@ -518,13 +518,13 @@ details[open] [data-testid="stExpanderDetails"]
   will-change: transform, opacity;
 }
 
-/* AccessibilitÃ© */
+/* Accessibilité */
 @media (prefers-reduced-motion: reduce){
   details[open] [data-testid="stExpanderDetails"]
     .stElementContainer:has(.n3load.v0), 
   details[open] [data-testid="stExpanderDetails"]
     .stElementContainer:has(.n3load.v1){
-    /* neutralise toutes les animations ciblÃ©es ci-dessus */
+    /* neutralise toutes les animations ciblées ci-dessus */
   }
   details[open] [data-testid="stExpanderDetails"]
     .stElementContainer:has(.n3load) ~ .stElementContainer
@@ -558,7 +558,7 @@ section[data-testid="stSidebar"] [role="radiogroup"]{
 section[data-testid="stSidebar"] label[data-baseweb="radio"]{
   position:relative;
   display:flex; align-items:center; gap:10px;
-  width:100%;                                 /* ðŸ‘ˆ all same width */
+  width:100%;                                 /* 👈 all same width */
   box-sizing:border-box;                      /* respect padding + border */
   padding:8px 12px;
   border-radius:10px;
@@ -626,9 +626,9 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked):
   text-shadow: 0 0 4px rgba(59,130,246,.3);
   transition: background .2s ease, border-color .2s ease;
 
-  /* rÃ©serve de la place Ã  gauche pour le point */
+  /* réserve de la place à gauche pour le point */
   position: relative;
-  padding-left: 36px !important;  /* â¬… now overrides lâ€™ancien padding!important */
+  padding-left: 36px !important;  /* ⬅ now overrides l’ancien padding!important */
 }
 
 /* point + glow + position fixe */
@@ -710,7 +710,7 @@ div[class*="__rowwrap"] div[class*="__rowbtn"] .stButton button:hover{
 .table-card .mbar{ display:block; overflow:hidden; border-radius:6px; }
 .table-card .mfill{ display:block; height:8px; width:var(--to,0%); border-radius:6px; }
 
-/* Rejoue lâ€™animation Ã  chaque rendu (compatible avec --to inline) */
+/* Rejoue l’animation à chaque rendu (compatible avec --to inline) */
 .table-card .mfill.anim{ animation:mfillGrowA .8s cubic-bezier(.22,.61,.36,1) forwards; }
 .table-card .mfill.anim.av1{ animation-name:mfillGrowB; }
 @keyframes mfillGrowA{ 0%{ width:0 } 100%{ width:var(--to) } }
@@ -1333,12 +1333,12 @@ body::before, body::after,
   object-fit:contain;
 }
 
-/* N2: garder les labels de colonnes seulement sur la 1ère ligne (depth-2) */
+/* N2: garder les labels de colonnes seulement sur la 1�re ligne (depth-2) */
 .n2-grid .n2g-cell .small { 
   display: none !important;
 }
 
-/* Exception: la 1ère ligne N2 (celle avec depth-2) garde les labels */
+/* Exception: la 1�re ligne N2 (celle avec depth-2) garde les labels */
 .n2-grid.depth-2 .n2g-cell .small {
   display: inline-block !important;
 }
