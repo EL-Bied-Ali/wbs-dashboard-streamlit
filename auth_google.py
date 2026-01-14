@@ -117,7 +117,9 @@ def switch_dev_user(email: str, name: str | None = None, ref_code: str | None = 
     host = _request_host()
     debug_bypass = os.environ.get("DEBUG_AUTH_BYPASS") == "1"
     localhost_ok = _is_localhost_host(host)
-    if not (localhost_ok or debug_bypass):
+    allow = localhost_ok or debug_bypass
+    _debug_log(f"switch_dev_user: host={host}, localhost_ok={localhost_ok}, debug_bypass={debug_bypass}, allow={allow}")
+    if not allow:
         _debug_log("DEV BYPASS BLOCKED")
         return
     email_value = (email or "").strip()
@@ -312,7 +314,9 @@ def _bypass_user_from_query() -> dict[str, Any] | None:
     host = _request_host()
     debug_bypass = os.environ.get("DEBUG_AUTH_BYPASS") == "1"
     localhost_ok = _is_localhost_host(host)
-    if not (localhost_ok or debug_bypass):
+    allow = localhost_ok or debug_bypass
+    _debug_log(f"_bypass_user_from_query: host={host}, localhost_ok={localhost_ok}, debug_bypass={debug_bypass}, allow={allow}")
+    if not allow:
         _debug_log("DEV BYPASS BLOCKED")
         return None
     _debug_log(f"bypass_query host={host} localhost_ok={localhost_ok} debug_bypass={debug_bypass}")
@@ -343,11 +347,9 @@ def _bypass_user_from_query() -> dict[str, Any] | None:
 
 def _is_localhost_host(host: str | None) -> bool:
     if not host:
-        # Streamlit sometimes can't access request host on refresh.
-        # If host is missing, assume local dev.
-        return True
+        return False
     base = host.split(":")[0].strip().lower()
-    return base in {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
+    return base in {"localhost", "127.0.0.1", "::1"}
 
 
 def _request_headers() -> dict[str, str]:
@@ -515,22 +517,29 @@ def _request_host() -> str | None:
     try:
         headers = _request_headers()
         if headers:
-            return (
+            host = (
                 headers.get("x-forwarded-host")
                 or headers.get("X-Forwarded-Host")
                 or headers.get("host")
                 or headers.get("Host")
             )
-    except Exception:
-        pass
+            _debug_log(f"_request_host from headers: {host}")
+            return host
+    except Exception as e:
+        _debug_log(f"_request_host headers error: {e}")
     try:
-        return st.get_option("browser.serverAddress")
-    except Exception:
-        pass
+        host = st.get_option("browser.serverAddress")
+        _debug_log(f"_request_host from browser.serverAddress: {host}")
+        return host
+    except Exception as e:
+        _debug_log(f"_request_host browser.serverAddress error: {e}")
     try:
-        return st.get_option("server.address")
-    except Exception:
-        pass
+        host = st.get_option("server.address")
+        _debug_log(f"_request_host from server.address: {host}")
+        return host
+    except Exception as e:
+        _debug_log(f"_request_host server.address error: {e}")
+    _debug_log("_request_host: no host found")
     return None
 
 
@@ -562,12 +571,15 @@ def _resolve_redirect_uri() -> str:
 def _bypass_user_for_localhost() -> dict[str, Any] | None:
     raw = (_get_setting("AUTH_BYPASS_LOCALHOST") or "").strip().lower()
     debug_bypass = os.environ.get("DEBUG_AUTH_BYPASS") == "1"
+    host = _request_host()
+    localhost_ok = _is_localhost_host(host)
     if raw in {"1", "true", "yes"}:
         host_ok = True
     else:
-        host = _request_host()
-        host_ok = _is_localhost_host(host) or debug_bypass
-    if not host_ok:
+        host_ok = localhost_ok or debug_bypass
+    allow = host_ok
+    _debug_log(f"_bypass_user_for_localhost: host={host}, localhost_ok={localhost_ok}, raw={raw}, debug_bypass={debug_bypass}, allow={allow}")
+    if not allow:
         _debug_log("DEV BYPASS BLOCKED")
         return None
     email = _get_setting("AUTH_LOCALHOST_EMAIL", "local@dev") or "local@dev"
