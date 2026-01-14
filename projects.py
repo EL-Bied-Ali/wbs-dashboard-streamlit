@@ -41,6 +41,9 @@ def owner_id_from_user(user: dict | None) -> str | None:
     account_id = user.get("billing_account_id")
     if account_id is not None:
         return _normalize_owner_id(account_id)
+    sub = (user.get("sub") or "").strip()
+    if sub:
+        return f"sub:{sub}"
     email = (user.get("email") or "").strip()
     if email:
         return _normalize_owner_id(email)
@@ -354,3 +357,24 @@ def persist_project_mapping(project_id: str | None, mapping: dict, mapping_key: 
     if not project_id:
         return
     update_project(project_id, mapping=mapping, mapping_key=mapping_key)
+
+
+def migrate_owner_id_to_sub(user: dict) -> None:
+    """Migrate projects from email-based owner_id to sub-based if user has sub."""
+    if not user or not user.get("sub"):
+        return
+    sub_owner_id = f"sub:{user['sub']}"
+    email = (user.get("email") or "").strip()
+    if not email:
+        return
+    email_owner_id = _normalize_owner_id(email)
+    if sub_owner_id == email_owner_id:
+        return  # already migrated or same
+    projects = _load_projects()
+    migrated = False
+    for project in projects:
+        if project.get("owner_id") == email_owner_id:
+            project["owner_id"] = sub_owner_id
+            migrated = True
+    if migrated:
+        _save_projects(projects)

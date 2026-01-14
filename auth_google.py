@@ -114,6 +114,12 @@ def forget_dev_user(email: str) -> None:
 
 
 def switch_dev_user(email: str, name: str | None = None, ref_code: str | None = None) -> None:
+    host = _request_host()
+    debug_bypass = os.environ.get("DEBUG_AUTH_BYPASS") == "1"
+    localhost_ok = _is_localhost_host(host)
+    if not (localhost_ok or debug_bypass):
+        _debug_log(f"switch_dev_user refused: host={host} not localhost and DEBUG_AUTH_BYPASS != '1'")
+        return
     email_value = (email or "").strip()
     if not email_value:
         return
@@ -304,16 +310,19 @@ def _bypass_user_from_env() -> dict[str, Any] | None:
 
 def _bypass_user_from_query() -> dict[str, Any] | None:
     host = _request_host()
-    if not _is_localhost_host(host):
+    debug_bypass = os.environ.get("DEBUG_AUTH_BYPASS") == "1"
+    localhost_ok = _is_localhost_host(host)
+    if not (localhost_ok or debug_bypass):
+        _debug_log(f"bypass_query refused: host={host} not localhost and DEBUG_AUTH_BYPASS != '1'")
         return None
-    _debug_log(f"bypass_query host={host} localhost_ok={_is_localhost_host(host)}")
+    _debug_log(f"bypass_query host={host} localhost_ok={localhost_ok} debug_bypass={debug_bypass}")
     params = _get_query_params()
     dev_user = (
         _query_value(params, "dev_user")
         or _query_value(params, "dev_email")
         or ""
     ).strip()
-    _debug_log(f"bypass_query host={host} localhost_ok={_is_localhost_host(host)} dev_user={dev_user}")
+    _debug_log(f"bypass_query host={host} localhost_ok={localhost_ok} dev_user={dev_user}")
     dev_name = (_query_value(params, "dev_name") or "").strip()
     raw = (
         _query_value(params, "dev_bypass")
@@ -552,12 +561,14 @@ def _resolve_redirect_uri() -> str:
 
 def _bypass_user_for_localhost() -> dict[str, Any] | None:
     raw = (_get_setting("AUTH_BYPASS_LOCALHOST") or "").strip().lower()
+    debug_bypass = os.environ.get("DEBUG_AUTH_BYPASS") == "1"
     if raw in {"1", "true", "yes"}:
         host_ok = True
     else:
         host = _request_host()
-        host_ok = _is_localhost_host(host)
+        host_ok = _is_localhost_host(host) or debug_bypass
     if not host_ok:
+        _debug_log(f"bypass_localhost refused: host={_request_host()} not localhost and DEBUG_AUTH_BYPASS != '1'")
         return None
     email = _get_setting("AUTH_LOCALHOST_EMAIL", "local@dev") or "local@dev"
     name = _get_setting("AUTH_LOCALHOST_NAME", "Local Dev") or "Local Dev"
@@ -1713,6 +1724,9 @@ def _post_login(user: dict[str, Any]) -> dict[str, Any]:
             "login",
             {"email": user.get("email"), "ref": ref_code},
         )
+    # Migrate owner_id to sub if available
+    from projects import migrate_owner_id_to_sub
+    migrate_owner_id_to_sub(user)
     return user
 
 
