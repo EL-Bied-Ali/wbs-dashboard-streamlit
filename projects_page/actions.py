@@ -67,6 +67,74 @@ def open_create_dialog(
     _dialog()
 
 
+def open_create_popover(
+    *,
+    project_count: int,
+    project_limit: int,
+    owner_id: str | None,
+    org_id: str | None,
+    account_id: int | None,
+) -> None:
+    """Render a small floating create project panel using st.popover.
+
+    This is UI-only: it does not modify query params or perform navigation. On
+    successful creation it sets a flash message and reruns so the project list
+    refreshes.
+    """
+    if not hasattr(st, "popover"):
+        # Fallback to dialog for older Streamlit versions
+        open_create_dialog(
+            project_count=project_count,
+            project_limit=project_limit,
+            owner_id=owner_id,
+            org_id=org_id,
+            account_id=account_id,
+            clear_query_params_fn=lambda *a, **k: None,
+        )
+        return
+
+    with st.popover("Create project", width="content"):
+        st.markdown('<div class="manage-modal-title">Create project</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="manage-modal-sub">Start a new workspace for a client or timeline.</div>',
+            unsafe_allow_html=True,
+        )
+        with st.container(key="create_form_popover"):
+            if project_count >= project_limit:
+                st.warning(f"Project limit reached ({project_limit}).")
+                return
+
+            if not owner_id and not org_id:
+                st.warning("Unable to create project: missing owner information.")
+                return
+
+            with st.form("create_project_form_popover"):
+                name = st.text_input(
+                    "Project name",
+                    key="create_project_name_popover",
+                    placeholder="Project name",
+                    label_visibility="visible",
+                )
+                submitted = st.form_submit_button("Create project")
+
+                if submitted:
+                    cleaned = (name or "").strip()
+                    if not cleaned:
+                        st.warning("Project name cannot be empty.")
+                    else:
+                        project = create_project(cleaned, owner_id=owner_id, org_id=org_id)
+                        if project:
+                            record_event(
+                                account_id,
+                                "project_created",
+                                {"project_id": project["id"]},
+                            )
+                            st.session_state["project_flash"] = f'Project "{cleaned}" created.'
+                            st.rerun()
+                        else:
+                            st.error("Unable to create project.")
+
+
 def project_actions_popover(
     *,
     project_id: str,

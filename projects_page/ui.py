@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import html as _html
-from typing import Callable
+from typing import Callable, Optional
 
 import streamlit as st
 
@@ -40,20 +40,26 @@ def render_top_bar(
     st.html(top_bar_html)
 
 
-def render_hero(*, cta_button_html: str, project_count: int, project_limit: int) -> None:
-    hero_html = f"""
-<div class="project-hero">
-  <div>
-    <h1 class="project-title">Pick your next project</h1>
-    <div class="project-sub">Build dashboards per client or per timeline.</div>
-  </div>
-  <div class="project-cta">
-    {cta_button_html}
-    <div class="ghost-chip">Projects {project_count}/{project_limit}</div>
-  </div>
-</div>
-"""
-    st.html(hero_html)
+def render_hero(*, cta_button_html: str = "", project_count: int, project_limit: int, on_render_cta: Optional[Callable[[], None]] = None) -> None:
+    """Render the hero area.
+
+    If on_render_cta is provided, it will be called to render the CTA widget
+    (e.g. a popover trigger) inside the CTA column. Otherwise the provided
+    raw `cta_button_html` string will be used.
+    """
+    cols = st.columns([3, 1])
+    with cols[0]:
+        st.markdown("<h1 class=\"project-title\">Pick your next project</h1>", unsafe_allow_html=True)
+        st.markdown("<div class=\"project-sub\">Build dashboards per client or per timeline.</div>", unsafe_allow_html=True)
+    with cols[1]:
+        if on_render_cta:
+            # Let the caller render an interactive CTA (e.g., st.popover)
+            on_render_cta()
+        else:
+            # Fallback to raw HTML CTA for older code paths
+            if cta_button_html:
+                st.html(cta_button_html)
+        st.markdown(f"<div class=\"ghost-chip\">Projects {project_count}/{project_limit}</div>", unsafe_allow_html=True)
 
 
 def render_admin_sidebar_left(
@@ -110,7 +116,7 @@ def render_admin_sidebar_left(
     <div class="admin-card-title">{tools_label}</div>
     <div class="admin-actions">
       <a class="admin-button" href="{admin_stats_href}">Open admin stats</a>
-      <a class="admin-button ghost" href="?create=1">Create project</a>
+      <!-- Create project popover is rendered separately in page.py to provide owner/org context -->
     </div>
   </div>
 </div>

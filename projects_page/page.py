@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import html
-import urllib.parse
 from pathlib import Path
 from typing import Callable
 import os
@@ -13,7 +12,7 @@ import streamlit as st
 from auth_google import _get_logo_data_uri, logout, require_login
 from billing_store import access_status, get_account_by_email
 from projects import PROJECT_LIMIT, assign_projects_to_owner, list_projects, owner_id_from_user, list_projects_for_org, org_id_from_email
-from projects_page.actions import open_create_dialog, project_actions_popover
+from projects_page.actions import open_create_popover, project_actions_popover
 from projects_page.debug_tools import debug_enabled, debug_log, timeit
 from projects_page.routing import (
     base_url,
@@ -68,7 +67,6 @@ def render_projects_page(
     params = get_query_params()
     logout_param = query_value(params, "logout")
     project_param = query_value(params, "project")
-    create_param = query_value(params, "create") or query_value(params, "new")
 
     if is_truthy(logout_param):
         logout()
@@ -196,19 +194,31 @@ def render_projects_page(
         locked_cta_label = "Subscription required"
 
     if is_locked:
-        cta_button_html = f'<a class="cta-button" href="/Billing">{locked_cta_label}</a>'
-    else:
-        params = get_params()
-        params['create'] = '1'
-        query_string = '&'.join(f'{k}={urllib.parse.quote(str(v))}' for k,v in params.items())
-        create_href = f'?{query_string}'
-        cta_button_html = f'<a class="cta-button" href="{create_href}">Create project</a>'
+        # Show billing CTA if account is locked
+        def _render_cta_locked() -> None:
+            st.markdown(f"<a class=\"cta-button\" href=\"/Billing\">{locked_cta_label}</a>", unsafe_allow_html=True)
 
-    render_hero(
-        cta_button_html=cta_button_html,
-        project_count=project_count,
-        project_limit=PROJECT_LIMIT,
-    )
+        render_hero(
+            project_count=project_count,
+            project_limit=PROJECT_LIMIT,
+            on_render_cta=_render_cta_locked,
+        )
+    else:
+        # Render a popover-based Create project CTA that is UI-only (no query params)
+        def _render_cta() -> None:
+            open_create_popover(
+                project_count=project_count,
+                project_limit=PROJECT_LIMIT,
+                owner_id=owner_id,
+                org_id=org_id,
+                account_id=user.get("billing_account_id"),
+            )
+
+        render_hero(
+            project_count=project_count,
+            project_limit=PROJECT_LIMIT,
+            on_render_cta=_render_cta,
+        )
 
     flash_message = st.session_state.pop("project_flash", None)
     if flash_message:
@@ -220,18 +230,6 @@ def render_projects_page(
             st.caption("Share this link to grant a bonus month on the first paid month.")
             st.code(referral_link)
 
-    if is_truthy(create_param):
-        if is_locked:
-            st.warning("Subscription required to create projects.")
-        else:
-            open_create_dialog(
-                project_count=project_count,
-                project_limit=PROJECT_LIMIT,
-                owner_id=owner_id,
-                org_id=org_id,   # <-- AJOUT
-                account_id=user.get("billing_account_id"),
-                clear_query_params_fn=clear_query_params,
-            )
 
 
 
