@@ -94,11 +94,6 @@ def open_create_popover(
         return
 
     with st.popover("Create project", width="content"):
-        st.markdown('<div class="manage-modal-title">Create project</div>', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="manage-modal-sub">Start a new workspace for a client or timeline.</div>',
-            unsafe_allow_html=True,
-        )
         with st.container(key="create_form_popover"):
             if project_count >= project_limit:
                 st.warning(f"Project limit reached ({project_limit}).")
@@ -108,31 +103,41 @@ def open_create_popover(
                 st.warning("Unable to create project: missing owner information.")
                 return
 
-            with st.form("create_project_form_popover"):
+            with st.form("create_project_form_popover", clear_on_submit=True):
                 name = st.text_input(
                     "Project name",
                     key="create_project_name_popover",
-                    placeholder="Project name",
-                    label_visibility="visible",
+                    placeholder="New project name",
+                    label_visibility="collapsed",
                 )
+
+                # Subtitle moved UNDER the input
+                st.markdown(
+                    '<div class="create-project-helper">'
+                    'Start a new workspace for a client or timeline.'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
+
+                # Required submit button (hidden via CSS)
                 submitted = st.form_submit_button("Create project")
 
-                if submitted:
-                    cleaned = (name or "").strip()
-                    if not cleaned:
-                        st.warning("Project name cannot be empty.")
+            if submitted:
+                cleaned = (name or "").strip()
+                if not cleaned:
+                    st.warning("Project name cannot be empty.")
+                else:
+                    project = create_project(cleaned, owner_id=owner_id, org_id=org_id)
+                    if project:
+                        record_event(
+                            account_id,
+                            "project_created",
+                            {"project_id": project["id"]},
+                        )
+                        st.session_state["project_flash"] = f'Project "{cleaned}" created.'
+                        st.rerun()
                     else:
-                        project = create_project(cleaned, owner_id=owner_id, org_id=org_id)
-                        if project:
-                            record_event(
-                                account_id,
-                                "project_created",
-                                {"project_id": project["id"]},
-                            )
-                            st.session_state["project_flash"] = f'Project "{cleaned}" created.'
-                            st.rerun()
-                        else:
-                            st.error("Unable to create project.")
+                        st.error("Unable to create project.")
 
 
 def project_actions_popover(
@@ -168,7 +173,10 @@ def project_actions_popover(
                         st.error("Unable to update project name.")
 
         st.divider()
-        st.caption("Danger zone")
+        st.markdown(
+            '<div class="manage-danger-title">Danger zone</div>',
+            unsafe_allow_html=True,
+        )
 
         if st.button(
             "Delete",

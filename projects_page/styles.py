@@ -184,6 +184,267 @@ body::before{
   text-decoration:none;
   box-shadow: 0 14px 36px rgba(109,213,237,.35);
 }
+
+/* ===================================
+   Create Project Popover Button
+   Styled to match .cta-button
+   =================================== */
+
+div.st-key-create_project_cta button[data-testid="stPopoverButton"] {
+  /* Base styling: match .cta-button */
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2)) !important;
+  color: #0b0f18 !important;
+  box-shadow: 0 14px 36px rgba(109,213,237,.35) !important;
+  
+  /* Reset Streamlit secondary button defaults */
+  border: none !important;
+  outline: none !important;
+  text-decoration: none !important;
+  line-height: normal !important;
+  
+  /* Smooth transitions */
+  transition: all 150ms ease-in-out !important;
+}
+
+div.st-key-create_project_cta button[data-testid="stPopoverButton"]:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 16px 40px rgba(109,213,237,.45) !important;
+}
+
+div.st-key-create_project_cta button[data-testid="stPopoverButton"]:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 10px 28px rgba(109,213,237,.30) !important;
+}
+
+div.st-key-create_project_cta button[data-testid="stPopoverButton"]:focus {
+  outline: none !important;
+  box-shadow: 0 14px 36px rgba(109,213,237,.35), 0 0 0 3px rgba(109,213,237,.2) !important;
+}
+
+/* Hide the expand_more icon */
+div.st-key-create_project_cta button[data-testid="stPopoverButton"] svg {
+  display: none !important;
+}
+
+/* =========================
+   Create Project Popover - Premium Glass Card
+   Portal node: div[data-testid="stPopoverBody"]#bui2
+   ========================= */
+
+/* Reset trigger wrapper (no frame around button) */
+div.st-key-create_project_cta [data-testid="stPopover"] {
+  background: transparent !important;
+}
+
+div.st-key-create_project_cta [data-testid="stPopover"] > div {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Popover panel (portal-rendered) */
+div[data-testid="stPopoverBody"]#bui2 {
+  background: var(--card) !important;
+  border: 1px solid var(--card-border) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62), inset 0 0 16px rgba(0, 0, 0, 0.10) !important;
+  backdrop-filter: blur(12px) !important;
+  padding: 18px 18px 16px 18px !important;
+  min-width: 360px !important;
+}
+
+/* Title */
+div[data-testid="stPopoverBody"]#bui2 .manage-modal-title {
+  color: var(--text) !important;
+  font-size: 18px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.2px !important;
+  margin-bottom: 6px !important;
+}
+
+/* Subtitle */
+div[data-testid="stPopoverBody"]#bui2 .manage-modal-sub {
+  color: var(--muted) !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  margin-bottom: 14px !important;
+}
+
+/* Input wrapper (BaseWeb) */
+div[data-testid="stPopoverBody"]#bui2 [data-testid="stTextInputRootElement"] {
+  background: rgba(10, 12, 18, 0.55) !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+div[data-testid="stPopoverBody"]#bui2 [data-testid="stTextInputRootElement"]:focus-within {
+  border-color: rgba(109, 213, 237, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(109, 213, 237, 0.18) !important;
+}
+
+/* Input text */
+div[data-testid="stPopoverBody"]#bui2 input[type="text"] {
+  color: var(--text) !important;
+  font-size: 14px !important;
+  padding: 11px 12px !important;
+}
+
+div[data-testid="stPopoverBody"]#bui2 input[type="text"]::placeholder {
+  color: rgba(139, 152, 180, 0.85) !important;
+}
+
+/* Hard reset inner wrappers to eliminate second frame */
+div[data-testid="stPopoverBody"]#bui2 > div,
+div[data-testid="stPopoverBody"]#bui2 > div > div,
+div[data-testid="stPopoverBody"]#bui2 [data-testid="stVerticalBlock"],
+div[data-testid="stPopoverBody"]#bui2 [data-testid="stLayoutWrapper"],
+div[data-testid="stPopoverBody"]#bui2 [data-testid="stForm"] {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Hide submit button inside Create Project popover */
+div[data-testid="stPopoverBody"]#bui2 [data-testid="stFormSubmitButton"] {
+  display: none !important;
+}
+
+/* Hide Streamlit default "Press Enter to submit form" hint */
+div[data-testid="stPopoverBody"]#bui2 form small {
+  display: none !important;
+}
+
+/* Helper text under input (subtitle moved below) */
+div[data-testid="stPopoverBody"]#bui2 .create-project-helper {
+  margin-top: 8px !important;
+  color: var(--muted) !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  opacity: 0.85 !important;
+}
+
+/* =========================
+   Manage Project Popover Panel (#bui4)
+   ========================= */
+
+/* Main panel - glass card style */
+div[data-testid="stPopoverBody"]#bui4 {
+  background: var(--card) !important;
+  border: 1px solid var(--card-border) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.60), inset 0 0 16px rgba(0, 0, 0, 0.10) !important;
+  backdrop-filter: blur(12px) !important;
+  padding: 16px !important;
+  min-width: 360px !important;
+}
+
+/* Hard reset inner wrappers to eliminate second frame */
+div[data-testid="stPopoverBody"]#bui4 > div,
+div[data-testid="stPopoverBody"]#bui4 > div > div,
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stVerticalBlock"],
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stLayoutWrapper"],
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stForm"] {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Section titles - Manage project */
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stCaptionContainer"] p {
+  color: var(--text) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  margin: 0 0 12px 0 !important;
+}
+
+/* Danger zone title - with red accent */
+div[data-testid="stPopoverBody"]#bui4 .manage-danger-title {
+  color: rgba(255, 140, 140, 0.95) !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  margin: 12px 0 10px 0 !important;
+}
+
+/* Divider - subtle line */
+div[data-testid="stPopoverBody"]#bui4 hr {
+  border: none !important;
+  height: 1px !important;
+  background: var(--card-border) !important;
+  opacity: 0.5 !important;
+  margin: 10px 0 !important;
+}
+
+/* Input wrapper */
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stTextInputRootElement"] {
+  background: rgba(10, 12, 18, 0.55) !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Input focus ring */
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stTextInputRootElement"]:focus-within {
+  border-color: rgba(109, 213, 237, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(109, 213, 237, 0.18) !important;
+}
+
+/* Input text */
+div[data-testid="stPopoverBody"]#bui4 input[type="text"] {
+  color: var(--text) !important;
+  font-size: 14px !important;
+  padding: 11px 12px !important;
+}
+
+/* Buttons container */
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stHorizontalBlock"] {
+  gap: 8px !important;
+}
+
+/* Save button - secondary style */
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stBaseButton-secondary"] {
+  width: 100% !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  background: rgba(10, 12, 18, 0.55) !important;
+  color: var(--text) !important;
+}
+
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stBaseButton-secondary"]:hover {
+  border-color: rgba(109, 213, 237, 0.35) !important;
+  background: rgba(10, 12, 18, 0.70) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Delete button - danger style */
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stBaseButton-primary"] {
+  width: 100% !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  font-weight: 800 !important;
+  border: 1px solid rgba(255, 100, 100, 0.35) !important;
+  background: rgba(255, 100, 100, 0.12) !important;
+  color: rgba(255, 160, 160, 0.95) !important;
+}
+
+div[data-testid="stPopoverBody"]#bui4 [data-testid="stBaseButton-primary"]:hover {
+  background: rgba(255, 100, 100, 0.18) !important;
+  border-color: rgba(255, 100, 100, 0.50) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.40) !important;
+}
+
 .ghost-chip{
   font-size:13px;
   color: var(--muted);

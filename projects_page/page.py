@@ -206,13 +206,14 @@ def render_projects_page(
     else:
         # Render a popover-based Create project CTA that is UI-only (no query params)
         def _render_cta() -> None:
-            open_create_popover(
-                project_count=project_count,
-                project_limit=PROJECT_LIMIT,
-                owner_id=owner_id,
-                org_id=org_id,
-                account_id=user.get("billing_account_id"),
-            )
+            with st.container(key="create_project_cta"):
+                open_create_popover(
+                    project_count=project_count,
+                    project_limit=PROJECT_LIMIT,
+                    owner_id=owner_id,
+                    org_id=org_id,
+                    account_id=user.get("billing_account_id"),
+                )
 
         render_hero(
             project_count=project_count,
