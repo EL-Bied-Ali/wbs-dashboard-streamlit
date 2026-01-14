@@ -118,7 +118,7 @@ def switch_dev_user(email: str, name: str | None = None, ref_code: str | None = 
     debug_bypass = os.environ.get("DEBUG_AUTH_BYPASS") == "1"
     localhost_ok = _is_localhost_host(host)
     if not (localhost_ok or debug_bypass):
-        _debug_log(f"switch_dev_user refused: host={host} not localhost and DEBUG_AUTH_BYPASS != '1'")
+        _debug_log("DEV BYPASS BLOCKED")
         return
     email_value = (email or "").strip()
     if not email_value:
@@ -313,7 +313,7 @@ def _bypass_user_from_query() -> dict[str, Any] | None:
     debug_bypass = os.environ.get("DEBUG_AUTH_BYPASS") == "1"
     localhost_ok = _is_localhost_host(host)
     if not (localhost_ok or debug_bypass):
-        _debug_log(f"bypass_query refused: host={host} not localhost and DEBUG_AUTH_BYPASS != '1'")
+        _debug_log("DEV BYPASS BLOCKED")
         return None
     _debug_log(f"bypass_query host={host} localhost_ok={localhost_ok} debug_bypass={debug_bypass}")
     params = _get_query_params()
@@ -568,7 +568,7 @@ def _bypass_user_for_localhost() -> dict[str, Any] | None:
         host = _request_host()
         host_ok = _is_localhost_host(host) or debug_bypass
     if not host_ok:
-        _debug_log(f"bypass_localhost refused: host={_request_host()} not localhost and DEBUG_AUTH_BYPASS != '1'")
+        _debug_log("DEV BYPASS BLOCKED")
         return None
     email = _get_setting("AUTH_LOCALHOST_EMAIL", "local@dev") or "local@dev"
     name = _get_setting("AUTH_LOCALHOST_NAME", "Local Dev") or "Local Dev"
