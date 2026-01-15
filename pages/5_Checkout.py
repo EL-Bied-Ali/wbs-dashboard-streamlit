@@ -48,9 +48,8 @@ def _base_url() -> str:
     raw = _get_secret("APP_URL")
     if raw:
         return raw.rstrip("/")
-    host = st.get_option("server.address") or "localhost"
-    port = st.get_option("server.port") or 8501
-    return f"http://{host}:{port}"
+    # Fallback: local dev
+    return "http://localhost:8501"
 
 
 def _paddle_checkout_widget_html(

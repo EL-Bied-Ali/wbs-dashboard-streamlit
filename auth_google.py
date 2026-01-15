@@ -1736,9 +1736,6 @@ def _post_login(user: dict[str, Any]) -> dict[str, Any]:
             "login",
             {"email": user.get("email"), "ref": ref_code},
         )
-    # Migrate owner_id to sub if available
-    from projects import migrate_owner_id_to_sub
-    migrate_owner_id_to_sub(user)
     return user
 
 

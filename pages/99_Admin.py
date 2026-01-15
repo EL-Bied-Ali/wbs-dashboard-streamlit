@@ -59,9 +59,8 @@ def _base_url() -> str:
             raw = ""
     if raw:
         return raw.rstrip("/")
-    host = st.get_option("server.address") or "localhost"
-    port = st.get_option("server.port") or 8501
-    return f"http://{host}:{port}"
+    # Fallback: local dev
+    return "http://localhost:8501"
 
 
 user = require_login()

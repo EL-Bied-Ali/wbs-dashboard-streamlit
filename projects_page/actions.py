@@ -21,6 +21,7 @@ def open_create_dialog(
     org_id: str | None,
     account_id: int | None,
     clear_query_params_fn,
+    user: dict | None = None,
 ) -> None:
 
     if not hasattr(st, "dialog"):
@@ -47,22 +48,24 @@ def open_create_dialog(
                 )
 
                 if st.button("Create project", key="create_project_btn"):
-                    project = create_project(name, owner_id=owner_id, org_id=org_id)
-                    if project:
-                        record_event(
-                            account_id,
-                            "project_created",
-                            {"project_id": project["id"]},
-                        )
-                        st.session_state["active_project_id"] = project["id"]
-                        st.session_state.pop("project_loaded_id", None)
-                        st.session_state["navigate_to_app"] = True
-                        _clear_flow_params_preserve_dev()
-                        st.rerun()
-
-
-
-                    st.error("Unable to create project.")
+                    try:
+                        project = create_project(name, owner_id=owner_id, org_id=org_id, user=user)
+                        if project:
+                            record_event(
+                                account_id,
+                                "project_created",
+                                {"project_id": project["id"]},
+                            )
+                            st.session_state["active_project_id"] = project["id"]
+                            st.session_state.pop("project_loaded_id", None)
+                            st.session_state["navigate_to_app"] = True
+                            _clear_flow_params_preserve_dev()
+                            st.rerun()
+                        else:
+                            st.error("Unable to create project.")
+                    except PermissionError as e:
+                        st.error(f"🔒 {str(e)}")
+                        st.page_link("pages/4_Billing.py", label="Go to Billing")
 
     _dialog()
 
@@ -74,6 +77,8 @@ def open_create_popover(
     owner_id: str | None,
     org_id: str | None,
     account_id: int | None,
+    can_edit: bool = True,
+    user: dict | None = None,
 ) -> None:
     """Render a small floating create project panel using st.popover.
 
@@ -90,7 +95,12 @@ def open_create_popover(
             org_id=org_id,
             account_id=account_id,
             clear_query_params_fn=lambda *a, **k: None,
+            user=user,
         )
+        return
+
+    if not can_edit:
+        st.button("Create project", disabled=True, key="create_btn_disabled", help="Your plan is expired. Upgrade to create projects.")
         return
 
     with st.popover("Create project", width="content"):
@@ -127,17 +137,21 @@ def open_create_popover(
                 if not cleaned:
                     st.warning("Project name cannot be empty.")
                 else:
-                    project = create_project(cleaned, owner_id=owner_id, org_id=org_id)
-                    if project:
-                        record_event(
-                            account_id,
-                            "project_created",
-                            {"project_id": project["id"]},
-                        )
-                        st.session_state["project_flash"] = f'Project "{cleaned}" created.'
-                        st.rerun()
-                    else:
-                        st.error("Unable to create project.")
+                    try:
+                        project = create_project(cleaned, owner_id=owner_id, org_id=org_id, user=user)
+                        if project:
+                            record_event(
+                                account_id,
+                                "project_created",
+                                {"project_id": project["id"]},
+                            )
+                            st.session_state["project_flash"] = f'Project "{cleaned}" created.'
+                            st.rerun()
+                        else:
+                            st.error("Unable to create project.")
+                    except PermissionError as e:
+                        st.error(f"🔒 {str(e)}")
+                        st.page_link("pages/4_Billing.py", label="Go to Billing")
 
 
 def project_actions_popover(
@@ -145,8 +159,14 @@ def project_actions_popover(
     project_id: str,
     current_name: str,
     owner_id: str | None,
+    can_edit: bool = True,
+    user: dict | None = None,
 ) -> None:
     if not hasattr(st, "popover"):
+        return
+    
+    if not can_edit:
+        st.button("⚙︎", disabled=True, key=f"actions_btn_disabled_{project_id}", help="Your plan is expired. Upgrade to modify projects.")
         return
 
     with st.popover("⚙︎", use_container_width=False):
@@ -166,11 +186,15 @@ def project_actions_popover(
                 if not cleaned:
                     st.warning("Project name cannot be empty.")
                 else:
-                    if update_project(project_id, owner_id=owner_id, name=cleaned):
-                        st.session_state["project_flash"] = f'Project renamed to "{cleaned}".'
-                        st.rerun()
-                    else:
-                        st.error("Unable to update project name.")
+                    try:
+                        if update_project(project_id, owner_id=owner_id, name=cleaned, user=user):
+                            st.session_state["project_flash"] = f'Project renamed to "{cleaned}".'
+                            st.rerun()
+                        else:
+                            st.error("Unable to update project name.")
+                    except PermissionError as e:
+                        st.error(f"🔒 {str(e)}")
+                        st.page_link("pages/4_Billing.py", label="Go to Billing")
 
         st.divider()
         st.markdown(
@@ -190,12 +214,16 @@ def project_actions_popover(
             confirm_cols = st.columns(2, gap="small")
             with confirm_cols[0]:
                 if st.button("Confirm", key=f"del_{project_id}", use_container_width=True):
-                    if delete_project(project_id, owner_id=owner_id):
-                        st.session_state.pop(f"confirm_{project_id}", None)
-                        st.session_state["project_flash"] = f'Project "{current_name}" deleted.'
-                        st.rerun()
-                    else:
-                        st.error("Unable to delete project.")
+                    try:
+                        if delete_project(project_id, owner_id=owner_id, user=user):
+                            st.session_state.pop(f"confirm_{project_id}", None)
+                            st.session_state["project_flash"] = f'Project "{current_name}" deleted.'
+                            st.rerun()
+                        else:
+                            st.error("Unable to delete project.")
+                    except PermissionError as e:
+                        st.error(f"🔒 {str(e)}")
+                        st.page_link("pages/4_Billing.py", label="Go to Billing")
             with confirm_cols[1]:
                 if st.button("Cancel", key=f"canc_{project_id}", use_container_width=True):
                     st.session_state.pop(f"confirm_{project_id}", None)

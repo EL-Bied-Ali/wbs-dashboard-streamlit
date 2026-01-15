@@ -58,8 +58,12 @@ def render_projects_page(
     if is_admin and owner_id:
         migrated_key = f"_projects_owner_migrated_{owner_id}"
         if not st.session_state.get(migrated_key):
-            assign_projects_to_owner(owner_id)
-            st.session_state[migrated_key] = True
+            try:
+                assign_projects_to_owner(owner_id, user=user)
+                st.session_state[migrated_key] = True
+            except PermissionError as e:
+                st.error(f"🔒 {str(e)}")
+                st.page_link("pages/4_Billing.py", label="Go to Billing")
 
     projects = list_projects_for_org(org_id) or list_projects(owner_id) or []
     project_count = len(projects)
@@ -213,6 +217,8 @@ def render_projects_page(
                     owner_id=owner_id,
                     org_id=org_id,
                     account_id=user.get("billing_account_id"),
+                    can_edit=plan_state.get("allowed", True),
+                    user=user,
                 )
 
         render_hero(
@@ -360,6 +366,8 @@ def render_projects_page(
                                     project_id=pid,
                                     current_name=current_name,
                                     owner_id=owner_id,
+                                    can_edit=plan_state.get("allowed", True),
+                                    user=user,
                                 )
                         st.markdown(card_html, unsafe_allow_html=True)
             card_index += 1

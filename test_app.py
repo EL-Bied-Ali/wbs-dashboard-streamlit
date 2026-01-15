@@ -1,22 +1,31 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
+#!/usr/bin/env python3
+"""
+Dependency smoke test.
 
-st.set_page_config(page_title="Mini Streamlit Test", layout="wide")
+Ensures ChronoPlan's core Python deps import and basic objects can be created,
+without starting Streamlit UI rendering.
+"""
 
-st.title("Mini Streamlit Test App")
-st.write("If you see this, Streamlit and pandas/plotly are working.")
+from __future__ import annotations
 
-# Simple dataframe and plot
-df = pd.DataFrame({
-    "week": [f"W{i}" for i in range(1, 6)],
-    "value": [3, 5, 2, 6, 4],
-})
 
-st.dataframe(df, width=" stretch\)
+def test_imports() -> None:
+    import pandas as pd
+    import plotly.express as px
+    import streamlit  # noqa: F401
 
-fig = px.bar(df, x="week", y="value", title="Sample bar chart")
-st.plotly_chart(fig, width=" stretch\, config={"displayModeBar": False})
+    df = pd.DataFrame(
+        {
+            "week": [f"W{i}" for i in range(1, 6)],
+            "value": [3, 5, 2, 6, 4],
+        }
+    )
+    fig = px.bar(df, x="week", y="value", title="Smoke")
 
-st.success("Everything loaded fine. If this runs, your install is OK.")
+    assert df.shape == (5, 2)
+    assert fig is not None
 
+
+if __name__ == "__main__":
+    test_imports()
+    print("PASS")

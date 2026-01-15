@@ -31,6 +31,7 @@ from auth_google import (
     require_login,
 )
 
+from access_guard import check_access_or_redirect
 from billing_store import access_status, get_account_by_email
 from charts import s_curve
 from data import demo_series, load_from_excel, sample_dashboard_data
@@ -196,6 +197,17 @@ if not st.session_state.get("active_project_id"):
 if st.session_state.get("active_project_id") and project_param != st.session_state.get("active_project_id"):
     _set_query_params({"project": st.session_state["active_project_id"]})
     st.rerun()
+
+# Check access status: if plan expired, redirect to projects
+account = get_account_by_email(user.get("email", ""))
+gate = access_status(account)
+if not gate.get("allowed", True):
+    st.error("🔒 Your plan is expired. Dashboard is locked.")
+    st.info("Please upgrade your plan to continue.")
+    st.session_state.pop("active_project_id", None)
+    st.switch_page("pages/0_Projects.py")
+    st.stop()
+
 with st.sidebar:
     with st.container(key="back_to_projects_link"):
         st.page_link("pages/0_Projects.py", label="Back to projects")
@@ -206,16 +218,11 @@ if not project:
     st.switch_page("pages/0_Projects.py")
     st.stop()
 
-account = get_account_by_email(user.get("email", ""))
-gate = access_status(account)
-if not gate.get("allowed", True):
-    _render_access_gate(gate)
-    st.stop()
 apply_project_to_session(project)
 
 
-def _store_project_upload(project_info, uploaded):
-    return store_project_upload(project_info, uploaded)
+def _store_project_upload(project_info, uploaded, user=None):
+    return store_project_upload(project_info, uploaded, user=user)
 
 def _excel_template_bytes():
     demo_bytes = demo_template_bytes()
@@ -344,7 +351,12 @@ shared_upload = st.sidebar.file_uploader(
     key="excel_upload_shared",
     label_visibility="collapsed",
 )
-shared_path = _store_project_upload(project, shared_upload)
+try:
+    shared_path = _store_project_upload(project, shared_upload, user=user)
+except PermissionError as e:
+    st.sidebar.error(f"🔒 {str(e)}")
+    st.sidebar.page_link("pages/4_Billing.py", label="Go to Billing")
+    shared_path = st.session_state.get("shared_excel_path")
 if shared_path is None:
     shared_path = set_default_excel_if_missing(persist=False)
 if shared_path and st.session_state.get("shared_excel_name"):
@@ -535,14 +547,19 @@ def _render_mapping_dialog_body(
                 st.session_state.get("shared_excel_key"),
             )
             st.session_state["mapping_source_key"] = mapping_key
-            persist_project_mapping(
-                st.session_state.get("active_project_id"),
-                new_mapping,
-                mapping_key,
-            )
-            st.session_state["mapping_open"] = False
-            st.session_state["mapping_skipped"] = False
-            st.rerun()
+            try:
+                persist_project_mapping(
+                    st.session_state.get("active_project_id"),
+                    new_mapping,
+                    mapping_key,
+                    user=user,
+                )
+                st.session_state["mapping_open"] = False
+                st.session_state["mapping_skipped"] = False
+                st.rerun()
+            except PermissionError as e:
+                st.error(f"🔒 {str(e)}")
+                st.page_link("pages/4_Billing.py", label="Go to Billing")
     with col2:
         if st.button("Skip for now"):
             st.session_state["mapping_open"] = False

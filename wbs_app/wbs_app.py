@@ -168,8 +168,8 @@ if not gate.get("allowed", True):
 apply_project_to_session(project)
 
 
-def _store_project_upload(project_info, uploaded):
-    return store_project_upload(project_info, uploaded)
+def _store_project_upload(project_info, uploaded, user=None):
+    return store_project_upload(project_info, uploaded, user=user)
 
 def _excel_template_bytes():
     demo_bytes = demo_template_bytes()
@@ -229,7 +229,12 @@ shared_upload = st.sidebar.file_uploader(
     key="excel_upload_shared",
     label_visibility="collapsed",
 )
-shared_path = _store_project_upload(project, shared_upload)
+try:
+    shared_path = _store_project_upload(project, shared_upload, user=user)
+except PermissionError as e:
+    st.sidebar.error(f"🔒 {str(e)}")
+    st.sidebar.page_link("pages/4_Billing.py", label="Go to Billing")
+    shared_path = st.session_state.get("shared_excel_path")
 if shared_path is None:
     shared_path = set_default_excel_if_missing(persist=False)
 if shared_path and st.session_state.get("shared_excel_name"):
@@ -363,14 +368,19 @@ def _render_mapping_dialog_body(
                 st.session_state.get("shared_excel_key"),
             )
             st.session_state["mapping_source_key"] = mapping_key
-            persist_project_mapping(
-                st.session_state.get("active_project_id"),
-                new_mapping,
-                mapping_key,
-            )
-            st.session_state["mapping_open"] = False
-            st.session_state["mapping_skipped"] = False
-            st.rerun()
+            try:
+                persist_project_mapping(
+                    st.session_state.get("active_project_id"),
+                    new_mapping,
+                    mapping_key,
+                    user=user,
+                )
+                st.session_state["mapping_open"] = False
+                st.session_state["mapping_skipped"] = False
+                st.rerun()
+            except PermissionError as e:
+                st.error(f"🔒 {str(e)}")
+                st.page_link("pages/4_Billing.py", label="Go to Billing")
     with col2:
         if st.button("Skip for now"):
             st.session_state["mapping_open"] = False

@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 import uuid
+from filelock import FileLock
 
 import streamlit as st
 
 PROJECT_LIMIT = 3
 PROJECTS_PATH = Path("artifacts") / "projects.json"
 PROJECTS_DIR = Path("artifacts") / "projects"
+PROJECTS_LOCK_PATH = Path("artifacts") / "projects.json.lock"
 
 def org_id_from_email(email: str | None) -> str | None:
     if not email or "@" not in email:
@@ -43,7 +46,7 @@ def owner_id_from_user(user: dict | None) -> str | None:
         return _normalize_owner_id(account_id)
     sub = (user.get("sub") or "").strip()
     if sub:
-        return f"sub:{sub}"
+        return f"acct:sub:{sub}"
     email = (user.get("email") or "").strip()
     if email:
         return _normalize_owner_id(email)
@@ -55,22 +58,26 @@ def _now_iso() -> str:
 
 
 def _load_projects() -> list[dict]:
-    if not PROJECTS_PATH.exists():
-        return []
-    try:
-        data = json.loads(PROJECTS_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-    if isinstance(data, dict):
-        data = data.get("projects", [])
-    if not isinstance(data, list):
-        return []
-    return [p for p in data if isinstance(p, dict)]
+    lock = FileLock(str(PROJECTS_LOCK_PATH), timeout=10)
+    with lock:
+        if not PROJECTS_PATH.exists():
+            return []
+        try:
+            data = json.loads(PROJECTS_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return []
+        if isinstance(data, dict):
+            data = data.get("projects", [])
+        if not isinstance(data, list):
+            return []
+        return [p for p in data if isinstance(p, dict)]
 
 
 def _save_projects(projects: list[dict]) -> None:
-    PROJECTS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    PROJECTS_PATH.write_text(json.dumps(projects, indent=2), encoding="utf-8")
+    lock = FileLock(str(PROJECTS_LOCK_PATH), timeout=10)
+    with lock:
+        PROJECTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        PROJECTS_PATH.write_text(json.dumps(projects, indent=2), encoding="utf-8")
 
 
 def _find_project_index(projects: list[dict], project_id: str) -> int | None:
@@ -119,7 +126,10 @@ def list_projects_for_org(org_id: str | None) -> list[dict]:
     return [p for p in projects if p.get("org_id") == org_id]
 
 
-def create_project(name: str | None, owner_id: str | int | None = None, org_id: str | None = None) -> dict | None:
+def create_project(name: str | None, owner_id: str | int | None = None, org_id: str | None = None, user: dict | None = None) -> dict | None:
+    if user:
+        from access_guard import assert_can_edit
+        assert_can_edit(user)
     owner_key = _normalize_owner_id(owner_id)
     if not owner_key:
         return None
@@ -142,6 +152,7 @@ def create_project(name: str | None, owner_id: str | int | None = None, org_id: 
     }
     projects.append(project)
     _save_projects(projects)
+    logging.info(f"CREATED project {project['id']} owner_id={owner_key}")
     return project
 
 
@@ -164,7 +175,10 @@ def get_project(project_id: str | None, owner_id: str | int | None = None) -> di
     return project
 
 
-def update_project(project_id: str, owner_id: str | int | None = None, **fields: object) -> dict | None:
+def update_project(project_id: str, owner_id: str | int | None = None, user: dict | None = None, **fields: object) -> dict | None:
+    if user:
+        from access_guard import assert_can_edit
+        assert_can_edit(user)
     projects = _load_projects()
     idx = _find_project_index(projects, project_id)
     if idx is None:
@@ -186,7 +200,11 @@ def delete_project(
     *,
     owner_id: str | int | None = None,
     remove_files: bool = True,
+    user: dict | None = None,
 ) -> bool:
+    if user:
+        from access_guard import assert_can_edit
+        assert_can_edit(user)
     projects = _load_projects()
     idx = _find_project_index(projects, project_id)
     if idx is None:
@@ -205,7 +223,10 @@ def delete_project(
     return True
 
 
-def assign_projects_to_owner(owner_id: str | int | None) -> int:
+def assign_projects_to_owner(owner_id: str | int | None, user: dict | None = None) -> int:
+    if user:
+        from access_guard import assert_can_edit
+        assert_can_edit(user)
     owner_key = _normalize_owner_id(owner_id)
     if not owner_key:
         return 0
@@ -310,7 +331,10 @@ def _apply_project_mapping(project: dict) -> None:
     st.session_state["mapping_skipped"] = False
 
 
-def store_project_upload(project: dict | None, uploaded) -> str | None:
+def store_project_upload(project: dict | None, uploaded, user: dict | None = None) -> str | None:
+    if user:
+        from access_guard import assert_can_edit
+        assert_can_edit(user)
     if project is None:
         return st.session_state.get("shared_excel_path")
     if uploaded is None:
@@ -353,28 +377,7 @@ def store_project_upload(project: dict | None, uploaded) -> str | None:
     return str(target_path)
 
 
-def persist_project_mapping(project_id: str | None, mapping: dict, mapping_key: str | None) -> None:
+def persist_project_mapping(project_id: str | None, mapping: dict, mapping_key: str | None, user: dict | None = None) -> None:
     if not project_id:
         return
-    update_project(project_id, mapping=mapping, mapping_key=mapping_key)
-
-
-def migrate_owner_id_to_sub(user: dict) -> None:
-    """Migrate projects from email-based owner_id to sub-based if user has sub."""
-    if not user or not user.get("sub"):
-        return
-    sub_owner_id = f"sub:{user['sub']}"
-    email = (user.get("email") or "").strip()
-    if not email:
-        return
-    email_owner_id = _normalize_owner_id(email)
-    if sub_owner_id == email_owner_id:
-        return  # already migrated or same
-    projects = _load_projects()
-    migrated = False
-    for project in projects:
-        if project.get("owner_id") == email_owner_id:
-            project["owner_id"] = sub_owner_id
-            migrated = True
-    if migrated:
-        _save_projects(projects)
+    update_project(project_id, mapping=mapping, mapping_key=mapping_key, user=user)
