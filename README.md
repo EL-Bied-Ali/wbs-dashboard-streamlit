@@ -63,3 +63,22 @@ http://YOUR_HOST:8001/webhook/paddle
 The handler maps Paddle subscription events to:
 - `plan_status = active|trialing`
 - `plan_end` from the current billing period end date
+
+## R2 backups (artifacts)
+The app can create daily backups of billing and project artifacts in Cloudflare R2.
+
+Setup:
+1) Create an R2 bucket in your Cloudflare account (e.g. `chronoplan-backups`).
+2) Create an R2 API token with read/write access to that bucket.
+3) Set these secrets (Streamlit secrets or env vars):
+   - `R2_ACCOUNT_ID`
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
+   - `R2_BUCKET`
+   - `R2_ENDPOINT` (optional; defaults to `<account_id>.r2.cloudflarestorage.com`)
+   - `R2_BACKUP_KEEP` (optional; defaults to 14)
+   - `ENABLE_R2_BACKUPS` (optional; default 0)
+
+Behavior:
+- The Router page triggers a lazy daily backup if the last backup is older than 24h.
+- Admins can trigger a manual backup from the Billing page (Admin billing diagnostics).

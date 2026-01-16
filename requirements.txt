@@ -9,3 +9,4 @@ requests==2.32.5
 streamlit-cookies-manager==0.2.0
 python-calamine
 filelock==3.13.1
+minio==7.2.9

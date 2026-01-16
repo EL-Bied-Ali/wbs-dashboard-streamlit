@@ -169,7 +169,7 @@ def project_actions_popover(
         st.button("⚙︎", disabled=True, key=f"actions_btn_disabled_{project_id}", help="Your plan is expired. Upgrade to modify projects.")
         return
 
-    with st.popover("⚙︎", use_container_width=False):
+    with st.popover("⚙︎", width="content"):
         st.caption("Manage project")
 
         new_name = st.text_input(
@@ -181,7 +181,7 @@ def project_actions_popover(
 
         cols = st.columns([1, 1], gap="small")
         with cols[0]:
-            if st.button("Save", key=f"save_{project_id}", use_container_width=True):
+            if st.button("Save", key=f"save_{project_id}", width="stretch"):
                 cleaned = (new_name or "").strip()
                 if not cleaned:
                     st.warning("Project name cannot be empty.")
@@ -206,14 +206,14 @@ def project_actions_popover(
             "Delete",
             key=f"askdel_{project_id}",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         ):
             st.session_state[f"confirm_{project_id}"] = True
 
         if st.session_state.get(f"confirm_{project_id}"):
             confirm_cols = st.columns(2, gap="small")
             with confirm_cols[0]:
-                if st.button("Confirm", key=f"del_{project_id}", use_container_width=True):
+                if st.button("Confirm", key=f"del_{project_id}", width="stretch"):
                     try:
                         if delete_project(project_id, owner_id=owner_id, user=user):
                             st.session_state.pop(f"confirm_{project_id}", None)
@@ -225,5 +225,5 @@ def project_actions_popover(
                         st.error(f"🔒 {str(e)}")
                         st.page_link("pages/4_Billing.py", label="Go to Billing")
             with confirm_cols[1]:
-                if st.button("Cancel", key=f"canc_{project_id}", use_container_width=True):
+                if st.button("Cancel", key=f"canc_{project_id}", width="stretch"):
                     st.session_state.pop(f"confirm_{project_id}", None)

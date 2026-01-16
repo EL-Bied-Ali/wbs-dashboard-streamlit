@@ -187,7 +187,7 @@ st.dataframe(
         }
         for a in accounts
     ],
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 
@@ -204,7 +204,7 @@ st.dataframe(
         }
         for r in referrals
     ],
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 
@@ -219,6 +219,6 @@ st.dataframe(
         }
         for e in events
     ],
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )

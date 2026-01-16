@@ -18,6 +18,8 @@ from billing_store import (
     force_sync_account_from_remote,
     get_account_by_email,
 )
+from backup_r2 import run_backup_now
+from runtime_checks import check_billing_db_integrity, get_account_row, validate_runtime_config
 
 
 def _get_secret(key: str) -> str:
@@ -1528,6 +1530,8 @@ if not user:
     st.stop()
 
 is_admin = _is_admin_user(user)
+runtime_status = validate_runtime_config(checkout_enabled=True)
+db_status = check_billing_db_integrity()
 
 params = _get_query_params()
 checkout_state = _query_value(params, "checkout")
@@ -1686,6 +1690,29 @@ with st.container(key="billing_back_btn"):
         st.switch_page("pages/0_Projects.py")
 
 st.markdown(top_html, unsafe_allow_html=True)
+
+if is_admin and (runtime_status.get("missing") or db_status.get("duplicates")):
+    missing_keys = runtime_status.get("missing", [])
+    duplicates = db_status.get("duplicates", [])
+    st.warning("Admin runtime checks: attention required.", icon="⚠️")
+    if missing_keys:
+        st.caption(f"Missing config: {', '.join(missing_keys)}")
+    if duplicates:
+        st.caption(f"Duplicate billing emails: {', '.join([d['email'] for d in duplicates])}")
+    st.caption(f"Billing DB path: {db_status.get('db_path')}")
+
+if is_admin:
+    with st.expander("Admin billing diagnostics", expanded=False):
+        st.write({"missing_config": runtime_status.get("missing", [])})
+        st.write({"duplicate_emails": db_status.get("duplicates", [])})
+        st.write({"billing_db_path": db_status.get("db_path")})
+        st.write({"account_row": get_account_row(user.get("email"))})
+        if st.button("Backup now", key="billing_backup_now"):
+            ok, message = run_backup_now(reason="admin")
+            if ok:
+                st.success(message)
+            else:
+                st.error(message)
 
 if checkout_state == "success":
     if plan_status == "active" and not is_locked:

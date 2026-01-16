@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import secrets
 import sqlite3
@@ -17,6 +18,31 @@ DB_ENV = "BILLING_DB_PATH"
 DEFAULT_DB_PATH = Path("artifacts") / "billing.sqlite"
 REMOTE_SYNC_TTL_SECONDS = 60
 _REMOTE_SYNC_CACHE: dict[str, float] = {}
+BILLING_LOGGER = logging.getLogger("billing_store")
+
+
+def _debug_enabled() -> bool:
+    return os.environ.get("BILLING_DEBUG", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _ensure_logger() -> None:
+    if not BILLING_LOGGER.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s [billing_store] %(levelname)s: %(message)s")
+        )
+        BILLING_LOGGER.addHandler(handler)
+    BILLING_LOGGER.setLevel(logging.DEBUG if _debug_enabled() else logging.INFO)
+
+
+def _log(level: int, message: str) -> None:
+    _ensure_logger()
+    BILLING_LOGGER.log(level, message)
+
+
+def _log_info(message: str, *, force: bool = False) -> None:
+    if force or _debug_enabled():
+        _log(logging.INFO, message)
 
 
 def _db_path() -> Path:
@@ -24,6 +50,10 @@ def _db_path() -> Path:
     if raw:
         return Path(raw)
     return DEFAULT_DB_PATH
+
+
+def get_billing_db_path() -> Path:
+    return _db_path()
 
 
 def _utc_now() -> datetime:
@@ -185,6 +215,7 @@ def _remote_sync_allowed(email: str) -> bool:
 def _fetch_remote_account(email: str) -> dict[str, Any] | None:
     base_url = _get_secret("BILLING_API_URL")
     if not base_url:
+        _log(logging.WARNING, "fetch_remote_account missing BILLING_API_URL")
         return None
     token = _get_secret("BILLING_API_TOKEN")
     url = f"{base_url.rstrip('/')}/account?{urlencode({'email': email})}"
@@ -194,11 +225,36 @@ def _fetch_remote_account(email: str) -> dict[str, Any] | None:
     try:
         req = Request(url, headers=headers, method="GET")
         with urlopen(req, timeout=6) as response:
+            status = getattr(response, "status", None)
             body = response.read().decode("utf-8")
-            payload = json.loads(body or "{}")
-    except Exception:
+        body_preview = body if len(body) <= 2000 else f"{body[:2000]}...(truncated)"
+        _log(
+            logging.DEBUG,
+            f"fetch_remote_account url={url} status={status} "
+            f"token_present={bool(token)} body={body_preview}",
+        )
+        payload = json.loads(body or "{}")
+    except HTTPError as err:
+        detail = ""
+        try:
+            detail = err.read().decode("utf-8")
+        except Exception:
+            detail = ""
+        detail_preview = detail if len(detail) <= 2000 else f"{detail[:2000]}...(truncated)"
+        _log(
+            logging.WARNING,
+            f"fetch_remote_account http_error status={err.code} "
+            f"token_present={bool(token)} body={detail_preview}",
+        )
+        return None
+    except URLError as err:
+        _log(logging.WARNING, f"fetch_remote_account url_error reason={getattr(err, 'reason', None)}")
+        return None
+    except Exception as err:
+        _log(logging.WARNING, f"fetch_remote_account error={err}")
         return None
     if not isinstance(payload, dict) or not payload.get("ok"):
+        _log(logging.WARNING, f"fetch_remote_account invalid_payload payload={payload}")
         return None
     account = payload.get("account")
     return account if isinstance(account, dict) else None
@@ -306,40 +362,78 @@ def create_portal_session(
 
 
 def sync_account_from_remote(email: str, force: bool = False) -> bool:
+    email_raw = email
     email = (email or "").strip().lower()
+    _log_info(
+        f"sync_account_from_remote email_raw={email_raw!r} normalized={email!r} "
+        f"force={force} db_path={_db_path()}",
+        force=force,
+    )
     if not _remote_sync_allowed(email):
+        _log_info(f"sync_account_from_remote skip_ttl email={email!r}", force=force)
         return False
     _REMOTE_SYNC_CACHE[email] = time.time()
     local = _get_account_by_email_local(email)
     if not local:
+        _log_info(f"sync_account_from_remote local_missing email={email!r}", force=force)
         return False
     remote = _fetch_remote_account(email)
     if not remote:
+        _log_info(f"sync_account_from_remote remote_missing email={email!r}", force=force)
         return False
     remote_updated_at = _parse_iso(remote.get("updated_at") if isinstance(remote.get("updated_at"), str) else None)
     local_updated_at = _parse_iso(local.get("plan_updated_at") if isinstance(local.get("plan_updated_at"), str) else None)
+    _log_info(
+        f"sync_account_from_remote updated_at remote={remote_updated_at} local={local_updated_at} "
+        f"force={force}",
+        force=force,
+    )
     if not force and remote_updated_at and local_updated_at and local_updated_at >= remote_updated_at:
+        _log_info("sync_account_from_remote skip_up_to_date", force=force)
         return False
     plan_status = (remote.get("plan_status") or "").strip().lower()
     if plan_status in {"active", "trialing"}:
-        update_account_plan(
+        _log_info(
+            "sync_account_from_remote update_account_plan "
+            f"status={plan_status!r} trial_end={remote.get('trial_end')!r} "
+            f"plan_end={remote.get('plan_end')!r} plan_updated_at={remote_updated_at}",
+            force=force,
+        )
+        updated = update_account_plan(
             email,
             plan_status,
             trial_end=remote.get("trial_end"),
             plan_end=remote.get("plan_end"),
             plan_updated_at=remote_updated_at,
         )
+        _log_info(f"sync_account_from_remote update_account_plan ok={updated}", force=force)
+    else:
+        _log_info(f"sync_account_from_remote skip_update_plan status={plan_status!r}", force=force)
     customer_id = remote.get("paddle_customer_id")
     subscription_id = remote.get("paddle_subscription_id")
     if customer_id or subscription_id:
         account_id = local.get("id")
         if account_id:
-            update_paddle_ids(int(account_id), customer_id, subscription_id)
+            _log_info(
+                "sync_account_from_remote update_paddle_ids "
+                f"account_id={account_id} customer_id_present={bool(customer_id)} "
+                f"subscription_id_present={bool(subscription_id)}",
+                force=force,
+            )
+            updated = update_paddle_ids(int(account_id), customer_id, subscription_id)
+            _log_info(f"sync_account_from_remote update_paddle_ids ok={updated}", force=force)
+    else:
+        _log_info("sync_account_from_remote skip_update_paddle_ids missing_ids", force=force)
     return True
 
 
 def force_sync_account_from_remote(email: str) -> bool:
+    email_raw = email
     email = (email or "").strip().lower()
+    _log_info(
+        f"force_sync_account_from_remote email_raw={email_raw!r} normalized={email!r} db_path={_db_path()}",
+        force=True,
+    )
     if not email:
         return False
     _REMOTE_SYNC_CACHE.pop(email, None)
@@ -348,7 +442,17 @@ def force_sync_account_from_remote(email: str) -> bool:
 
 def get_account_by_email(email: str) -> dict[str, Any] | None:
     sync_account_from_remote(email)
-    return _get_account_by_email_local(email)
+    account = _get_account_by_email_local(email)
+    if account:
+        _log_info(
+            "get_account_by_email "
+            f"email={email!r} plan_status={account.get('plan_status')!r} "
+            f"plan_end={account.get('plan_end')!r} plan_updated_at={account.get('plan_updated_at')!r} "
+            f"db_path={_db_path()}",
+        )
+    else:
+        _log_info(f"get_account_by_email email={email!r} not_found db_path={_db_path()}")
+    return account
 
 
 def get_account_by_id(account_id: int) -> dict[str, Any] | None:
@@ -521,6 +625,13 @@ def record_event(account_id: int | None, event_type: str, metadata: dict[str, An
 
 
 def access_status(account: dict[str, Any] | None) -> dict[str, Any]:
+    if account and _debug_enabled():
+        _log(
+            logging.DEBUG,
+            "access_status input "
+            f"email={account.get('email')!r} plan_status={account.get('plan_status')!r} "
+            f"trial_end={account.get('trial_end')!r} plan_end={account.get('plan_end')!r}",
+        )
     if not account:
         return {
             "allowed": True,
@@ -612,15 +723,33 @@ def update_account_plan(
     init_db()
     with _conn() as conn:
         row = conn.execute(
-            "SELECT id FROM accounts WHERE email = ?",
+            "SELECT id, plan_status, trial_end, plan_end, plan_updated_at FROM accounts WHERE email = ?",
             (email,),
         ).fetchone()
         if not row:
+            _log(logging.WARNING, f"update_account_plan email_not_found email={email!r}")
             return False
+        _log_info(
+            "update_account_plan before "
+            f"email={email!r} status={row['plan_status']!r} trial_end={row['trial_end']!r} "
+            f"plan_end={row['plan_end']!r} plan_updated_at={row['plan_updated_at']!r} "
+            f"db_path={_db_path()}",
+        )
         conn.execute(
             "UPDATE accounts SET plan_status = ?, trial_end = ?, plan_end = ?, plan_updated_at = ? WHERE email = ?",
             (normalized_status, trial_end_value, plan_end_value, plan_updated_at_value, email),
         )
+        updated = conn.execute(
+            "SELECT plan_status, trial_end, plan_end, plan_updated_at FROM accounts WHERE email = ?",
+            (email,),
+        ).fetchone()
+        if updated:
+            _log_info(
+                "update_account_plan after "
+                f"email={email!r} status={updated['plan_status']!r} "
+                f"trial_end={updated['trial_end']!r} plan_end={updated['plan_end']!r} "
+                f"plan_updated_at={updated['plan_updated_at']!r}",
+            )
     return True
 
 
@@ -676,11 +805,17 @@ def update_paddle_ids(
     init_db()
     with _conn() as conn:
         row = conn.execute(
-            "SELECT id FROM accounts WHERE id = ?",
+            "SELECT id, paddle_customer_id, paddle_subscription_id FROM accounts WHERE id = ?",
             (account_id,),
         ).fetchone()
         if not row:
+            _log(logging.WARNING, f"update_paddle_ids account_id_not_found id={account_id}")
             return False
+        _log_info(
+            "update_paddle_ids before "
+            f"id={account_id} customer_id={row['paddle_customer_id']!r} "
+            f"subscription_id={row['paddle_subscription_id']!r} db_path={_db_path()}",
+        )
         conn.execute(
             """
             UPDATE accounts
@@ -690,6 +825,16 @@ def update_paddle_ids(
             """,
             (customer_id, subscription_id, account_id),
         )
+        updated = conn.execute(
+            "SELECT paddle_customer_id, paddle_subscription_id FROM accounts WHERE id = ?",
+            (account_id,),
+        ).fetchone()
+        if updated:
+            _log_info(
+                "update_paddle_ids after "
+                f"id={account_id} customer_id={updated['paddle_customer_id']!r} "
+                f"subscription_id={updated['paddle_subscription_id']!r}",
+            )
     return True
 
 

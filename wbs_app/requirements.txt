@@ -7,3 +7,4 @@ google-auth
 itsdangerous
 requests
 streamlit-cookies-manager
+minio==7.2.9
