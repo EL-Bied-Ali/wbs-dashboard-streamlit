@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.git/
+.gitignore
+
+ngrok.log
+ngrok.err
+streamlit.log
+streamlit.err
+
+artifacts/

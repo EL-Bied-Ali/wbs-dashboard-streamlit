@@ -1,0 +1,22 @@
+.venv/
+.git_worktree_pointer
+__pycache__/
+*.pyc
+*.pyo
+*.DS_Store
+.streamlit/*
+!.streamlit/pages.toml
+.streamlit/generated_demo/
+.vscode/
+.idea/
+env/
+venv/
+.pytest_cache/
+*.log
+*.xlsx
+*.mp4
+New Python File.py
+tmp_*.py
+wbs_all.json
+artifacts/
+!artifacts/Chronoplan_Template.xlsx

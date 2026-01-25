@@ -1,0 +1,10 @@
+streamlit
+plotly
+pandas
+openpyxl
+authlib
+google-auth
+itsdangerous
+requests
+streamlit-cookies-manager
+minio==7.2.9
